@@ -1,0 +1,2640 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Folder" referent="RBX3D4C984097574CAD85D00C2998E21627">
+		<Properties>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">ACCESSORIES</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="Folder" referent="RBXCA550B1442F24E3E91F757D6E8E13E3A">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Head</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="ModuleScript" referent="RBXDED2A00AA35448B4A597148975B19999">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[
+local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.fromRGB(27, 42, 53),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.559238434, -0.00855731964, -0.00256347656, 1, -1.66607231e-27, -2.13162821e-14, -2.13162821e-14, 2.34478832e-13, 1, 1.66607231e-27, -1, -2.34478832e-13),
+		["Size"] = Vector3.new(0.118150, 0.922316, 0.656704)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.fromRGB(27, 42, 53),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.0218353271, -0.30855751, -0.709693909, -1, 1.66607231e-27, -2.13162821e-14, 2.13162821e-14, -2.34478832e-13, 1, -1.66607231e-27, 1, -2.34478832e-13),
+		["Size"] = Vector3.new(0.232000, 0.117000, 0.117000)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.fromRGB(27, 42, 53),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.575260162, -0.30855751, -0.187561035, -1, -1.66607231e-27, 2.13162821e-14, 2.13162821e-14, 2.34478832e-13, -1, -1.66607231e-27, -1, 2.34478832e-13),
+		["Size"] = Vector3.new(0.058150, 0.492316, 0.056704)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.fromRGB(27, 42, 53),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.506954193, -0.30855751, -0.51550293, -0.866025448, 0.50000006, 2.13162821e-14, 1.35699855e-13, 1.92406475e-13, -1, -0.50000006, -0.866025448, 2.34478832e-13),
+		["Size"] = Vector3.new(0.058150, 0.342316, 0.056704)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.fromRGB(27, 42, 53),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.298065186, -0.30855751, -0.679527283, -0.258819103, 0.965925872, 2.13162821e-14, 2.32006227e-13, 4.00976486e-14, -1, -0.965925872, -0.258819103, 2.34478832e-13),
+		["Size"] = Vector3.new(0.058150, 0.342316, 0.056704)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.fromRGB(27, 42, 53),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.599239349, -0.00855731964, -0.00256347656, 1, -1.66607231e-27, -2.13162821e-14, -2.13162821e-14, 2.34478832e-13, 1, 1.66607231e-27, -1, -2.34478832e-13),
+		["Size"] = Vector3.new(0.118150, 0.442316, 0.656704)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Ball,
+		["Color"] = Color3.fromRGB(27, 42, 53),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.0881652832, -0.30855751, -0.709693909, -1, 1.66607231e-27, -2.13162821e-14, 2.13162821e-14, -2.34478832e-13, 1, -1.66607231e-27, 1, -2.34478832e-13),
+		["Size"] = Vector3.new(0.232000, 0.117000, 0.117000)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{35C3CA54-7C95-41BE-A408-6D25E7B3EF39}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Microphone</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX02C55347A1FF46D8BBA999A4D442735D">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[
+local module = {
+	[1] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843), -- color3.new()
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Size"] = Vector3.new(0.118149728, 0.922316313, 0.65670383), -- vector 3
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(-0.559238434, -0.0059967041, 0, 1, -7.10542736e-15, 0, -7.10542736e-15, 1, -7.81596061e-14, 0, -7.81596061e-14, 1) -- cframe
+	},
+	[2] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.0781497285, 0.492316306, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(0.54076004, 0.179003239, 0, 1, -7.10542736e-15, 0, -7.10542736e-15, 1, -7.81596061e-14, 0, -7.81596061e-14, 1)
+	},
+	[3] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.118149728, 0.3423163, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(0.522453308, 0.416944027, 0, 0.965925813, -0.258819044, 0, 0.258819044, 0.965925813, -7.81596061e-14, -2.02291949e-14, -7.54963786e-14, 1)
+	},
+	[4] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.118149728, 0.3423163, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(0.333568573, 0.580964088, 0, 0.258819163, -0.965926111, 0, 0.965926111, 0.258819163, -7.81596061e-14, -7.54964057e-14, -2.02292034e-14, 1)
+	},
+	[5] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.118149728, 0.3423163, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(0.0735683441, 0.630964279, 0, -7.10542736e-15, -1, 0, 1, 7.10542736e-15, -7.81596061e-14, -7.81596061e-14, 0, 1)
+	},
+	[6] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Size"] = Vector3.new(0.118149728, 0.922316313, 0.65670383),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(0.564739227, -0.0059967041, 0, -1, -7.10542736e-15, -0, 7.10542736e-15, 1, 7.81596061e-14, 0, -7.81596061e-14, -1)
+	},
+	[7] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.0781497285, 0.492316306, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(-0.535259247, 0.179003239, 0, -1, -7.10542736e-15, -0, 7.10542736e-15, 1, 7.81596061e-14, 0, -7.81596061e-14, -1)
+	},
+	[8] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.118149728, 0.3423163, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(-0.516952515, 0.416944027, 0, -0.965925813, 0.258819044, -0, 0.258819044, 0.965925813, 7.81596061e-14, -2.02291949e-14, -7.54963786e-14, -1)
+	},
+	[9] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.118149728, 0.3423163, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(-0.32806778, 0.580964088, 0, -0.258819163, 0.965926111, -0, 0.965926111, 0.258819163, 7.81596061e-14, -7.54964057e-14, -2.02292034e-14, -1)
+	},
+	[10] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Size"] = Vector3.new(0.118149728, 0.3423163, 0.316703826),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(-0.0680675507, 0.630964279, 0, -7.10542736e-15, 1, -0, 1, -7.10542736e-15, 7.81596061e-14, -7.81596061e-14, 0, -1)
+	},
+	[11] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Size"] = Vector3.new(0.118149638, 0.442316294, 0.65670383),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(-0.599239349, -0.0059967041, 0, 1, -7.10542736e-15, 0, -7.10542736e-15, 1, -7.81596061e-14, 0, -7.81596061e-14, 1)
+	},
+	[12] =    {
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Size"] = Vector3.new(0.0581496954, 0.442316294, 0.65670383),
+		["Transparency"] = 0,
+		["WeldC0"] = CFrame.new(0.630760193, -0.0059967041, 0, 1, -7.10542736e-15, 0, -7.10542736e-15, 1, -7.81596061e-14, 0, -7.81596061e-14, 1)
+	}
+}
+
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{FA36BDA3-8FEA-4379-8E99-48AD229A232C}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Headphone</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX20ACFE56E8C04867ADB917DF869923DF">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, 0.62499094, 0, 1, -2.84217094e-14, 3.33214423e-27, -2.84217094e-14, 1, -3.12638424e-13, 3.33214423e-27, -3.12638424e-13, 1),
+		["Size"] = Vector3.new(1.5399999618530273, 0.22999991476535797, 1.3399999141693115)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, 0.0949907303, 0, 1, -2.84217094e-14, 3.33214423e-27, -2.84217094e-14, 1, -3.12638424e-13, 3.33214423e-27, -3.12638424e-13, 1),
+		["Size"] = Vector3.new(1.5, 1.2699999809265137, 1.2999999523162842)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, 0.62499094, 0, 1, -2.84217094e-14, 3.33214423e-27, -2.84217094e-14, 1, -3.12638424e-13, 3.33214423e-27, -3.12638424e-13, 1),
+		["Size"] = Vector3.new(1.5399999618530273, 0.22999991476535797, 1.3399999141693115)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.972549, 0.972549, 0.972549),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.395000458, 0.724990845, 0.319999695, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.6499999761581421, 0.049999915063381195, 0.5399999618530273)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.265003204, 0.729990959, 0.38999939, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.22999997437000275, 0.059999916702508926, 0.21999993920326233)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.54000473, 0.729990959, 0.459999084, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.19999992847442627, 0.059999916702508926, 0.07999993860721588)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.390003204, 0.729990959, 0.200004578, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.49999991059303284, 0.059999916702508926, 0.019999951124191284)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.390003204, 0.729990959, 0.160003662, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.49999991059303284, 0.059999916702508926, 0.019999951124191284)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.390003204, 0.729990959, 0.120002747, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.49999991059303284, 0.059999916702508926, 0.019999951124191284)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.390003204, 0.729990959, 0.0900039673, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.49999991059303284, 0.059999916702508926, 0.019999951124191284)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.390003204, 0.729990959, 0.240005493, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.49999991059303284, 0.059999916702508926, 0.019999951124191284)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.54000473, 0.729990959, 0.380004883, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.19999992847442627, 0.059999916702508926, 0.019999951124191284)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.54000473, 0.729990959, 0.340003967, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.19999992847442627, 0.059999916702508926, 0.019999951124191284)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.54000473, 0.729990959, 0.300003052, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.19999992847442627, 0.059999916702508926, 0.019999951124191284)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.54000473, 0.729990959, 0.520004272, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(0.19999992847442627, 0.059999916702508926, 0.019999951124191284)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{5224AAAB-FEE9-4891-A93E-7F83D7F51240}</string>
+					<BinaryString name="AttributesSerialize">AQAAAAYAAABPTkVPRkYDAQ==</BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Box</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX1EA5BDF0BFCF46DF94A5C3FA88082C02">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, 0.62499094, 0, 1, -2.84217094e-14, 3.33214423e-27, -2.84217094e-14, 1, -3.12638424e-13, 3.33214423e-27, -3.12638424e-13, 1),
+		["Size"] = Vector3.new(1.2799999713897705, 0.22999991476535797, 1.2399998903274536)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, 0.0599908829, -0.630004883, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(1.2799999713897705, 1.3599998950958252, 0.07999992370605469)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, 0.0599908829, 0.580001831, 1, -1.42108547e-14, 5.55357403e-28, -1.42108547e-14, 1, -1.56319212e-13, 5.55357403e-28, -1.56319212e-13, 1),
+		["Size"] = Vector3.new(1.2799999713897705, 1.3599998950958252, 0.07999992370605469)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0.605766296, 0.114990711, -0.0257644653, -5.55357403e-28, -1.42108547e-14, 1, 1.56319212e-13, 1, -1.42108547e-14, -1, -1.56319212e-13, 5.55357403e-28),
+		["Size"] = Vector3.new(1.2799999713897705, 1.2499998807907104, 0.07999992370605469)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.604236603, 0.12499094, -0.0257644653, -5.55357403e-28, -1.42108547e-14, 1, 1.56319212e-13, 1, -1.42108547e-14, -1, -1.56319212e-13, 5.55357403e-28),
+		["Size"] = Vector3.new(1.2799999713897705, 1.2299998998641968, 0.07999992370605469)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, -0.490008831, -0.630004883, -1, 1.42108547e-14, 5.55357403e-28, 1.42108547e-14, -1, -1.56319212e-13, -5.55357403e-28, 1.56319212e-13, 1),
+		["Size"] = Vector3.new(1.2799999713897705, 0.6799999475479126, 0.07999992370605469)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, -0.490009308, -0.660003662, 1, 1.39003138e-14, -2.95460296e-15, -1.42108547e-14, -0.978147626, 0.2079117, 5.55357403e-28, -0.2079117, -0.978147626),
+		["Size"] = Vector3.new(1.2799999713897705, 0.6799999475479126, 0.07999992370605469)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.220001221, -0.490009308, -0.660003662, 1, 1.39003138e-14, -2.95460296e-15, -1.42108547e-14, -0.978147626, 0.2079117, 5.55357403e-28, -0.2079117, -0.978147626),
+		["Size"] = Vector3.new(0.8199999928474426, 0.6799999475479126, 0.07999992370605469)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, -0.490009308, 0.609985352, -1, 1.39003138e-14, -2.95460296e-15, 1.42108547e-14, -0.978147626, 0.2079117, -5.55357403e-28, 0.2079117, 0.978147626),
+		["Size"] = Vector3.new(1.2799999713897705, 0.6799999475479126, 0.07999992370605469)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0, -0.490008831, 0.579986572, 1, 1.42108547e-14, -5.55357403e-28, -1.42108547e-14, -1, 1.56319212e-13, 5.55357403e-28, 1.56319212e-13, -1),
+		["Size"] = Vector3.new(1.2799999713897705, 0.6799999475479126, 0.07999992370605469)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0.220001221, -0.490009308, 0.609985352, -1, 1.39003138e-14, -2.95460296e-15, 1.42108547e-14, -0.978147626, 0.2079117, -5.55357403e-28, 0.2079117, 0.978147626),
+		["Size"] = Vector3.new(0.8199999928474426, 0.6799999475479126, 0.07999992370605469)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0.557498932, -0.660300255, -0.588783264, 1, 1.41913806e-14, -7.4373855e-16, -1.42108547e-14, -0.99862963, 0.0523359478, 5.55357403e-28, -0.0523359478, -0.998629689),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3399999737739563, 0.17999990284442902)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(0.557498932, -0.660300255, 0.501213074, 1, 1.41913806e-14, -7.4373855e-16, -1.42108547e-14, -0.99862963, 0.0523359478, 5.55357403e-28, -0.0523359478, -0.998629689),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3399999737739563, 0.17999990284442902)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.5625, -0.660300255, 0.521209717, -1, 1.41913789e-14, -7.43738497e-16, 1.42108547e-14, -0.99862951, 0.052335944, -5.55357403e-28, 0.0523359403, 0.99862957),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3399999737739563, 0.17999990284442902)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.886275, 0.607843, 0.25098),
+		["Material"] = Enum.Material.Cardboard,
+		["WeldC0"] = CFrame.new(-0.5625, -0.660300255, -0.518791199, -1, 1.41913789e-14, -7.43738497e-16, 1.42108547e-14, -0.99862951, 0.052335944, -5.55357403e-28, 0.0523359403, 0.99862957),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3399999737739563, 0.17999990284442902)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{582ED56C-FC02-4F23-904F-0F30ED32CA0A}</string>
+					<BinaryString name="AttributesSerialize">AQAAAAYAAABPTkVPRkYDAQ==</BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Paperbag</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX05D9A279A99C47F282043537790348A3">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(0, 1.39999104, 0.00499725342, 1, -2.84217094e-14, 3.33214423e-27, -2.84217094e-14, 1, -3.12638424e-13, 3.33214423e-27, -3.12638424e-13, 1),
+		["Size"] = Vector3.new(0.1599999964237213, 0.5999999046325684, 0.10999992489814758)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(-0.0974998474, 1.30905724, 0.00499725342, 0.866025388, -0.5, 5.55357403e-28, 0.5, 0.866025388, -1.56319212e-13, -7.81596061e-14, -1.35376411e-13, 1),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(0.102500916, 1.30905724, 0.00499725342, -0.866025388, 0.5, -5.55357403e-28, 0.5, 0.866025388, 1.56319212e-13, -7.81596061e-14, -1.35376411e-13, -1),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(0.0170860291, 1.13141203, 0.00499725342, 0.629320323, -0.777145982, 5.55357403e-28, 0.777145982, 0.629320323, -1.56319212e-13, -1.21482848e-13, -9.83748605e-14, 1),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.13141203, 0.0195770264, -1.10439086e-14, -8.94317969e-15, -1, 0.777145982, 0.629320323, 1.42108547e-14, 0.629320323, -0.777145982, -5.55357403e-28),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.30905724, 0.104995728, -7.10542736e-15, -1.2306961e-14, 1, 0.5, 0.866025388, -1.42108547e-14, -0.866025388, 0.5, 5.55357403e-28),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.30905724, -0.0950012207, -7.10542736e-15, -1.2306961e-14, -1, 0.5, 0.866025388, 1.42108547e-14, 0.866025388, -0.5, -5.55357403e-28),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.Neon,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.39999104, 0.00249481201, 5.55357403e-28, -1.42108547e-14, -1, -1.56319212e-13, 1, 1.42108547e-14, 1, -1.56319212e-13, -5.55357403e-28),
+		["Size"] = Vector3.new(0.1599999964237213, 0.5999999046325684, 0.10999992489814758)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{309C82D5-AEB6-4382-8873-7B913D5E6AED}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">ARROW</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBXF7934FB8C2684FB8AA06E127341B57BF">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[
+local thingo = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0120811462, 1.15744114, 0.00499725342, -0.629320323, 0.777145982, 5.55357403e-28, -0.777145982, -0.629320323, -1.56319212e-13, 1.21482848e-13, 9.83748605e-14, 1),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.15744114, 0.0195770264, 1.10439086e-14, 8.94317969e-15, 1, -0.777145982, -0.629320323, -1.42108547e-14, 0.629320323, -0.777145982, 5.55357403e-28),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 0.979797363, 0.104995728, 1.2306961e-14, 7.10542736e-15, -1, -0.866025388, -0.5, 1.42108547e-14, -0.5, 0.866025388, -5.55357403e-28),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 0.979791164, -0.0950012207, 1.19182288e-14, 7.73978727e-15, 1, -0.83867079, -0.544639111, -1.42108547e-14, 0.544639051, -0.838670671, 5.55357403e-28),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.337255, 0.141176, 0.141176),
+		["Material"] = Enum.Material.Wood,
+		["WeldC0"] = CFrame.new(0.00250244141, 0.888861656, 0.00249481201, 5.55357403e-28, 1.42108547e-14, 1, -1.56319212e-13, -1, -1.42108547e-14, 1, 1.56319212e-13, 5.55357403e-28),
+		["Size"] = Vector3.new(0.1599999964237213, 0.5999999046325684, 0.10999992489814758)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.13210058, -0.18976593, 1.19182288e-14, 7.73978727e-15, 1, -0.83867079, -0.544639111, -1.42108547e-14, 0.544639051, -0.838670671, 5.55357403e-28),
+		["Size"] = Vector3.new(0.11999999731779099, 0.5899999141693115, 0.10999992489814758)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.15644836, 0.178115845, 1.2306961e-14, 7.10542736e-15, -1, -0.866025388, -0.5, 1.42108547e-14, -0.5, 0.866025388, -5.55357403e-28),
+		["Size"] = Vector3.new(0.10999999940395355, 0.5299999117851257, 0.10999992489814758)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.35394812, 0.14780426, 1.2306961e-14, 7.10542736e-15, -1, -0.866025388, -0.5, 1.42108547e-14, -0.5, 0.866025388, -5.55357403e-28),
+		["Size"] = Vector3.new(0.10999999940395355, 0.4599999189376831, 0.10999992489814758)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.3420558, -0.143638611, 1.19182288e-14, 7.73978727e-15, 1, -0.83867079, -0.544639111, -1.42108547e-14, 0.544639051, -0.838670671, 5.55357403e-28),
+		["Size"] = Vector3.new(0.11999999731779099, 0.4799998998641968, 0.10999992489814758)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.56562662, -0.0765457153, 1.19182288e-14, 7.73978727e-15, 1, -0.83867079, -0.544639111, -1.42108547e-14, 0.544639051, -0.838670671, 5.55357403e-28),
+		["Size"] = Vector3.new(0.11999999731779099, 0.31999990344047546, 0.10999992489814758)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.00250244141, 1.56644773, 0.0915145874, 1.2306961e-14, 7.10542736e-15, -1, -0.866025388, -0.5, 1.42108547e-14, -0.5, 0.866025388, -5.55357403e-28),
+		["Size"] = Vector3.new(0.10999999940395355, 0.3299999237060547, 0.10999992489814758)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0240859985, 1.15744114, -0.00199890137, 1.10439086e-14, 8.94317969e-15, 1, -0.777145982, -0.629320323, -1.42108547e-14, 0.629320323, -0.777145982, 5.55357403e-28),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0386657715, 1.15744114, -0.0165863037, 0.629320323, -0.777145982, -5.55357403e-28, -0.777145982, -0.629320323, 1.56319212e-13, 1.21482848e-13, 9.83748605e-14, -1),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.124084473, 0.979797363, -0.0165863037, -0.5, 0.866025388, 5.55357403e-28, -0.866025388, -0.5, -1.56319212e-13, 1.35376411e-13, 7.81596061e-14, 1),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0759124756, 0.979791164, -0.0165863037, 0.544639051, -0.838670671, -5.55357403e-28, -0.83867079, -0.544639111, 1.56319212e-13, 1.31100358e-13, 8.51375584e-14, -1),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[16] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.337255, 0.141176, 0.141176),
+		["Material"] = Enum.Material.Wood,
+		["WeldC0"] = CFrame.new(0.0215835571, 0.888861656, -0.0165863037, 1, 1.42108547e-14, -5.55357403e-28, -1.42108547e-14, -1, 1.56319212e-13, 5.55357403e-28, 1.56319212e-13, -1),
+		["Size"] = Vector3.new(0.1599999964237213, 0.5999999046325684, 0.10999992489814758)
+	},
+	[17] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.170677185, 1.13210058, -0.0165863037, 0.544639051, -0.838670671, -5.55357403e-28, -0.83867079, -0.544639111, 1.56319212e-13, 1.31100358e-13, 8.51375584e-14, -1),
+		["Size"] = Vector3.new(0.11999999731779099, 0.5899999141693115, 0.10999992489814758)
+	},
+	[18] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.19720459, 1.15644836, -0.0165863037, -0.5, 0.866025388, 5.55357403e-28, -0.866025388, -0.5, -1.56319212e-13, 1.35376411e-13, 7.81596061e-14, 1),
+		["Size"] = Vector3.new(0.10999999940395355, 0.5299999117851257, 0.10999992489814758)
+	},
+	[19] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.166893005, 1.35394812, -0.0165863037, -0.5, 0.866025388, 5.55357403e-28, -0.866025388, -0.5, -1.56319212e-13, 1.35376411e-13, 7.81596061e-14, 1),
+		["Size"] = Vector3.new(0.10999999940395355, 0.4599999189376831, 0.10999992489814758)
+	},
+	[20] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.124549866, 1.3420558, -0.0165863037, 0.544639051, -0.838670671, -5.55357403e-28, -0.83867079, -0.544639111, 1.56319212e-13, 1.31100358e-13, 8.51375584e-14, -1),
+		["Size"] = Vector3.new(0.11999999731779099, 0.4799998998641968, 0.10999992489814758)
+	},
+	[21] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0574569702, 1.56562662, -0.0165863037, 0.544639051, -0.838670671, -5.55357403e-28, -0.83867079, -0.544639111, 1.56319212e-13, 1.31100358e-13, 8.51375584e-14, -1),
+		["Size"] = Vector3.new(0.11999999731779099, 0.31999990344047546, 0.10999992489814758)
+	},
+	[22] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.110603333, 1.56644773, -0.0165863037, -0.5, 0.866025388, 5.55357403e-28, -0.866025388, -0.5, -1.56319212e-13, 1.35376411e-13, 7.81596061e-14, 1),
+		["Size"] = Vector3.new(0.10999999940395355, 0.3299999237060547, 0.10999992489814758)
+	},
+	[23] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0280799866, 1.15744114, -0.0215301514, 0.444996655, -0.549525201, 0.707106769, -0.777145982, -0.629320323, 1.00485782e-13, 0.444996655, -0.549525201, -0.707106769),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[24] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0280723572, 1.15744114, -0.0421524048, 0.444996655, -0.549525201, -0.707106769, -0.777145982, -0.629320323, 1.2058296e-13, -0.444996655, 0.549525201, -0.707106769),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[25] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0884742737, 0.979797363, -0.102554321, -0.353553385, 0.612372398, 0.707106769, -0.866025388, -0.5, -1.2058296e-13, 0.353553385, -0.612372398, 0.707106769),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[26] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0529441833, 0.979791164, 0.0388641357, 0.385117948, -0.593029737, -0.707106769, -0.83867079, -0.544639111, 1.2058296e-13, -0.385117948, 0.593029737, -0.707106769),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[27] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.337255, 0.141176, 0.141176),
+		["Material"] = Enum.Material.Wood,
+		["WeldC0"] = CFrame.new(0.0159950256, 0.888861656, -0.0300750732, 0.707106769, 1.42108547e-14, -0.707106769, 1.00485782e-13, -1, 1.2058296e-13, -0.707106769, 1.56319212e-13, -0.707106769),
+		["Size"] = Vector3.new(0.1599999964237213, 0.5999999046325684, 0.10999992489814758)
+	},
+	[28] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.119953156, 1.13210058, 0.105873108, 0.385117948, -0.593029737, -0.707106769, -0.83867079, -0.544639111, 1.2058296e-13, -0.385117948, 0.593029737, -0.707106769),
+		["Size"] = Vector3.new(0.11999999731779099, 0.5899999141693115, 0.10999992489814758)
+	},
+	[29] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.14017868, 1.15644836, -0.154258728, -0.353553385, 0.612372398, 0.707106769, -0.866025388, -0.5, -1.2058296e-13, 0.353553385, -0.612372398, 0.707106769),
+		["Size"] = Vector3.new(0.10999999940395355, 0.5299999117851257, 0.10999992489814758)
+	},
+	[30] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.118740082, 1.35394812, -0.132820129, -0.353553385, 0.612372398, 0.707106769, -0.866025388, -0.5, -1.2058296e-13, 0.353553385, -0.612372398, 0.707106769),
+		["Size"] = Vector3.new(0.10999999940395355, 0.4599999189376831, 0.10999992489814758)
+	},
+	[31] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0873374939, 1.3420558, 0.0732574463, 0.385117948, -0.593029737, -0.707106769, -0.83867079, -0.544639111, 1.2058296e-13, -0.385117948, 0.593029737, -0.707106769),
+		["Size"] = Vector3.new(0.11999999731779099, 0.4799998998641968, 0.10999992489814758)
+	},
+	[32] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0398979187, 1.56562662, 0.0258178711, 0.385117948, -0.593029737, -0.707106769, -0.83867079, -0.544639111, 1.2058296e-13, -0.385117948, 0.593029737, -0.707106769),
+		["Size"] = Vector3.new(0.11999999731779099, 0.31999990344047546, 0.10999992489814758)
+	},
+	[33] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0789375305, 1.56644773, -0.0930175781, -0.353553385, 0.612372398, 0.707106769, -0.866025388, -0.5, -1.2058296e-13, 0.353553385, -0.612372398, 0.707106769),
+		["Size"] = Vector3.new(0.10999999940395355, 0.3299999237060547, 0.10999992489814758)
+	},
+	[34] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.00355148315, 1.15744114, -0.0421600342, 0.444996655, -0.549525201, -0.707106769, -0.777145982, -0.629320323, 1.2058296e-13, -0.444996655, 0.549525201, -0.707106769),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[35] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0241737366, 1.15744114, -0.0421447754, -0.444996655, 0.549525201, -0.707106769, -0.777145982, -0.629320323, -1.00485782e-13, -0.444996655, 0.549525201, 0.707106769),
+		["Size"] = Vector3.new(0.14999999105930328, 0.10999993979930878, 0.10999992489814758)
+	},
+	[36] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0845756531, 0.979797363, -0.102554321, 0.353553385, -0.612372398, 0.707106769, -0.866025388, -0.5, 1.00485782e-13, 0.353553385, -0.612372398, -0.707106769),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[37] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.056842804, 0.979791164, 0.0388641357, -0.385117948, 0.593029737, -0.707106769, -0.83867079, -0.544639111, -1.00485782e-13, -0.385117948, 0.593029737, 0.707106769),
+		["Size"] = Vector3.new(0.1599999964237213, 0.3899999260902405, 0.10999992489814758)
+	},
+	[38] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.337255, 0.141176, 0.141176),
+		["Material"] = Enum.Material.Wood,
+		["WeldC0"] = CFrame.new(-0.012096405, 0.888861656, -0.0300750732, -0.707106769, 1.42108547e-14, -0.707106769, 1.2058296e-13, -1, -1.00485782e-13, -0.707106769, 1.56319212e-13, 0.707106769),
+		["Size"] = Vector3.new(0.1599999964237213, 0.5999999046325684, 0.10999992489814758)
+	},
+	[39] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.123851776, 1.13210058, 0.105880737, -0.385117948, 0.593029737, -0.707106769, -0.83867079, -0.544639111, -1.00485782e-13, -0.385117948, 0.593029737, 0.707106769),
+		["Size"] = Vector3.new(0.11999999731779099, 0.5899999141693115, 0.10999992489814758)
+	},
+	[40] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.13628006, 1.15644836, -0.154251099, 0.353553385, -0.612372398, 0.707106769, -0.866025388, -0.5, 1.00485782e-13, 0.353553385, -0.612372398, -0.707106769),
+		["Size"] = Vector3.new(0.10999999940395355, 0.5299999117851257, 0.10999992489814758)
+	},
+	[41] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.114841461, 1.35394812, -0.1328125, 0.353553385, -0.612372398, 0.707106769, -0.866025388, -0.5, 1.00485782e-13, 0.353553385, -0.612372398, -0.707106769),
+		["Size"] = Vector3.new(0.10999999940395355, 0.4599999189376831, 0.10999992489814758)
+	},
+	[42] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0912361145, 1.3420558, 0.0732574463, -0.385117948, 0.593029737, -0.707106769, -0.83867079, -0.544639111, -1.00485782e-13, -0.385117948, 0.593029737, 0.707106769),
+		["Size"] = Vector3.new(0.11999999731779099, 0.4799998998641968, 0.10999992489814758)
+	},
+	[43] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0437965393, 1.56562662, 0.0258178711, -0.385117948, 0.593029737, -0.707106769, -0.83867079, -0.544639111, -1.00485782e-13, -0.385117948, 0.593029737, 0.707106769),
+		["Size"] = Vector3.new(0.11999999731779099, 0.31999990344047546, 0.10999992489814758)
+	},
+	[44] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.172549, 0.396078, 0.113725),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0750389099, 1.56644773, -0.0930175781, 0.353553385, -0.612372398, 0.707106769, -0.866025388, -0.5, 1.00485782e-13, 0.353553385, -0.612372398, -0.707106769),
+		["Size"] = Vector3.new(0.10999999940395355, 0.3299999237060547, 0.10999992489814758)
+	}
+}
+return thingo
+]]></ProtectedString>
+					<string name="ScriptGuid">{2D258194-3BB7-4495-9238-E96C84C0610C}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Tree</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX67E724C86E8B412588B1EF0672D6961B">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local thingo = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0, 0.775000095, 0, -4.26325641e-14, -1, 8.33036114e-27, 1, 4.26325641e-14, -4.68957664e-13, -4.68957664e-13, -8.33036037e-27, 1),
+		["Size"] = Vector3.new(0.3699999451637268, 0.19999998807907104, 0.1199999749660492)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0449981689, 0.610000134, -0.160003662, -4.26325641e-14, -1, 8.33036114e-27, 1, 4.26325641e-14, -4.68957664e-13, -4.68957664e-13, -8.33036037e-27, 1),
+		["Size"] = Vector3.new(0.019999945536255836, 0.3700000047683716, 0.7199999690055847)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.105003357, 0.610000134, -0.0200042725, -4.26325641e-14, -1, 8.33036114e-27, 1, 4.26325641e-14, -4.68957664e-13, -4.68957664e-13, -8.33036037e-27, 1),
+		["Size"] = Vector3.new(0.019999945536255836, 0.3700000047683716, 0.2800000011920929)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0449981689, 0.610000134, 0.0799942017, -4.26325641e-14, -1, 8.33036114e-27, 1, 4.26325641e-14, -4.68957664e-13, -4.68957664e-13, -8.33036037e-27, 1),
+		["Size"] = Vector3.new(0.019999945536255836, 0.3700000047683716, 0.2800000011920929)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0, 0.669999599, -0.120002747, -4.26325641e-14, -1, 8.33036114e-27, 1, 4.26325641e-14, -4.68957664e-13, -4.68957664e-13, -8.33036037e-27, 1),
+		["Size"] = Vector3.new(0.15999996662139893, 0.19999998807907104, 0.13999995589256287)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0800018311, 0.71999979, -0.0750045776, -4.26325641e-14, -1, 8.33036114e-27, 1, 4.26325641e-14, -4.68957664e-13, -4.68957664e-13, -8.33036037e-27, 1),
+		["Size"] = Vector3.new(0.25999996066093445, 0.19999998807907104, 0.10999995470046997)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.135002136, 0.610000134, -0.114997864, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.019999945536255836, 0.14999999105930328, 0.3699999749660492)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0550003052, 0.620000362, -0.124992371, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.019999945536255836, 0.14999999105930328, 0.3699999749660492)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0499992371, 0.620000362, -0.0799942017, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.019999945536255836, 0.17999999225139618, 0.4599999785423279)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0249977112, 0.625000477, -0.0799942017, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.02999994531273842, 0.12999999523162842, 0.4599999785423279)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0599975586, 0.749999523, -0.0750045776, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.31999993324279785, 0.19999998807907104, 0.10999995470046997)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.9,0.9,0),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0449981689, 0.620000362, -0.0200042725, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.019999945536255836, 0.3700000047683716, 0.2800000011920929)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.356863, 0.364706, 0.411765),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0, 0.974999905, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.623529, 0.631373, 0.67451),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0, 0.920000553, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.09999993443489075, 0.021000001579523087, 0.1199999749660492)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0, 0.985000134, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	},
+	[16] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0600013733, 0.925000191, -0.0800018311, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	},
+	[17] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.623529, 0.631373, 0.67451),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0600013733, 0.86000061, -0.0800018311, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.09999993443489075, 0.021000001579523087, 0.1199999749660492)
+	},
+	[18] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.356863, 0.364706, 0.411765),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-0.0600013733, 0.914999962, -0.0800018311, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	},
+	[19] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.356863, 0.364706, 0.411765),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-3.81469727e-06, 0.764999866, -0.130004883, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	},
+	[20] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.623529, 0.631373, 0.67451),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-3.81469727e-06, 0.710000515, -0.130004883, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.09999993443489075, 0.021000001579523087, 0.1199999749660492)
+	},
+	[21] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(-3.81469727e-06, 0.775000095, -0.130004883, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	},
+	[22] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.356863, 0.364706, 0.411765),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0799980164, 0.875, -0.0900039673, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	},
+	[23] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.623529, 0.631373, 0.67451),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0799980164, 0.820000648, -0.0900039673, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.09999993443489075, 0.021000001579523087, 0.1199999749660492)
+	},
+	[24] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Plastic,
+		["WeldC0"] = CFrame.new(0.0799980164, 0.885000229, -0.0900039673, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.009999940171837807, 0.021000001579523087, 0.1199999749660492)
+	}
+}
+return thingo
+]]></ProtectedString>
+					<string name="ScriptGuid">{B60C7703-986D-4DE2-BBB2-BD3317A76BB2}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Candles</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX22B42A8F19AC4E4C8D61B21FE5519619">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local thingo = {
+	[1] = {
+		["Transparency"] = 0.5,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.686275, 0.866667, 1),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0, -0.505000114, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.04999999701976776, 1.2399998903274536, 1.7799999713897705)
+	},
+	[2] = {
+		["Transparency"] = 0.5,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.686275, 0.866667, 1),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0, -0.465000153, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.029999999329447746, 1.279999852180481, 1.7799999713897705)
+	},
+	[3] = {
+		["Transparency"] = 0.5,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.686275, 0.866667, 1),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0, 0.0900001526, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(1.0799999237060547, 1.2999998331069946, 1.7799999713897705)
+	},
+	[4] = {
+		["Transparency"] = 0.5,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.686275, 0.866667, 1),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0, 0.639500141, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.020999999716877937, 1.279999852180481, 1.7799999713897705)
+	},
+	[5] = {
+		["Transparency"] = 0.5,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.686275, 0.866667, 1),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0, 0.659500599, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.021000001579523087, 1.2399998903274536, 1.7799999713897705)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.415686, 0.223529, 0.0352941),
+		["Material"] = Enum.Material.WoodPlanks,
+		["WeldC0"] = CFrame.new(0, 0.749500751, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.16099999845027924, 1.3199999332427979, 1.7799999713897705)
+	}
+}
+return thingo
+]]></ProtectedString>
+					<string name="ScriptGuid">{118E5E81-B802-43B1-B47F-79064C774974}</string>
+					<BinaryString name="AttributesSerialize">AQAAAAYAAABPTkVPRkYDAQ==</BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Jar</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX862AC003F24C4555AF83F12658CA521B">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(0, 0.289500713, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.16099999845027924, 1.3199999332427979, 1.2200000286102295)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{E147B5CB-C9F8-40EF-90CC-E2002A6E19B3}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Headband</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBXE6A8C576E80349B694F332C9ECAF347D">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(0, 0.109500408, 0, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.3399999737739563, 1.3199999332427979, 1.2200000286102295)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(0.0992772579, -0.0634756088, 0.625499725, -0.574940741, -0.809017003, -0.122207418, 0.207911655, 2.0675791e-13, -0.978147626, 0.791338086, -0.587785244, 0.168204039),
+		["Size"] = Vector3.new(0.03999999910593033, 0.8899999260902405, 0.6299999952316284)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(-0.0262641907, -0.0536937714, 0.634738922, -0.913179517, 0.35836792, -0.194102228, 0.207911655, 2.81687678e-13, -0.978147626, -0.350536734, -0.933580399, -0.0745088831),
+		["Size"] = Vector3.new(0.07999998331069946, 0.8899999260902405, 0.6499999761581421)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(0.0241236687, 0.0970687866, 0.59885788, -0.574940741, -0.809017003, -0.122207418, 0.207911655, 2.0675791e-13, -0.978147626, 0.791338086, -0.587785244, 0.168204039),
+		["Size"] = Vector3.new(0.1954306960105896, 0.22999998927116394, 0.2955337464809418)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{1B69DDAF-C849-479B-AA80-1CFCE625BFC4}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Blindfold</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX2BB6FDB9257D46CD96B59405A91F69C9">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local thingo = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.189136505, -0.0425839424, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.25, 0.04046272486448288)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.3391366, 0.207558632, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.550000011920929, 0.04046272486448288)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.344047546, -0.0175127983, -0.626941681, -0.777145982, -0.629320383, 3.33214423e-27, 0.629320383, -0.777145982, -3.12638424e-13, -1.96749735e-13, 2.42965695e-13, 1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.0842254162, 0.0824875832, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.2805992066860199, 0.040462758392095566, 0.04046272486448288)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.156804562, -0.0425839424, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.25, 0.04046272486448288)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.306804657, 0.207558632, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.550000011920929, 0.04046272486448288)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.0518937111, 0.0824875832, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.2805992066860199, 0.040462758392095566, 0.04046272486448288)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.311715603, -0.0175127983, -0.626941681, 0.777145982, -0.629320383, 3.33214423e-27, 0.629320383, 0.777145982, -3.12638424e-13, -1.96749735e-13, -2.42965695e-13, 1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.0161659718, 0.0766038895, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.14271974563598633, 0.04046272486448288)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.594047308, 0.182487488, -0.179985046, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.04222281649708748, 0.040462758392095566, 0.934374213218689)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.561715603, 0.182487488, -0.209785461, -2.84217094e-14, -1, 3.33214423e-27, 1, 2.84217094e-14, -3.12638424e-13, -3.12638424e-13, -3.33214423e-27, 1),
+		["Size"] = Vector3.new(0.04222281649708748, 0.040462758392095566, 0.8747801184654236)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.364748955, 0.0355205536, -0.626941681, 0.707106888, -0.707106709, 3.33214423e-27, 0.707106709, 0.707106888, -3.12638424e-13, -2.21068728e-13, -2.21068782e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.39708066, 0.0355205536, -0.626941681, -0.707106769, -0.707106769, 3.33214423e-27, 0.707106769, -0.707106769, -3.12638424e-13, -2.21068742e-13, 2.21068742e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.414748907, 0.135520458, -0.626941681, 0.258819163, -0.965925813, 3.33214423e-27, 0.965925813, 0.258819163, -3.12638424e-13, -3.01985515e-13, -8.09168135e-14, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.447080612, 0.135519981, -0.626941681, -0.258819044, -0.965926051, 3.33214423e-27, 0.965926051, -0.258819044, -3.12638424e-13, -3.01985596e-13, 8.09167796e-14, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	}
+}
+
+return thingo
+]]></ProtectedString>
+					<string name="ScriptGuid">{948528AA-98A5-4233-8C1D-AF111B1395F0}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Glasses</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX290AB030BA764305861B33C73135999C">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.339136124, 0.157558441, -0.626941681, -3.12638804e-13, -1, 5.25368149e-25, 1, 3.12638804e-13, -3.43902272e-12, -3.43902272e-12, -5.253681e-25, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.550000011920929, 0.04046272486448288)
+	},
+	[2] = {
+		["Transparency"] = 0.20000000298023224,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(-0.259225845, 0.0574874878, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.18059921264648438, 0.3904627859592438, 0.04046272486448288)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.306804657, 0.157558441, -0.626941681, -3.12638804e-13, -1, 5.25368149e-25, 1, 3.12638804e-13, -3.43902272e-12, -3.43902272e-12, -5.253681e-25, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.550000011920929, 0.04046272486448288)
+	},
+	[4] = {
+		["Transparency"] = 0.20000000298023224,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0.226893425, 0.0574874878, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.18059921264648438, 0.3904627859592438, 0.04046272486448288)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.0666667, 0.0666667, 0.0666667),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.0161657333, 0.151603699, -0.626941681, -1.98951966e-13, -1, 2.09925107e-25, 1, 1.98951966e-13, -2.18846902e-12, -2.18846902e-12, -2.09925107e-25, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.14271974563598633, 0.04046272486448288)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.594047546, 0.132487297, -0.179985046, -2.84217094e-13, -1, 4.33178807e-25, 1, 2.84217094e-13, -3.12638435e-12, -3.12638435e-12, -4.33178758e-25, 1),
+		["Size"] = Vector3.new(0.04222281649708748, 0.040462758392095566, 0.934374213218689)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.56171608, 0.132487297, -0.209785461, -2.84217094e-13, -1, 4.33178807e-25, 1, 2.84217094e-13, -3.12638435e-12, -3.12638435e-12, -4.33178758e-25, 1),
+		["Size"] = Vector3.new(0.04222281649708748, 0.040462758392095566, 0.8747801184654236)
+	},
+	[8] = {
+		["Transparency"] = 0.20000000298023224,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(-0.464757919, 0.00319814682, -0.626941681, -0.707106769, -0.707106769, 2.09925107e-25, 0.707106769, -0.707106769, -2.18846902e-12, -1.54748122e-12, 1.54748122e-12, 1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	},
+	[9] = {
+		["Transparency"] = 0.20000000298023224,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(-0.472932816, 0.0919904709, -0.626941681, -0.258819044, -0.965926051, 2.09925107e-25, 0.965926051, -0.258819044, -2.18846902e-12, -2.11389933e-12, 5.66417464e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.09046275913715363, 0.04046272486448288)
+	},
+	[10] = {
+		["Transparency"] = 0.20000000298023224,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0.440601349, 0.0919909477, -0.626941681, 0.258819163, -0.965925813, 2.09925107e-25, 0.965925813, 0.258819163, -2.18846902e-12, -2.11389868e-12, -5.66417681e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.09046275913715363, 0.04046272486448288)
+	},
+	[11] = {
+		["Transparency"] = 0.20000000298023224,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.Glass,
+		["WeldC0"] = CFrame.new(0.432426453, 0.00319814682, -0.626941681, 0.707106888, -0.707106709, 2.09925107e-25, 0.707106709, 0.707106888, -2.18846902e-12, -1.54748111e-12, -1.54748154e-12, 1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{FBB220A6-928C-4721-9574-0CD108C0FA9A}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Shade</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX971B0635B98E4D8F9D67709BF63E3DD3">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local thingo =  {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.320386648, -0.0425839424, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.2874999940395355, 0.04046272486448288)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.3391366, 0.207558632, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.550000011920929, 0.04046272486448288)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.481547594, -0.0175127983, -0.626941681, -0.777145982, -0.629320383, 1.55500061e-26, 0.629320383, -0.777145982, -6.25276849e-13, -3.93499469e-13, 4.85931391e-13, 1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.0842254162, 0.138737679, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.16809919476509094, 0.040462758392095566, 0.04046272486448288)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.294304609, -0.0425839424, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.2750000059604645, 0.04046272486448288)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.306804657, 0.207558632, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.550000011920929, 0.04046272486448288)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.0518937111, 0.138737679, -0.626941681, -1.13686838e-13, -1, 6.66428892e-26, 1, 1.13686838e-13, -1.2505537e-12, -1.2505537e-12, -6.66428892e-26, 1),
+		["Size"] = Vector3.new(0.16809919476509094, 0.040462758392095566, 0.04046272486448288)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.449215651, -0.0175127983, -0.626941681, 0.777145982, -0.629320383, 1.55500061e-26, 0.629320383, 0.777145982, -6.25276849e-13, -3.93499469e-13, -4.85931391e-13, 1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.0161659718, 0.139103889, -0.626941681, -5.68434189e-14, -1, 1.55500061e-26, 1, 5.68434189e-14, -6.25276849e-13, -6.25276849e-13, -1.55500061e-26, 1),
+		["Size"] = Vector3.new(0.03045704960823059, 0.14271974563598633, 0.04046272486448288)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.594047308, 0.182487488, -0.179985046, -8.52651283e-14, -1, 3.66535869e-26, 1, 8.52651283e-14, -9.37915327e-13, -9.37915327e-13, -3.66535869e-26, 1),
+		["Size"] = Vector3.new(0.04222281649708748, 0.040462758392095566, 0.934374213218689)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.561715603, 0.182487488, -0.209785461, -8.52651283e-14, -1, 3.66535869e-26, 1, 8.52651283e-14, -9.37915327e-13, -9.37915327e-13, -3.66535869e-26, 1),
+		["Size"] = Vector3.new(0.04222281649708748, 0.040462758392095566, 0.8747801184654236)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.502249002, 0.0355205536, -0.626941681, 0.707106888, -0.707106709, 1.55500061e-26, 0.707106709, 0.707106888, -6.25276849e-13, -4.42137456e-13, -4.42137565e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.534580469, 0.0355205536, -0.626941681, -0.707106769, -0.707106769, 1.55500061e-26, 0.707106769, -0.707106769, -6.25276849e-13, -4.42137483e-13, 4.42137483e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.552248955, 0.135520458, -0.626941681, 0.258819163, -0.965925813, 1.55500061e-26, 0.965925813, 0.258819163, -6.25276849e-13, -6.03971029e-13, -1.61833627e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.58458066, 0.135519981, -0.626941681, -0.258819044, -0.965926051, 1.55500061e-26, 0.965926051, -0.258819044, -6.25276849e-13, -6.03971192e-13, 1.61833559e-13, 1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[16] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.0791079998, 0.0355205536, -0.636325836, -0.707106888, 0.707106709, -1.55500061e-26, 0.707106709, 0.707106888, 6.25276849e-13, -4.42137456e-13, -4.42137565e-13, -1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[17] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(0.132141352, -0.0175127983, -0.636325836, -0.777145982, 0.629320383, -1.55500061e-26, 0.629320383, 0.777145982, 6.25276849e-13, -3.93499469e-13, -4.85931391e-13, -1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	},
+	[18] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.111440182, 0.0355205536, -0.636325836, 0.707106829, 0.707106829, -1.55500061e-26, 0.707106829, -0.707106829, 6.25276849e-13, -4.42137538e-13, 4.42137538e-13, -1),
+		["Size"] = Vector3.new(0.1305992156267166, 0.040462758392095566, 0.04046272486448288)
+	},
+	[19] = {
+		["Transparency"] = 0,
+		["Name"] = "Head",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0, 0, 0),
+		["Material"] = Enum.Material.Metal,
+		["WeldC0"] = CFrame.new(-0.164473057, -0.0175127983, -0.636325836, 0.777145982, 0.629320383, -1.55500061e-26, 0.629320383, -0.777145982, 6.25276849e-13, -3.93499469e-13, 4.85931391e-13, -1),
+		["Size"] = Vector3.new(0.08059921860694885, 0.040462758392095566, 0.04046272486448288)
+	}
+}
+
+return thingo
+]]></ProtectedString>
+					<string name="ScriptGuid">{48E7B1AF-1643-4268-BC2D-3CE734CBDE2C}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">GlassesV2</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="Folder" referent="RBX0E8EF5FC4AB34D79B5AB2A98518F7261">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Torso</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="ModuleScript" referent="RBX6D1F16F9A3FF4BD0B64BC8353EBD88CF">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.541675568, 1.30448771, -0.0863113403, -0.9998613, -0.0149087161, 0.00743660657, 0.0110006025, -0.255545169, 0.966734588, -0.0125123831, 0.966682136, 0.255673736),
+		["Size"] = Vector3.new(0.11814972758293152, 0.922316312789917, 0.6567038297653198)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.560932159, 1.26931143, 0.0787658691, -0.9998613, -0.0149087161, 0.00743660657, 0.0110006025, -0.255545169, 0.966734588, -0.0125123831, 0.966682136, 0.255673736),
+		["Size"] = Vector3.new(0.07814972847700119, 0.4923163056373596, 0.31670382618904114)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.54617691, 1.20830107, 0.309005737, -0.969653964, 0.244368315, 0.0074366061, -0.0555105582, -0.249685645, 0.966734588, 0.238096103, 0.936985254, 0.255673707),
+		["Size"] = Vector3.new(0.11814972758293152, 0.34231629967689514, 0.31670382618904114)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.359760284, 1.16431093, 0.469924927, -0.273228765, 0.961920321, 0.00743665919, -0.243986905, -0.0767771602, 0.966734588, 0.93049264, 0.262325227, 0.255673707),
+		["Size"] = Vector3.new(0.11814972758293152, 0.34231629967689514, 0.31670382618904114)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.100543976, 1.14866972, 0.521499634, -0.0149086257, 0.9998613, 0.00743660657, -0.255545169, -0.0110005792, 0.966734588, 0.966682136, 0.0125122955, 0.255673736),
+		["Size"] = Vector3.new(0.11814972758293152, 0.34231629967689514, 0.31670382618904114)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.582149506, 1.31684923, -0.100379944, 0.9998613, -0.0149087161, -0.00743660657, -0.0110006025, -0.255545169, -0.966734588, 0.0125123831, 0.966682136, -0.255673736),
+		["Size"] = Vector3.new(0.11814972758293152, 0.922316312789917, 0.6567038297653198)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.514945984, 1.25747538, 0.0922164917, 0.9998613, -0.0149087161, -0.00743660657, -0.0110006025, -0.255545169, -0.966734588, 0.0125123831, 0.966682136, -0.255673736),
+		["Size"] = Vector3.new(0.07814972847700119, 0.4923163056373596, 0.31670382618904114)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.493087769, 1.19686747, 0.322013855, 0.96193707, -0.273169845, -0.00743663264, -0.076762192, -0.243991628, -0.966734588, 0.262268215, 0.930508673, -0.255673736),
+		["Size"] = Vector3.new(0.11814972758293152, 0.34231629967689514, 0.31670382618904114)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.301784515, 1.15702868, 0.47820282, 0.244427845, -0.969639003, -0.00743658841, -0.249682248, -0.0555258952, -0.966734588, 0.936970651, 0.238153607, -0.255673707),
+		["Size"] = Vector3.new(0.11814972758293152, 0.34231629967689514, 0.31670382618904114)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.0410728455, 1.14711905, 0.523262024, -0.0149086257, -0.9998613, -0.00743660657, -0.255545169, 0.0110005792, -0.966734588, 0.966682136, -0.0125122955, -0.255673736),
+		["Size"] = Vector3.new(0.11814972758293152, 0.34231629967689514, 0.31670382618904114)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.581672668, 1.30404615, -0.0858230591, -0.9998613, -0.0149087161, 0.00743660657, 0.0110006025, -0.255545169, 0.966734588, -0.0125123831, 0.966682136, 0.255673736),
+		["Size"] = Vector3.new(0.11814963817596436, 0.44231629371643066, 0.6567038297653198)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.101961, 0.164706, 0.203922),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.648166656, 1.31756735, -0.101203918, -0.9998613, -0.0149087161, 0.00743660657, 0.0110006025, -0.255545169, 0.966734588, -0.0125123831, 0.966682136, 0.255673736),
+		["Size"] = Vector3.new(0.05814969539642334, 0.44231629371643066, 0.6567038297653198)
+	}
+}
+
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{2A331EB2-BFAA-4F32-ADED-6BB8CBF8AE1E}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">RestingHeadphone</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX1E33CAE664F047719B14B5CF3A329B6A">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local module =  {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.13750648, -0.769990921, -0.0499954224, -6.66428892e-26, 1.13686838e-13, -1, 1.2505537e-12, -1, 1.13686838e-13, -1, 1.2505537e-12, -6.66428892e-26),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.06513023, -0.769990921, -0.435558319, -0.35836798, 1.13686838e-13, -0.933580518, 1.20823425e-12, -1, -3.4202258e-13, -0.933580518, 1.2505537e-12, 0.35836798),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.818454742, -0.769990921, -0.728206635, -0.777146041, 1.13686838e-13, -0.629320443, 8.75350248e-13, -1, -9.00317418e-13, -0.629320443, 1.2505537e-12, 0.777146041),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.532787323, -0.769990921, -0.903224945, -0.965925872, 1.13686838e-13, -0.258819044, 4.33480183e-13, -1, -1.1785179e-12, -0.258819044, 1.2505537e-12, 0.965925872),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.142746925, -0.769990921, -0.996543884, -0.994521976, 1.13686838e-13, -0.104528442, 2.43782479e-13, -1, -1.23181966e-12, -0.104528442, 1.2505537e-12, 0.994521976),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.184809685, -0.769990921, -0.995765686, -0.965925872, 1.13686838e-13, 0.258819133, -2.13854162e-13, -1, -1.23736655e-12, 0.258819133, 1.2505537e-12, 0.965925872),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.568863869, -0.769990921, -0.879306793, -0.809016943, 1.13686838e-13, 0.587785423, -6.43082701e-13, -1, -1.07854264e-12, 0.587785423, 1.2505537e-12, 0.809016943),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.832533836, -0.769990921, -0.615982056, -0.544638872, 1.13686838e-13, 0.838670671, -9.86884511e-13, -1, -7.76445965e-13, 0.838670671, 1.2505537e-12, 0.544638872),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-1.02077007, -0.769990921, -0.237422943, -0.207911462, 1.13686838e-13, 0.978147686, -1.19958936e-12, -1, -3.71206971e-13, 0.978147686, 1.2505537e-12, 0.207911462),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-1.02937222, -0.769990921, 0.0910339355, 0.1564347, 1.13686838e-13, 0.987688303, -1.25294187e-12, -1, 8.33428378e-14, 0.987688303, 1.2505537e-12, -0.1564347),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.869691849, -0.769990921, 0.463253021, 0.500000238, 1.13686838e-13, 0.866025209, -1.13985449e-12, -1, 5.26821425e-13, 0.866025209, 1.2505537e-12, -0.500000238),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.581305504, -0.769990921, 0.750595093, 0.777146161, 1.13686838e-13, 0.629320204, -8.75350031e-13, -1, 9.00317581e-13, 0.629320204, 1.2505537e-12, -0.777146161),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.230055809, -0.769990921, 0.894874573, 0.9510566, 1.13686838e-13, 0.309016734, -4.94564621e-13, -1, 1.15421615e-12, 0.309016734, 1.2505537e-12, -0.9510566),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.0957040787, -0.769990921, 0.912761688, 0.99862951, 1.13686838e-13, -0.0523362383, -4.80817575e-14, -1, 1.25478978e-12, -0.0523362383, 1.2505537e-12, -0.99862951),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 0, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.465192795, -0.769990921, 0.886058807, 0.91354537, 1.13686838e-13, -0.40673691, 4.04788263e-13, -1, 1.18867817e-12, -0.40673691, 1.2505537e-12, -0.91354537),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[16] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1,1,1),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.798472404, -0.769990921, 0.649959564, 0.70710659, 1.13686838e-13, -0.707107008, 8.0388658e-13, -1, 9.64663462e-13, -0.707107008, 1.2505537e-12, -0.70710659),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[17] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.04706764, -0.769990921, 0.354167938, 0.406736463, 1.13686838e-13, -0.913545609, 1.09619724e-12, -1, 6.12503917e-13, -0.913545609, 1.2505537e-12, -0.406736463),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	}
+}
+
+return module
+]]></ProtectedString>
+					<string name="ScriptGuid">{0A9C0817-5C4B-4DED-8454-0BAA3C40025E}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Lifesaver</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX557942D7C7D04699997D5F6F9AED7025">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local thingo = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.15092278, -0.845753193, 0.140762329, 0.258818865, 1.13686838e-13, -0.965926051, 1.17851811e-12, -1, 4.33479966e-13, -0.965926051, 1.2505537e-12, -0.258818865),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.946376801, -0.845753193, 0.480571747, 0.587785125, 1.13686838e-13, -0.809017241, 9.44896071e-13, -1, 8.27031477e-13, -0.809017241, 1.2505537e-12, -0.587785125),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.646386147, -0.845753193, 0.773471832, 0.838670552, 1.13686838e-13, -0.544639289, 5.8575486e-13, -1, 1.11072089e-12, -0.544639289, 1.2505537e-12, -0.838670552),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.276058197, -0.845753193, 0.85987854, 0.978147626, 1.13686838e-13, -0.207911968, 1.4880256e-13, -1, 1.24686307e-12, -0.207911968, 1.2505537e-12, -0.978147626),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.057094574, -0.845753193, 0.894054413, 0.987688422, 1.13686838e-13, 0.156434223, -3.07916561e-13, -1, 1.21737288e-12, 0.156434223, 1.2505537e-12, -0.987688422),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[6] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.436387062, -0.845753193, 0.804172516, 0.866025686, 1.13686838e-13, 0.499999881, -7.2373238e-13, -1, 1.02616819e-12, 0.499999881, 1.2505537e-12, -0.866025686),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[7] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.774916649, -0.845753193, 0.559158325, 0.629320681, 1.13686838e-13, 0.777145803, -1.04340809e-12, -1, 6.98648062e-13, 0.777145803, 1.2505537e-12, -0.629320681),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[8] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.996583939, -0.845753193, 0.20741272, 0.309017241, 1.13686838e-13, 0.9510566, -1.22447853e-12, -1, 2.7832001e-13, 0.9510566, 1.2505537e-12, -0.309017241),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[9] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-1.0406065, -0.845753193, -0.126983643, -0.0523357242, 1.13686838e-13, 0.998629689, -1.24289012e-12, -1, -1.78979688e-13, 0.998629689, 1.2505537e-12, 0.0523357242),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[10] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.910549164, -0.845753193, -0.54101944, -0.406736463, 1.13686838e-13, 0.913545609, -1.09619724e-12, -1, -6.12503917e-13, 0.913545609, 1.2505537e-12, 0.406736463),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[11] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.685505867, -0.845753193, -0.850341797, -0.707106829, 1.13686838e-13, 0.707107067, -8.0388658e-13, -1, -9.64663896e-13, 0.707107067, 1.2505537e-12, 0.707106829),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[12] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.314823151, -0.845753193, -1.03008652, -0.913545549, 1.13686838e-13, 0.406736732, -4.0478802e-13, -1, -1.18867839e-12, 0.406736732, 1.2505537e-12, 0.913545549),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[13] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.0171527863, -0.845753193, -1.08347702, -0.998629749, 1.13686838e-13, 0.0523359925, 4.80820895e-14, -1, -1.25479e-12, 0.0523359925, 1.2505537e-12, 0.998629749),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[14] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.42759037, -0.845753193, -1.05149841, -0.994522035, 1.13686838e-13, -0.104528442, 2.43782506e-13, -1, -1.23181966e-12, -0.104528442, 1.2505537e-12, 0.994522035),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[15] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.745326996, -0.845753193, -0.919921875, -0.866025567, 1.13686838e-13, -0.500000119, 7.23732706e-13, -1, -1.02616808e-12, -0.500000119, 1.2505537e-12, 0.866025567),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[16] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.04241943, -0.845753193, -0.662822723, -0.500000119, 1.13686838e-13, -0.866025507, 1.13985481e-12, -1, -5.26821317e-13, -0.866025507, 1.2505537e-12, 0.500000119),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[17] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.1777153, -0.845753193, -0.283538818, -0.156434461, 1.13686838e-13, -0.987688363, 1.25294187e-12, -1, -8.33425329e-14, -0.987688363, 1.2505537e-12, 0.156434461),
+		["Size"] = Vector3.new(0.4619310200214386, 0.8212108016014099, 0.6415709853172302)
+	},
+	[18] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.13750648, -0.769990921, -0.0499954224, -6.66428892e-26, 1.13686838e-13, -1, 1.2505537e-12, -1, 1.13686838e-13, -1, 1.2505537e-12, -6.66428892e-26),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[19] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.06513023, -0.769990921, -0.435558319, -0.35836798, 1.13686838e-13, -0.933580518, 1.20823425e-12, -1, -3.4202258e-13, -0.933580518, 1.2505537e-12, 0.35836798),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[20] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.818454742, -0.769990921, -0.728206635, -0.777146041, 1.13686838e-13, -0.629320443, 8.75350248e-13, -1, -9.00317418e-13, -0.629320443, 1.2505537e-12, 0.777146041),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[21] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.532787323, -0.769990921, -0.903224945, -0.965925872, 1.13686838e-13, -0.258819044, 4.33480183e-13, -1, -1.1785179e-12, -0.258819044, 1.2505537e-12, 0.965925872),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[22] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.142746925, -0.769990921, -0.996543884, -0.994521976, 1.13686838e-13, -0.104528442, 2.43782479e-13, -1, -1.23181966e-12, -0.104528442, 1.2505537e-12, 0.994521976),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[23] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.184809685, -0.769990921, -0.995765686, -0.965925872, 1.13686838e-13, 0.258819133, -2.13854162e-13, -1, -1.23736655e-12, 0.258819133, 1.2505537e-12, 0.965925872),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[24] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.568863869, -0.769990921, -0.879306793, -0.809016943, 1.13686838e-13, 0.587785423, -6.43082701e-13, -1, -1.07854264e-12, 0.587785423, 1.2505537e-12, 0.809016943),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[25] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.832533836, -0.769990921, -0.615982056, -0.544638872, 1.13686838e-13, 0.838670671, -9.86884511e-13, -1, -7.76445965e-13, 0.838670671, 1.2505537e-12, 0.544638872),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[26] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-1.02077007, -0.769990921, -0.237422943, -0.207911462, 1.13686838e-13, 0.978147686, -1.19958936e-12, -1, -3.71206971e-13, 0.978147686, 1.2505537e-12, 0.207911462),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[27] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-1.02937222, -0.769990921, 0.0910339355, 0.1564347, 1.13686838e-13, 0.987688303, -1.25294187e-12, -1, 8.33428378e-14, 0.987688303, 1.2505537e-12, -0.1564347),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[28] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.869691849, -0.769990921, 0.463253021, 0.500000238, 1.13686838e-13, 0.866025209, -1.13985449e-12, -1, 5.26821425e-13, 0.866025209, 1.2505537e-12, -0.500000238),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[29] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.581305504, -0.769990921, 0.750595093, 0.777146161, 1.13686838e-13, 0.629320204, -8.75350031e-13, -1, 9.00317581e-13, 0.629320204, 1.2505537e-12, -0.777146161),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[30] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.230055809, -0.769990921, 0.894874573, 0.9510566, 1.13686838e-13, 0.309016734, -4.94564621e-13, -1, 1.15421615e-12, 0.309016734, 1.2505537e-12, -0.9510566),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[31] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.0957040787, -0.769990921, 0.912761688, 0.99862951, 1.13686838e-13, -0.0523362383, -4.80817575e-14, -1, 1.25478978e-12, -0.0523362383, 1.2505537e-12, -0.99862951),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[32] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.465192795, -0.769990921, 0.886058807, 0.91354537, 1.13686838e-13, -0.40673691, 4.04788263e-13, -1, 1.18867817e-12, -0.40673691, 1.2505537e-12, -0.91354537),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[33] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.798472404, -0.769990921, 0.649959564, 0.70710659, 1.13686838e-13, -0.707107008, 8.0388658e-13, -1, 9.64663462e-13, -0.707107008, 1.2505537e-12, -0.70710659),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[34] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(1.04706764, -0.769990921, 0.354167938, 0.406736463, 1.13686838e-13, -0.913545609, 1.09619724e-12, -1, 6.12503917e-13, -0.913545609, 1.2505537e-12, -0.406736463),
+		["Size"] = Vector3.new(0.44999992847442627, 0.7999999523162842, 0.625)
+	},
+	[35] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.142745972, -0.569642544, -1.12152481, 1.03858091e-13, 1, -4.62406196e-14, -0.91354543, -1.13686838e-13, 0.406736791, 0.406736791, 6.66428892e-26, 0.91354543),
+		["Size"] = Vector3.new(0.5374999046325684, 0.7999999523162842, 0.6624999642372131)
+	},
+	[36] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.142745972, -0.257144213, -1.25902557, 8.83512556e-14, 1, -7.15454646e-14, -0.777145863, -1.13686838e-13, 0.629320562, 0.629320562, 6.66428892e-26, 0.777145863),
+		["Size"] = Vector3.new(0.5374999046325684, 0.7999999523162842, 0.6624999642372131)
+	},
+	[37] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Cylinder,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.142745972, -0.157144308, -1.39652634, 5.94988341e-15, 1, -1.13531038e-13, -0.052335728, -1.13686838e-13, 0.99862957, 0.99862957, 6.66428892e-26, 0.052335728),
+		["Size"] = Vector3.new(0.5374999046325684, 0.7999999523162842, 0.6624999642372131)
+	},
+	[38] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Ball,
+		["Color"] = Color3.new(1, 1, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.142745972, -0.14464426, -1.68402481, 5.94988341e-15, 1, -1.13531038e-13, -0.052335728, -1.13686838e-13, 0.99862957, 0.99862957, 6.66428892e-26, 0.052335728),
+		["Size"] = Vector3.new(0.7580127716064453, 0.5993589162826538, 0.6875)
+	},
+	[39] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Ball,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(-0.0510034561, 0.0363571644, -1.82453918, 5.94988341e-15, 1, -1.13531038e-13, -0.052335728, -1.13686838e-13, 0.99862957, 0.99862957, 6.66428892e-26, 0.052335728),
+		["Size"] = Vector3.new(0.08421503007411957, 0.125, 0.10379995405673981)
+	},
+	[40] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.Ball,
+		["Color"] = Color3.new(0.105882, 0.164706, 0.207843),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.348996162, 0.0363571644, -1.82453918, 5.94988341e-15, 1, -1.13531038e-13, -0.052335728, -1.13686838e-13, 0.99862957, 0.99862957, 6.66428892e-26, 0.052335728),
+		["Size"] = Vector3.new(0.08421503007411957, 0.125, 0.10379995405673981)
+	},
+	[41] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(1, 0.690196, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.0239944458, -0.152236462, -1.9214592, 0.8648386, -0.49999994, 0.0453240722, -0.052335728, 1.1398547e-12, 0.99862957, -0.499314696, -0.866025448, -0.0261678603),
+		["Size"] = Vector3.new(0.1928602010011673, 0.28626155853271484, 0.23749999701976776)
+	},
+	[42] = {
+		["Transparency"] = 0,
+		["Name"] = "Part",
+		["Shape"] = Enum.PartType.CornerWedge,
+		["Color"] = Color3.new(1, 0.690196, 0),
+		["Material"] = Enum.Material.SmoothPlastic,
+		["WeldC0"] = CFrame.new(0.123994827, -0.139736414, -1.99645996, 0.556718707, 0.123857982, 0.821415603, -0.775140047, 0.433012635, 0.46006301, -0.29870078, -0.892837882, 0.337073475),
+		["Size"] = Vector3.new(0.1928602010011673, 0.28626155853271484, 0.23749999701976776)
+	}
+}
+
+return thingo
+]]></ProtectedString>
+					<string name="ScriptGuid">{101B18EF-7A2C-435A-8E7E-BE475C95B110}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Duckfloatie</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBX55A8DCE1118A42FA80B9F27B3AE6336A">
+				<Properties>
+					<Content name="LinkedSource"><null></null></Content>
+					<ProtectedString name="Source"><![CDATA[local randcol = Color3.new(math.random(),math.random(),math.random()) or Color3.new(1,0,0)
+local thingo = {
+	[1] = {
+		["Transparency"] = 0,
+		["Name"] = "Torso",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = randcol,
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(-0.649999619, 0, 0, 1, -2.27373675e-13, 2.75457286e-25, -2.27373675e-13, 1, -2.50110739e-12, 2.75457286e-25, -2.50110739e-12, 1),
+		["Size"] = Vector3.new(0.7749999761581421, 2.0250000953674316, 1.024999976158142)
+	},
+	[2] = {
+		["Transparency"] = 0,
+		["Name"] = "Torso",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = randcol,
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(0.649999619, 0, 0, 1, -2.27373675e-13, 2.75457286e-25, -2.27373675e-13, 1, -2.50110739e-12, 2.75457286e-25, -2.50110739e-12, 1),
+		["Size"] = Vector3.new(0.7749999761581421, 2.0250000953674316, 1.024999976158142)
+	},
+	[3] = {
+		["Transparency"] = 0,
+		["Name"] = "Torso",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = randcol,
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(0, 0, 0.506248474, 1, -2.27373675e-13, 2.75457286e-25, -2.27373675e-13, 1, -2.50110739e-12, 2.75457286e-25, -2.50110739e-12, 1),
+		["Size"] = Vector3.new(0.5250000357627869, 2.0250000953674316, 0.01249992847442627)
+	},
+	[4] = {
+		["Transparency"] = 0,
+		["Name"] = "Torso",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = Color3.new(0.972549, 0.972549, 0.972549),
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(-9.53674316e-07, -1.01875019, 0, 1, -1.13686838e-13, 6.66428892e-26, -1.13686838e-13, 1, -1.2505537e-12, 6.66428892e-26, -1.2505537e-12, 1),
+		["Size"] = Vector3.new(2.075000047683716, 0.012500000186264515, 1.024999976158142)
+	},
+	[5] = {
+		["Transparency"] = 0,
+		["Name"] = "Torso",
+		["Shape"] = Enum.PartType.Block,
+		["Color"] = randcol,
+		["Material"] = Enum.Material.Fabric,
+		["WeldC0"] = CFrame.new(-9.53674316e-07, 1.0062499, 0.262500763, 1, -1.13686838e-13, 6.66428892e-26, -1.13686838e-13, 1, -1.2505537e-12, 6.66428892e-26, -1.2505537e-12, 1),
+		["Size"] = Vector3.new(0.5250000357627869, 0.012500000186264515, 0.4999999403953552)
+	}
+}
+
+return thingo
+]]></ProtectedString>
+					<string name="ScriptGuid">{C1B62EE9-ECAD-4422-B0C5-D6F76595DD67}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Jacket</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+	</Item>
+</roblox>

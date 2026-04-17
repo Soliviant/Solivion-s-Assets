@@ -1,0 +1,1068 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Script" referent="RBX6346056531CF4202A80FB4CCC676E291">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[if not game:FindFirstChildOfClass("ServerStorage"):FindFirstChild("BadgeInvoke") then
+	local NewInvoker = Instance.new("BindableEvent",game:FindFirstChildOfClass("ServerStorage"))
+	NewInvoker.Name = "BadgeInvoke"
+end
+local tasks: {[number]: {[number]: thread}} = {}
+local EasyTween = function(itemtotween,property,value,tweentime,easingstyle,easingdirection)
+	task.desynchronize()
+	local info = TweenInfo.new(tweentime,Enum.EasingStyle[easingstyle],Enum.EasingDirection[easingdirection],0,false,0)
+	local goal = {}
+	goal[property] = value
+	task.synchronize()	
+	return game:FindFirstChildOfClass("TweenService"):Create(itemtotween,info,goal)
+end
+local servercache = {}
+local function FadeInBadge(PlrBadgeGui)
+	if not PlrBadgeGui or not PlrBadgeGui:FindFirstChildOfClass('Frame') then return end
+	----(("Fading in Gui >>"..PlrBadgeGui:GetFullName())
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Size",UDim2.fromScale(0,0.1),0.5,"Sine","In"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Position",UDim2.new(0.5, 0,0.1, 0),0.5,"Sine","In"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"ImageTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"BackgroundTransparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"ImageTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageTransparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"BackgroundColor3",Color3.new(1,1,1),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageColor3",Color3.new(1,1,1),0.5,"Exponential","Out"):Play()
+end
+local function FadeOutBadge(PlrBadgeGui) if not PlrBadgeGui or not PlrBadgeGui:FindFirstChildOfClass('Frame') then return end 
+	----(("Fading out Gui >>"..PlrBadgeGui:GetFullName())
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Size",UDim2.fromScale(0,0.1),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Position",UDim2.new(0.5, 0,0.1, 0),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"Position",UDim2.fromScale(0,1),0.5,"Sine","In"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"Position",UDim2.fromScale(0,0),0.5,"Sine","In"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"BackgroundTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"ImageTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageTransparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"BackgroundColor3",Color3.new(1,1,1),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageColor3",Color3.new(1,1,1),0.5,"Exponential","Out"):Play()
+end
+local function DetailBadge(PlrBadgeGui, Id: number) if not PlrBadgeGui or not Id then return end
+	----(("Detailing Gui >>"..PlrBadgeGui:GetFullName())
+	local inf = servercache[Id]
+	if not servercache[Id] then
+		local success = pcall(function() inf =	game:FindFirstChildOfClass("BadgeService"):GetBadgeInfoAsync(Id) end)
+		if not success then return end
+		servercache[Id] = {IconImageId = inf.IconImageId, Name = inf.Name, Description = inf.Description, IsEnabled = inf.IsEnabled}
+	end
+	if not PlrBadgeGui then return end
+	PlrBadgeGui["Frame"].Frame.BackgroundColor3 = Color3.new(0, 0, 0)
+	if not inf then
+		PlrBadgeGui["Frame"].Frame.BadgeNotif.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+		PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"].Text = 'UNABLE TO LOAD DESCRIPTION'
+		PlrBadgeGui["Frame"].Frame["MAIN TITLE"].Text = 'UNABLE TO LOAD TITLE'
+		--RED = true
+		PlrBadgeGui["Frame"].Frame.BackgroundColor3 = Color3.new(1,0,0)
+	else
+		PlrBadgeGui["Frame"].Frame.BadgeNotif.Image = "rbxassetid://"..inf.IconImageId
+		PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"].Text = inf.Description
+		PlrBadgeGui["Frame"].Frame["MAIN TITLE"].Text = inf.Name
+	end
+end
+local function OpenBreifBadge(PlrBadgeGui) if not PlrBadgeGui or not PlrBadgeGui:FindFirstChildOfClass('Frame') then return end
+	----(("Opening Brief Gui >>"..PlrBadgeGui:GetFullName())
+	if PlrBadgeGui["Frame"].Frame:FindFirstChildOfClass("UIStroke") then
+		EasyTween(PlrBadgeGui["Frame"].Frame.UIStroke,"Thickness",1,0.5,"Exponential","Out"):Play()
+		EasyTween(PlrBadgeGui["Frame"].Frame.UIStroke,"Transparency",1,0.5,"Exponential","Out"):Play()
+	end
+
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"ImageTransparency",0,0.5,"Exponential","Out"):Play()
+
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"Size",UDim2.new(0.25,0,1,0),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"Position",UDim2.new(0,0,0,0),0.5,"Exponential","Out"):Play()
+
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"BackgroundTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Size",UDim2.fromScale(0.5,0.1),0.5,"Sine","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Position",UDim2.new(0.25, 0,0.1, 0),0.5,"Sine","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"],"TextTransparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"],"TextTransparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"],"Position",UDim2.fromScale(0.225, 0.5),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"],"Position",UDim2.fromScale(0.225, 0.05),0.5,"Exponential","Out"):Play()
+
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"].UIStroke,"Transparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"].UIStroke,"Transparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"].UIStroke,"Thickness",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"].UIStroke,"Thickness",1,0.5,"Exponential","Out"):Play()
+end
+local function OpenFullBadgeDetail(PlrBadgeGui) if not PlrBadgeGui or not PlrBadgeGui:FindFirstChildOfClass('Frame') then return end
+	----(("Opening Full Badge Gui")
+	local IsBadgeFullDetailOn = false
+	if IsBadgeFullDetailOn == false then
+		IsBadgeFullDetailOn = true
+		PlrBadgeGui["Frame"].Frame.MouseLeave:Connect(function()
+			IsBadgeFullDetailOn = false
+		end)
+	end
+end
+local function ShakeBadge(PlrBadgeGui) if not PlrBadgeGui or not PlrBadgeGui:FindFirstChildOfClass('Frame') then return end
+	if PlrBadgeGui["Frame"].Frame:FindFirstChildOfClass("UIStroke") then
+		PlrBadgeGui["Frame"].Frame.UIStroke.Color = Color3.new(1,0,0)
+		EasyTween(PlrBadgeGui["Frame"].Frame.UIStroke,"Thickness",1,0.5,"Exponential","Out"):Play()
+		EasyTween(PlrBadgeGui["Frame"].Frame.UIStroke,"Transparency",1,0.5,"Exponential","Out"):Play()
+	end
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageColor3",Color3.new(0,0,0),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"BackgroundColor3",Color3.new(1,0,0),0.5,"Exponential","Out"):Play()
+end
+local function CloseBadge(PlrBadgeGui) if not PlrBadgeGui or not PlrBadgeGui:FindFirstChildOfClass('Frame') then return end
+	----(("Closing Badge Gui >>"..PlrBadgeGui:GetFullName())
+	if PlrBadgeGui["Frame"].Frame:FindFirstChildOfClass("UIStroke") then
+		PlrBadgeGui["Frame"].Frame.UIStroke.Color = Color3.new(1,1,1)
+		EasyTween(PlrBadgeGui["Frame"].Frame.UIStroke,"Thickness",0,0.5,"Exponential","Out"):Play()
+		EasyTween(PlrBadgeGui["Frame"].Frame.UIStroke,"Transparency",0,0.5,"Exponential","Out"):Play()
+	end
+
+	EasyTween(PlrBadgeGui['Frame'].Frame.BadgeNotif,"ImageTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"BackgroundTransparency",1,0.5,"Exponential","Out"):Play()
+
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"Size",UDim2.new(1,0,1,0),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.BadgeNotif,"Position",UDim2.new(0,0,0,0),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"BackgroundColor3",Color3.new(1,1,1),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"BackgroundColor3",Color3.new(1,1,1),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageColor3",Color3.new(1,1,1),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"ImageTransparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Size",UDim2.fromScale(0.1,0.1),0.5,"Sine","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame,"Position",UDim2.new(0.45, 0,0.1, 0),0.5,"Sine","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame.ImageLabel,"BackgroundTransparency",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"],"TextTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"],"TextTransparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"],"Position",UDim2.fromScale(0.125, 0.5),0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"],"Position",UDim2.fromScale(0.125, 0),0.5,"Exponential","Out"):Play()
+
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"].UIStroke,"Transparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"].UIStroke,"Transparency",1,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["BRIEF DESCRIPTION"].UIStroke,"Thickness",0,0.5,"Exponential","Out"):Play()
+	EasyTween(PlrBadgeGui["Frame"].Frame["MAIN TITLE"].UIStroke,"Thickness",0,0.5,"Exponential","Out"):Play()
+end
+game:FindFirstChildOfClass("Players").PlayerAdded:Connect(function(AddedPlr)
+	local Working = false -- If ran When Working. Ignore
+	local IsBadgeFullDetailOn = false
+	local PlrBadgeGui = script.ScreenGui:Clone()
+	local RED = false
+	local queue = {}
+	PlrBadgeGui.ResetOnSpawn = false
+	PlrBadgeGui.Enabled = true
+	PlrBadgeGui.DisplayOrder = 99
+	PlrBadgeGui.Name = "BadgeGui"
+	PlrBadgeGui.ClipToDeviceSafeArea = false
+	PlrBadgeGui.IgnoreGuiInset = true
+	PlrBadgeGui.Parent = AddedPlr:FindFirstChildOfClass('PlayerGui')
+	local connection connection = game:FindFirstChildOfClass("ServerStorage"):FindFirstChild("BadgeInvoke").Event:Connect(function(plr: Player?,Badge: number?,...)
+		local plrid = plr and plr.UserId
+		if PlrBadgeGui:GetAttribute(Badge) or (typeof(tasks[plrid]) == 'table' and tasks[plrid][Badge]) then return end
+		local check, result = pcall(function()
+			return game:FindFirstChildOfClass('BadgeService'):UserHasBadgeAsync(plrid, Badge)
+		end)
+		if not AddedPlr then
+			if connection then
+				connection:Disconnect()
+				connection = nil
+				return
+			end
+		end
+		if (not plr or not Badge) or table.find(queue, Badge) or  (plrid ~= AddedPlr.UserId) or (check and result ~= false) then
+			--[[pcall(function()
+				warn('Player:' ..tostring(plr ~= nil)) print('Badge:' ..tostring(Badge ~= nil))
+				warn('First:' ..tostring(not plr or not Badge))
+				warn('Second:' ..tostring(plr ~= AddedPlr and plr ~= AddedPlr.UserId and plr.UserId ~= AddedPlr.UserId and plr ~= AddedPlr.Name and plr.Name ~= AddedPlr.Name))
+				warn('Third:' .. tostring(game:FindFirstChildOfClass('BadgeService'):UserHasBadgeAsync(plr.UserId, Badge)))
+			end)]]
+			return
+		end  
+		PlrBadgeGui:SetAttribute(tostring(Badge), true)
+		local plrID = AddedPlr.UserId
+		local successful = false
+		local untildone = task.spawn(function()
+			local tries = 0
+			local badged = false
+			local scces, dthey = pcall(function()
+				return game:FindFirstChildOfClass('BadgeService'):UserHasBadgeAsync(plrID, Badge)
+			end)
+			badged = (scces == true) and dthey
+			while not badged do
+				pcall(function()
+					game:FindFirstChildOfClass('BadgeService'):AwardBadgeAsync(plrID, Badge)
+					task.wait(1)
+					--for reliabillity
+				end) 
+				local scces, dthey = pcall(function()
+					return game:FindFirstChildOfClass('BadgeService'):UserHasBadgeAsync(plrID, Badge)
+				end)
+				badged = (scces == true) and dthey
+				if not badged then tries += 1 if tries > (2 ^ 16) then break end end
+			end  successful = tries < (2 ^ 16) tasks[plrID][Badge] = successful local alldone = true for i,v in tasks[plrID] do if v ~= true then alldone = false break end end if alldone then tasks[plrID] = nil end end)
+		if not tasks[plrID] then
+			tasks[plrID] = {}
+		end
+		tasks[plrID][Badge] = untildone table.insert(queue, Badge)
+		if Working then
+			repeat task.wait(.1)
+				if not successful or queue[1] ~= Badge then
+					continue -- keep the thing running the awarding first
+				end
+				if not Working then
+					break -- Yield
+				end
+			until not Working and successful
+		else
+			Working = true
+		end
+		task.wait()
+		if not PlrBadgeGui or not plr or not AddedPlr or not AddedPlr.Parent then Working = false if table.find(queue, Badge) then	table.remove(queue, table.find(queue, Badge)) end return end
+		DetailBadge(PlrBadgeGui, Badge)
+		task.wait(.5)
+		if not successful then
+			CloseBadge(PlrBadgeGui)
+			task.wait(.5)
+			ShakeBadge(PlrBadgeGui)
+			task.wait(.5)
+			FadeOutBadge(PlrBadgeGui)
+			Working = false
+			repeat task.wait(1) until (not AddedPlr or not PlrBadgeGui or not AddedPlr.Parent) or (successful and Working == false)
+			if (not AddedPlr or not PlrBadgeGui or not AddedPlr.Parent) then Working = false if table.find(queue, Badge) then	table.remove(queue, table.find(queue, Badge)) end  return end
+			DetailBadge(PlrBadgeGui, Badge)
+		end
+		task.wait()
+		FadeInBadge(PlrBadgeGui)
+		task.wait(0.5)
+		CloseBadge(PlrBadgeGui)
+		task.wait(0.5)
+		OpenBreifBadge(PlrBadgeGui)
+		task.wait(5)
+		if IsBadgeFullDetailOn then
+			repeat
+				task.wait()
+				if not IsBadgeFullDetailOn then
+					break
+				end
+			until IsBadgeFullDetailOn == false
+		end
+		task.wait()
+		CloseBadge(PlrBadgeGui)
+		task.wait(0.5)
+		FadeOutBadge(PlrBadgeGui)
+		task.wait()
+		Working = false
+		if table.find(queue, Badge) then	table.remove(queue, table.find(queue, Badge)) end
+	end)	
+	AddedPlr.Destroying:Once(function()
+		Working = true
+		if PlrBadgeGui then PlrBadgeGui:ClearAllChildren() PlrBadgeGui:Destroy() end
+		if connection then connection:Disconnect() connection = nil end
+		if FadeInBadge then FadeInBadge = nil end if FadeOutBadge then FadeOutBadge = nil end if DetailBadge then DetailBadge = nil end if OpenBreifBadge then OpenBreifBadge = nil end if OpenFullBadgeDetail then OpenFullBadgeDetail = nil end if CloseBadge then CloseBadge = nil end
+	end)
+end)]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{F62EE17E-7E7A-4DAE-9EDE-576C5212BA87}</string>
+			<BinaryString name="AttributesSerialize">AQAAAAoAAABfX25vcmVtb3ZlAwE=</BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">BadgeAwarder_Handler</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="ScreenGui" referent="RBXA479346835AE45BDAE99ED81A9659BCA">
+			<Properties>
+				<bool name="ClipToDeviceSafeArea">true</bool>
+				<int name="DisplayOrder">0</int>
+				<token name="SafeAreaCompatibility">1</token>
+				<token name="ScreenInsets">1</token>
+				<bool name="Enabled">true</bool>
+				<bool name="ResetOnSpawn">true</bool>
+				<token name="ZIndexBehavior">1</token>
+				<bool name="AutoLocalize">true</bool>
+				<Ref name="RootLocalizationTable">null</Ref>
+				<token name="SelectionBehaviorDown">0</token>
+				<token name="SelectionBehaviorLeft">0</token>
+				<token name="SelectionBehaviorRight">0</token>
+				<token name="SelectionBehaviorUp">0</token>
+				<bool name="SelectionGroup">false</bool>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">ScreenGui</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="Frame" referent="RBX25728112FB164158880BC0C6132BEE34">
+				<Properties>
+					<token name="Style">0</token>
+					<bool name="Active">false</bool>
+					<Vector2 name="AnchorPoint">
+						<X>0</X>
+						<Y>0</Y>
+					</Vector2>
+					<token name="AutomaticSize">0</token>
+					<Color3 name="BackgroundColor3">
+						<R>1</R>
+						<G>1</G>
+						<B>1</B>
+					</Color3>
+					<float name="BackgroundTransparency">1</float>
+					<Color3 name="BorderColor3">
+						<R>0</R>
+						<G>0</G>
+						<B>0</B>
+					</Color3>
+					<token name="BorderMode">0</token>
+					<int name="BorderSizePixel">0</int>
+					<bool name="ClipsDescendants">false</bool>
+					<bool name="Draggable">false</bool>
+					<token name="InputSink">0</token>
+					<bool name="Interactable">true</bool>
+					<int name="LayoutOrder">0</int>
+					<Ref name="NextSelectionDown">null</Ref>
+					<Ref name="NextSelectionLeft">null</Ref>
+					<Ref name="NextSelectionRight">null</Ref>
+					<Ref name="NextSelectionUp">null</Ref>
+					<UDim2 name="Position">
+						<XS>0</XS>
+						<XO>0</XO>
+						<YS>0</YS>
+						<YO>0</YO>
+					</UDim2>
+					<float name="Rotation">0</float>
+					<bool name="Selectable">false</bool>
+					<Ref name="SelectionImageObject">null</Ref>
+					<int name="SelectionOrder">0</int>
+					<UDim2 name="Size">
+						<XS>0</XS>
+						<XO>0</XO>
+						<YS>1</YS>
+						<YO>0</YO>
+					</UDim2>
+					<token name="SizeConstraint">0</token>
+					<bool name="Visible">true</bool>
+					<int name="ZIndex">1</int>
+					<bool name="AutoLocalize">true</bool>
+					<Ref name="RootLocalizationTable">null</Ref>
+					<token name="SelectionBehaviorDown">0</token>
+					<token name="SelectionBehaviorLeft">0</token>
+					<token name="SelectionBehaviorRight">0</token>
+					<token name="SelectionBehaviorUp">0</token>
+					<bool name="SelectionGroup">false</bool>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Frame</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="Frame" referent="RBX0171E8F2A41341C89ABC5BEFF29CCED4">
+					<Properties>
+						<token name="Style">0</token>
+						<bool name="Active">false</bool>
+						<Vector2 name="AnchorPoint">
+							<X>0</X>
+							<Y>0</Y>
+						</Vector2>
+						<token name="AutomaticSize">0</token>
+						<Color3 name="BackgroundColor3">
+							<R>0</R>
+							<G>0</G>
+							<B>0</B>
+						</Color3>
+						<float name="BackgroundTransparency">0</float>
+						<Color3 name="BorderColor3">
+							<R>0</R>
+							<G>0</G>
+							<B>0</B>
+						</Color3>
+						<token name="BorderMode">0</token>
+						<int name="BorderSizePixel">0</int>
+						<bool name="ClipsDescendants">true</bool>
+						<bool name="Draggable">false</bool>
+						<token name="InputSink">0</token>
+						<bool name="Interactable">true</bool>
+						<int name="LayoutOrder">0</int>
+						<Ref name="NextSelectionDown">null</Ref>
+						<Ref name="NextSelectionLeft">null</Ref>
+						<Ref name="NextSelectionRight">null</Ref>
+						<Ref name="NextSelectionUp">null</Ref>
+						<UDim2 name="Position">
+							<XS>0.5</XS>
+							<XO>0</XO>
+							<YS>0.100000001</YS>
+							<YO>0</YO>
+						</UDim2>
+						<float name="Rotation">0</float>
+						<bool name="Selectable">false</bool>
+						<Ref name="SelectionImageObject">null</Ref>
+						<int name="SelectionOrder">0</int>
+						<UDim2 name="Size">
+							<XS>0</XS>
+							<XO>0</XO>
+							<YS>0.100000001</YS>
+							<YO>0</YO>
+						</UDim2>
+						<token name="SizeConstraint">0</token>
+						<bool name="Visible">true</bool>
+						<int name="ZIndex">1</int>
+						<bool name="AutoLocalize">true</bool>
+						<Ref name="RootLocalizationTable">null</Ref>
+						<token name="SelectionBehaviorDown">0</token>
+						<token name="SelectionBehaviorLeft">0</token>
+						<token name="SelectionBehaviorRight">0</token>
+						<token name="SelectionBehaviorUp">0</token>
+						<bool name="SelectionGroup">false</bool>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Frame</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="ImageLabel" referent="RBX66FFBE5BE4F849BDA4CFBD905B9A3F2A">
+						<Properties>
+							<Content name="Image"><url>http://www.roblox.com/asset/?id=15411747267</url></Content>
+							<Color3 name="ImageColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<Vector2 name="ImageRectOffset">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<Vector2 name="ImageRectSize">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<float name="ImageTransparency">1</float>
+							<token name="ResampleMode">0</token>
+							<token name="ScaleType">0</token>
+							<Rect2D name="SliceCenter">
+								<min>
+									<X>0</X>
+									<Y>0</Y>
+								</min>
+								<max>
+									<X>0</X>
+									<Y>0</Y>
+								</max>
+							</Rect2D>
+							<float name="SliceScale">1</float>
+							<UDim2 name="TileSize">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">0</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<token name="InputSink">0</token>
+							<bool name="Interactable">true</bool>
+							<int name="LayoutOrder">0</int>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<int name="SelectionOrder">0</int>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">11</int>
+							<bool name="AutoLocalize">true</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<token name="SelectionBehaviorDown">0</token>
+							<token name="SelectionBehaviorLeft">0</token>
+							<token name="SelectionBehaviorRight">0</token>
+							<token name="SelectionBehaviorUp">0</token>
+							<bool name="SelectionGroup">false</bool>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">ImageLabel</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+						<Item class="UICorner" referent="RBXD50BE5798BF9452EBB0250B1CBFD21FB">
+							<Properties>
+								<UDim name="CornerRadius">
+									<S>9</S>
+									<O>99</O>
+								</UDim>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">UICorner</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+						<Item class="UIGradient" referent="RBXE8FDE44FAAA141E1A00341DA04624623">
+							<Properties>
+								<ColorSequence name="Color">0 0 0 0 0 0.5 0.258824 0.258824 0.258824 0 1 0 0 0 0 </ColorSequence>
+								<bool name="Enabled">false</bool>
+								<Vector2 name="Offset">
+									<X>0</X>
+									<Y>0</Y>
+								</Vector2>
+								<float name="Rotation">90</float>
+								<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">UIGradient</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="UICorner" referent="RBX4D1D2CC47CD0424EBDB4B931A34254C3">
+						<Properties>
+							<UDim name="CornerRadius">
+								<S>9</S>
+								<O>99</O>
+							</UDim>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">UICorner</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+					<Item class="TextLabel" referent="RBX97F4399F4FBF44E4890D62D9BDE022E2">
+						<Properties>
+							<Font name="FontFace">
+								<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+								<Weight>400</Weight>
+								<Style>Normal</Style>
+								<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+							</Font>
+							<float name="LineHeight">1</float>
+							<string name="LocalizationMatchIdentifier"></string>
+							<string name="LocalizationMatchedSourceText"></string>
+							<int name="MaxVisibleGraphemes">-1</int>
+							<string name="OpenTypeFeatures"></string>
+							<bool name="RichText">false</bool>
+							<string name="Text">PLACEHOLDER TITLE</string>
+							<Color3 name="TextColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="TextDirection">0</token>
+							<bool name="TextScaled">true</bool>
+							<float name="TextSize">14</float>
+							<Color3 name="TextStrokeColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">true</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<token name="InputSink">0</token>
+							<bool name="Interactable">true</bool>
+							<int name="LayoutOrder">0</int>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0.200000003</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<int name="SelectionOrder">0</int>
+							<UDim2 name="Size">
+								<XS>0.800000012</XS>
+								<XO>0</XO>
+								<YS>0.5</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">2</int>
+							<bool name="AutoLocalize">true</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<token name="SelectionBehaviorDown">0</token>
+							<token name="SelectionBehaviorLeft">0</token>
+							<token name="SelectionBehaviorRight">0</token>
+							<token name="SelectionBehaviorUp">0</token>
+							<bool name="SelectionGroup">false</bool>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">MAIN TITLE</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+						<Item class="UIStroke" referent="RBX36DE84C5709C42DE96D18C696E949A8E">
+							<Properties>
+								<token name="ApplyStrokeMode">0</token>
+								<UDim name="BorderOffset">
+									<S>0</S>
+									<O>0</O>
+								</UDim>
+								<token name="BorderStrokePosition">0</token>
+								<Color3 name="Color">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<bool name="Enabled">true</bool>
+								<token name="LineJoinMode">0</token>
+								<token name="StrokeSizingMode">0</token>
+								<float name="Thickness">2</float>
+								<float name="Transparency">0</float>
+								<int name="ZIndex">1</int>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">UIStroke</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+							<Item class="UIGradient" referent="RBX20F574BEB83140238E8C8892098ED5C3">
+								<Properties>
+									<ColorSequence name="Color">0 1 1 1 0 0.5 0 0 0 0 1 0.258824 0.258824 0.258824 0 </ColorSequence>
+									<bool name="Enabled">true</bool>
+									<Vector2 name="Offset">
+										<X>0</X>
+										<Y>1</Y>
+									</Vector2>
+									<float name="Rotation">90</float>
+									<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+									<BinaryString name="AttributesSerialize"></BinaryString>
+									<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+									<bool name="DefinesCapabilities">false</bool>
+									<string name="Name">UIGradient</string>
+									<int64 name="SourceAssetId">-1</int64>
+									<BinaryString name="Tags"></BinaryString>
+								</Properties>
+							</Item>
+						</Item>
+					</Item>
+					<Item class="TextLabel" referent="RBXCFC1A053E06046E8AA4B55ECB94C8890">
+						<Properties>
+							<Font name="FontFace">
+								<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+								<Weight>400</Weight>
+								<Style>Normal</Style>
+								<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+							</Font>
+							<float name="LineHeight">1</float>
+							<string name="LocalizationMatchIdentifier"></string>
+							<string name="LocalizationMatchedSourceText"></string>
+							<int name="MaxVisibleGraphemes">-1</int>
+							<string name="OpenTypeFeatures"></string>
+							<bool name="RichText">false</bool>
+							<string name="Text">BRIEF DESCRIPTION</string>
+							<Color3 name="TextColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="TextDirection">0</token>
+							<bool name="TextScaled">true</bool>
+							<float name="TextSize">14</float>
+							<Color3 name="TextStrokeColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">true</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<token name="InputSink">0</token>
+							<bool name="Interactable">true</bool>
+							<int name="LayoutOrder">0</int>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0.200000003</XS>
+								<XO>0</XO>
+								<YS>0.5</YS>
+								<YO>0</YO>
+							</UDim2>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<int name="SelectionOrder">0</int>
+							<UDim2 name="Size">
+								<XS>0.800000012</XS>
+								<XO>0</XO>
+								<YS>0.5</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">2</int>
+							<bool name="AutoLocalize">true</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<token name="SelectionBehaviorDown">0</token>
+							<token name="SelectionBehaviorLeft">0</token>
+							<token name="SelectionBehaviorRight">0</token>
+							<token name="SelectionBehaviorUp">0</token>
+							<bool name="SelectionGroup">false</bool>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">BRIEF DESCRIPTION</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+						<Item class="UIStroke" referent="RBX38D3CCBB7725411DA8E04298DEAD37EF">
+							<Properties>
+								<token name="ApplyStrokeMode">0</token>
+								<UDim name="BorderOffset">
+									<S>0</S>
+									<O>0</O>
+								</UDim>
+								<token name="BorderStrokePosition">0</token>
+								<Color3 name="Color">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<bool name="Enabled">true</bool>
+								<token name="LineJoinMode">0</token>
+								<token name="StrokeSizingMode">0</token>
+								<float name="Thickness">2</float>
+								<float name="Transparency">0</float>
+								<int name="ZIndex">1</int>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">UIStroke</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+							<Item class="UIGradient" referent="RBX05E014A1DD3140B08261D69F7DB879BA">
+								<Properties>
+									<ColorSequence name="Color">0 1 1 1 0 0.5 0 0 0 0 1 1 1 1 0 </ColorSequence>
+									<bool name="Enabled">true</bool>
+									<Vector2 name="Offset">
+										<X>0</X>
+										<Y>1</Y>
+									</Vector2>
+									<float name="Rotation">90</float>
+									<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+									<BinaryString name="AttributesSerialize"></BinaryString>
+									<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+									<bool name="DefinesCapabilities">false</bool>
+									<string name="Name">UIGradient</string>
+									<int64 name="SourceAssetId">-1</int64>
+									<BinaryString name="Tags"></BinaryString>
+								</Properties>
+							</Item>
+						</Item>
+					</Item>
+					<Item class="UIStroke" referent="RBX649C5B25829246FC91C9AB0C79F7B477">
+						<Properties>
+							<token name="ApplyStrokeMode">1</token>
+							<UDim name="BorderOffset">
+								<S>0</S>
+								<O>0</O>
+							</UDim>
+							<token name="BorderStrokePosition">0</token>
+							<Color3 name="Color">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<bool name="Enabled">true</bool>
+							<token name="LineJoinMode">0</token>
+							<token name="StrokeSizingMode">1</token>
+							<float name="Thickness">0</float>
+							<float name="Transparency">0</float>
+							<int name="ZIndex">1</int>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">UIStroke</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+					<Item class="ImageLabel" referent="RBX0CC8EDE0556541B288A93AF7CA3A8631">
+						<Properties>
+							<Content name="Image"><url>rbxassetid://7451945728</url></Content>
+							<Color3 name="ImageColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<Vector2 name="ImageRectOffset">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<Vector2 name="ImageRectSize">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<float name="ImageTransparency">0</float>
+							<token name="ResampleMode">0</token>
+							<token name="ScaleType">0</token>
+							<Rect2D name="SliceCenter">
+								<min>
+									<X>0</X>
+									<Y>0</Y>
+								</min>
+								<max>
+									<X>0</X>
+									<Y>0</Y>
+								</max>
+							</Rect2D>
+							<float name="SliceScale">1</float>
+							<UDim2 name="TileSize">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">0</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<token name="InputSink">0</token>
+							<bool name="Interactable">true</bool>
+							<int name="LayoutOrder">0</int>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<int name="SelectionOrder">0</int>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">11</int>
+							<bool name="AutoLocalize">true</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<token name="SelectionBehaviorDown">0</token>
+							<token name="SelectionBehaviorLeft">0</token>
+							<token name="SelectionBehaviorRight">0</token>
+							<token name="SelectionBehaviorUp">0</token>
+							<bool name="SelectionGroup">false</bool>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">BadgeNotif</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+						<Item class="UICorner" referent="RBX488012EDC1914CDEBE43EEDAC4F12D88">
+							<Properties>
+								<UDim name="CornerRadius">
+									<S>9</S>
+									<O>99</O>
+								</UDim>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">UICorner</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+						<Item class="UIGradient" referent="RBXCB83985AD5BA482DA3D30EB71E42E162">
+							<Properties>
+								<ColorSequence name="Color">0 0 0 0 0 0.5 0.258824 0.258824 0.258824 0 1 0 0 0 0 </ColorSequence>
+								<bool name="Enabled">false</bool>
+								<Vector2 name="Offset">
+									<X>0</X>
+									<Y>1</Y>
+								</Vector2>
+								<float name="Rotation">90</float>
+								<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">UIGradient</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+						<Item class="LocalScript" referent="RBX1CAA93773F874EEDB832BE8095FA33DA">
+							<Properties>
+								<ProtectedString name="Source"><![CDATA[task.wait()
+while script:FindFirstAncestorWhichIsA('PlayerGui') do
+	task.wait()
+	script.Parent.Size = UDim2.new(0,script.Parent.AbsoluteSize.Y, 1, 0)
+	script.Parent.Position = UDim2.new(0, 0, 0, 0)
+end]]></ProtectedString>
+								<bool name="Disabled">false</bool>
+								<Content name="LinkedSource"><null></null></Content>
+								<token name="RunContext">0</token>
+								<string name="ScriptGuid">{64486496-8769-4ED2-995D-2D74D8B770DB}</string>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">keepitSquare</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="UIGradient" referent="RBXDA9C83A0943B4752BBBCFFF0C266F20F">
+						<Properties>
+							<ColorSequence name="Color">0 0 0 0 0 0.5 0.258824 0.258824 0.258824 0 1 0 0 0 0 </ColorSequence>
+							<bool name="Enabled">false</bool>
+							<Vector2 name="Offset">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<float name="Rotation">90</float>
+							<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">UIGradient</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="LocalScript" referent="RBX681B518A07474037863410C74C22CFF4">
+					<Properties>
+						<ProtectedString name="Source"><![CDATA[task.wait()
+while script:FindFirstAncestorWhichIsA('PlayerGui') do
+	task.wait()
+	script.Parent.Size = UDim2.new(0,script.Parent.AbsoluteSize.Y, 1, 0)
+	script.Parent.Position = UDim2.new(.5, -script.Parent.AbsoluteSize.Y/2, 0, 0)
+end]]></ProtectedString>
+						<bool name="Disabled">false</bool>
+						<Content name="LinkedSource"><null></null></Content>
+						<token name="RunContext">0</token>
+						<string name="ScriptGuid">{3AACE641-F164-4BBC-B7E1-C83A36946C82}</string>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">make the ui square</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+		</Item>
+	</Item>
+</roblox>

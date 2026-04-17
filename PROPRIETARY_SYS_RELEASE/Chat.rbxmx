@@ -1,0 +1,803 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Folder" referent="RBX8B9A073134404912B169D65396B610C0">
+		<Properties>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">__Chat</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="ScreenGui" referent="RBX0F25F95AC8CC424F867279252F9BFA8B">
+			<Properties>
+				<bool name="ClipToDeviceSafeArea">true</bool>
+				<int name="DisplayOrder">0</int>
+				<token name="SafeAreaCompatibility">1</token>
+				<token name="ScreenInsets">2</token>
+				<bool name="Enabled">false</bool>
+				<bool name="ResetOnSpawn">false</bool>
+				<token name="ZIndexBehavior">1</token>
+				<bool name="AutoLocalize">true</bool>
+				<Ref name="RootLocalizationTable">null</Ref>
+				<token name="SelectionBehaviorDown">0</token>
+				<token name="SelectionBehaviorLeft">0</token>
+				<token name="SelectionBehaviorRight">0</token>
+				<token name="SelectionBehaviorUp">0</token>
+				<bool name="SelectionGroup">false</bool>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">CHGUI</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="ScrollingFrame" referent="RBX8C4D3F1DBCAD4AB0B0E5FF3D2884F897">
+				<Properties>
+					<token name="AutomaticCanvasSize">0</token>
+					<Content name="BottomImage"><url>rbxasset://textures/ui/Scroll/scroll-bottom.png</url></Content>
+					<Vector2 name="CanvasPosition">
+						<X>0</X>
+						<Y>0</Y>
+					</Vector2>
+					<UDim2 name="CanvasSize">
+						<XS>0</XS>
+						<XO>0</XO>
+						<YS>2</YS>
+						<YO>0</YO>
+					</UDim2>
+					<token name="ElasticBehavior">0</token>
+					<token name="HorizontalScrollBarInset">0</token>
+					<Content name="MidImage"><url>rbxasset://textures/ui/Scroll/scroll-middle.png</url></Content>
+					<Color3 name="ScrollBarImageColor3">
+						<R>0</R>
+						<G>0</G>
+						<B>0</B>
+					</Color3>
+					<float name="ScrollBarImageTransparency">0</float>
+					<int name="ScrollBarThickness">12</int>
+					<token name="ScrollingDirection">4</token>
+					<bool name="ScrollingEnabled">true</bool>
+					<Content name="TopImage"><url>rbxasset://textures/ui/Scroll/scroll-top.png</url></Content>
+					<token name="VerticalScrollBarInset">0</token>
+					<token name="VerticalScrollBarPosition">0</token>
+					<bool name="Active">true</bool>
+					<Vector2 name="AnchorPoint">
+						<X>0</X>
+						<Y>0</Y>
+					</Vector2>
+					<token name="AutomaticSize">0</token>
+					<Color3 name="BackgroundColor3">
+						<R>1</R>
+						<G>1</G>
+						<B>1</B>
+					</Color3>
+					<float name="BackgroundTransparency">0.75</float>
+					<Color3 name="BorderColor3">
+						<R>0</R>
+						<G>0</G>
+						<B>0</B>
+					</Color3>
+					<token name="BorderMode">0</token>
+					<int name="BorderSizePixel">0</int>
+					<bool name="ClipsDescendants">true</bool>
+					<bool name="Draggable">false</bool>
+					<token name="InputSink">0</token>
+					<bool name="Interactable">true</bool>
+					<int name="LayoutOrder">0</int>
+					<Ref name="NextSelectionDown">null</Ref>
+					<Ref name="NextSelectionLeft">null</Ref>
+					<Ref name="NextSelectionRight">null</Ref>
+					<Ref name="NextSelectionUp">null</Ref>
+					<UDim2 name="Position">
+						<XS>0</XS>
+						<XO>0</XO>
+						<YS>0</YS>
+						<YO>0</YO>
+					</UDim2>
+					<float name="Rotation">0</float>
+					<bool name="Selectable">true</bool>
+					<Ref name="SelectionImageObject">null</Ref>
+					<int name="SelectionOrder">0</int>
+					<UDim2 name="Size">
+						<XS>0.400000006</XS>
+						<XO>0</XO>
+						<YS>0.400000006</YS>
+						<YO>0</YO>
+					</UDim2>
+					<token name="SizeConstraint">0</token>
+					<bool name="Visible">true</bool>
+					<int name="ZIndex">1</int>
+					<bool name="AutoLocalize">true</bool>
+					<Ref name="RootLocalizationTable">null</Ref>
+					<token name="SelectionBehaviorDown">0</token>
+					<token name="SelectionBehaviorLeft">0</token>
+					<token name="SelectionBehaviorRight">0</token>
+					<token name="SelectionBehaviorUp">0</token>
+					<bool name="SelectionGroup">true</bool>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">ScrollingFrame</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="UIListLayout" referent="RBX95CA89DEDEA145A9A7B940A196C75064">
+					<Properties>
+						<token name="HorizontalFlex">0</token>
+						<token name="ItemLineAlignment">0</token>
+						<UDim name="Padding">
+							<S>0</S>
+							<O>0</O>
+						</UDim>
+						<token name="VerticalFlex">0</token>
+						<bool name="Wraps">false</bool>
+						<token name="FillDirection">1</token>
+						<token name="HorizontalAlignment">1</token>
+						<token name="SortOrder">2</token>
+						<token name="VerticalAlignment">1</token>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UIListLayout</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="UICorner" referent="RBXDB277623817F478C84A2CBA5AC22EA40">
+					<Properties>
+						<UDim name="CornerRadius">
+							<S>0</S>
+							<O>8</O>
+						</UDim>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UICorner</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="UIStroke" referent="RBX1B7D0FB960F6432FB1CEADDACE13E36B">
+					<Properties>
+						<token name="ApplyStrokeMode">1</token>
+						<UDim name="BorderOffset">
+							<S>0</S>
+							<O>0</O>
+						</UDim>
+						<token name="BorderStrokePosition">0</token>
+						<Color3 name="Color">
+							<R>0.509803951</R>
+							<G>0.509803951</G>
+							<B>0.509803951</B>
+						</Color3>
+						<bool name="Enabled">true</bool>
+						<token name="LineJoinMode">0</token>
+						<token name="StrokeSizingMode">1</token>
+						<float name="Thickness">0.00999999978</float>
+						<float name="Transparency">0</float>
+						<int name="ZIndex">1</int>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UIStroke</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="UIGradient" referent="RBXBF57F33D59594E34A6A77D78572435AD">
+						<Properties>
+							<ColorSequence name="Color">0 0 0 0 0 1 1 1 1 0 </ColorSequence>
+							<bool name="Enabled">true</bool>
+							<Vector2 name="Offset">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<float name="Rotation">-90</float>
+							<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">UIGradient</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="UIGradient" referent="RBX069E18A1DE1348ABBB32ABA75CC036B4">
+					<Properties>
+						<ColorSequence name="Color">0 0 0 0 0 1 1 1 1 0 </ColorSequence>
+						<bool name="Enabled">true</bool>
+						<Vector2 name="Offset">
+							<X>0</X>
+							<Y>0</Y>
+						</Vector2>
+						<float name="Rotation">90</float>
+						<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UIGradient</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+			<Item class="TextBox" referent="RBX055ADE8F05F3401DBAE20D3FD26B7A7F">
+				<Properties>
+					<bool name="ClearTextOnFocus">false</bool>
+					<Font name="FontFace">
+						<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+						<Weight>400</Weight>
+						<Style>Normal</Style>
+						<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+					</Font>
+					<float name="LineHeight">1</float>
+					<string name="LocalizationMatchIdentifier"></string>
+					<string name="LocalizationMatchedSourceText"></string>
+					<int name="MaxVisibleGraphemes">-1</int>
+					<bool name="MultiLine">false</bool>
+					<string name="OpenTypeFeatures"></string>
+					<Color3 name="PlaceholderColor3">
+						<R>0.699999988</R>
+						<G>0.699999988</G>
+						<B>0.699999988</B>
+					</Color3>
+					<string name="PlaceholderText">Type Here And Press Enter To Chat!</string>
+					<bool name="RichText">false</bool>
+					<bool name="ShowNativeInput">true</bool>
+					<string name="Text"></string>
+					<Color3 name="TextColor3">
+						<R>1</R>
+						<G>1</G>
+						<B>1</B>
+					</Color3>
+					<token name="TextDirection">0</token>
+					<bool name="TextEditable">true</bool>
+					<bool name="TextScaled">true</bool>
+					<float name="TextSize">14</float>
+					<Color3 name="TextStrokeColor3">
+						<R>0</R>
+						<G>0</G>
+						<B>0</B>
+					</Color3>
+					<float name="TextStrokeTransparency">1</float>
+					<float name="TextTransparency">0</float>
+					<token name="TextTruncate">1</token>
+					<bool name="TextWrapped">true</bool>
+					<token name="TextXAlignment">0</token>
+					<token name="TextYAlignment">1</token>
+					<bool name="Active">true</bool>
+					<Vector2 name="AnchorPoint">
+						<X>0</X>
+						<Y>0</Y>
+					</Vector2>
+					<token name="AutomaticSize">0</token>
+					<Color3 name="BackgroundColor3">
+						<R>0.43921572</R>
+						<G>0.43921572</G>
+						<B>0.43921572</B>
+					</Color3>
+					<float name="BackgroundTransparency">0.25</float>
+					<Color3 name="BorderColor3">
+						<R>0</R>
+						<G>0</G>
+						<B>0</B>
+					</Color3>
+					<token name="BorderMode">0</token>
+					<int name="BorderSizePixel">0</int>
+					<bool name="ClipsDescendants">false</bool>
+					<bool name="Draggable">false</bool>
+					<token name="InputSink">0</token>
+					<bool name="Interactable">true</bool>
+					<int name="LayoutOrder">0</int>
+					<Ref name="NextSelectionDown">null</Ref>
+					<Ref name="NextSelectionLeft">null</Ref>
+					<Ref name="NextSelectionRight">null</Ref>
+					<Ref name="NextSelectionUp">null</Ref>
+					<UDim2 name="Position">
+						<XS>0</XS>
+						<XO>0</XO>
+						<YS>0.349999994</YS>
+						<YO>0</YO>
+					</UDim2>
+					<float name="Rotation">0</float>
+					<bool name="Selectable">true</bool>
+					<Ref name="SelectionImageObject">null</Ref>
+					<int name="SelectionOrder">0</int>
+					<UDim2 name="Size">
+						<XS>0.400000006</XS>
+						<XO>0</XO>
+						<YS>0.0500000007</YS>
+						<YO>0</YO>
+					</UDim2>
+					<token name="SizeConstraint">0</token>
+					<bool name="Visible">true</bool>
+					<int name="ZIndex">1</int>
+					<bool name="AutoLocalize">true</bool>
+					<Ref name="RootLocalizationTable">null</Ref>
+					<token name="SelectionBehaviorDown">0</token>
+					<token name="SelectionBehaviorLeft">0</token>
+					<token name="SelectionBehaviorRight">0</token>
+					<token name="SelectionBehaviorUp">0</token>
+					<bool name="SelectionGroup">false</bool>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">TextBox</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="UICorner" referent="RBX0AE382D894BA462680B78DCF58195BDF">
+					<Properties>
+						<UDim name="CornerRadius">
+							<S>0</S>
+							<O>8</O>
+						</UDim>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UICorner</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="UIStroke" referent="RBX6BE6CDACCDAB40F69170FCA86359ACB9">
+					<Properties>
+						<token name="ApplyStrokeMode">1</token>
+						<UDim name="BorderOffset">
+							<S>0</S>
+							<O>0</O>
+						</UDim>
+						<token name="BorderStrokePosition">0</token>
+						<Color3 name="Color">
+							<R>0.509803951</R>
+							<G>0.509803951</G>
+							<B>0.509803951</B>
+						</Color3>
+						<bool name="Enabled">true</bool>
+						<token name="LineJoinMode">0</token>
+						<token name="StrokeSizingMode">1</token>
+						<float name="Thickness">0.100000001</float>
+						<float name="Transparency">0</float>
+						<int name="ZIndex">1</int>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UIStroke</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="UIGradient" referent="RBXE7D9B643C95449FB9DE46381FC3678D3">
+						<Properties>
+							<ColorSequence name="Color">0 0 0 0 0 1 1 1 1 0 </ColorSequence>
+							<bool name="Enabled">true</bool>
+							<Vector2 name="Offset">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<float name="Rotation">-90</float>
+							<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">UIGradient</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="LocalScript" referent="RBX19FD3D2FE24A485D92B1DA1173FE2831">
+					<Properties>
+						<ProtectedString name="Source"><![CDATA[local textBox = script.Parent
+local player = game:GetService('Players').LocalPlayer
+local blocked = false
+textBox.FocusLost:Connect(function(enterPressed)
+	if blocked then return end
+	if enterPressed and textBox.Text ~= '' then
+		(game:FindFirstChildOfClass('ReplicatedStorage') or game:GetService('ReplicatedStorage')):WaitForChild('Mailbox'):FireServer(player.Name, textBox.Text)
+		textBox.Text = ""
+	end
+end);
+(game:FindFirstChildOfClass('ReplicatedStorage') or game:GetService('ReplicatedStorage')):WaitForChild('Mailbox'):GetAttributeChangedSignal('disabled'):Connect(function()
+	if (game:FindFirstChildOfClass('ReplicatedStorage') or game:GetService('ReplicatedStorage')):WaitForChild('Mailbox'):GetAttribute('disabled') then blocked = true
+		textBox.PlaceholderText = 'disabled'
+		textBox.TextEditable = false
+	else
+		textBox.PlaceholderText = 'Type Here And Press Enter To Chat!'
+		textBox.TextEditable = true
+	end
+end)
+]]></ProtectedString>
+						<bool name="Disabled">false</bool>
+						<Content name="LinkedSource"><null></null></Content>
+						<token name="RunContext">0</token>
+						<string name="ScriptGuid">{A12712FF-2B9A-4765-B5A5-78C4FA7A8C20}</string>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">LocalScript</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="UIGradient" referent="RBX7FFD116FA9184A5C8DA41B38F1E71FBA">
+					<Properties>
+						<ColorSequence name="Color">0 0 0 0 0 1 1 1 1 0 </ColorSequence>
+						<bool name="Enabled">true</bool>
+						<Vector2 name="Offset">
+							<X>0</X>
+							<Y>0</Y>
+						</Vector2>
+						<float name="Rotation">90</float>
+						<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UIGradient</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+			<Item class="LocalScript" referent="RBXD3CCB85CC7E343D58FBD5BEBD1745331">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[local instance = 1
+(game:FindFirstChildOfClass('ReplicatedStorage') or game:GetService('ReplicatedStorage')):WaitForChild('Mailbox').OnClientEvent:Connect(function(plrname, mes, timestamp, sysmes: boolean?)
+	if typeof(plrname) ~= 'string' or typeof(mes) ~= 'string' then return end
+	if mes == '' or ((mes:match("^%s*(.-)%s*$")) == '') then return end
+	mes = mes:gsub("%s+", " ")
+	local newlabel = Instance.new('TextLabel')
+	local newgrad = Instance.new('UIGradient', newlabel)
+	pcall(function()
+		newgrad.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(1, 1)
+		}
+		newgrad.Offset = Vector2.new(-1, 0)
+		game:GetService('TweenService'):Create(newgrad, TweenInfo.new(3), {Offset =  Vector2.new(1, 0)}):Play()
+		task.delay(3, function()
+			newgrad.Transparency = NumberSequence.new(0)
+			newgrad.Offset = Vector2.new(0,1)
+			newgrad.Rotation = 90
+			newgrad.Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(0.75,0.75,0.75))
+			game:GetService('TweenService'):Create(newgrad, TweenInfo.new(3), {Offset =  Vector2.new(0, 0)}):Play()
+		end)
+	end)
+	newlabel.Text = tostring(plrname)..': '..mes
+	newlabel.Size = UDim2.new(0.975,0,0,50)
+	newlabel.Position = UDim2.new(0,0,0,50 * (instance - 1))
+	newlabel.Parent = script.Parent.ScrollingFrame
+	newlabel.TextScaled = true
+	newlabel.ClipsDescendants = false
+	newlabel.TextTruncate = Enum.TextTruncate.SplitWord
+	newlabel.TextXAlignment = Enum.TextXAlignment.Left
+	if sysmes then newlabel.TextColor3 = Color3.new(1,1,1) newlabel.BackgroundColor3 = Color3.new(0,0,0) end
+	if timestamp then
+	local tsnewlabel = Instance.new('TextLabel')
+		tsnewlabel.TextXAlignment = Enum.TextXAlignment.Left
+		tsnewlabel.Text = tostring(timestamp)
+		tsnewlabel.TextColor3 = Color3.new(1,1,1)
+		tsnewlabel.TextTransparency = 1
+		tsnewlabel.BackgroundTransparency = 1
+		tsnewlabel.TextStrokeTransparency = 1
+		local success = pcall(function()
+			game:GetService('TweenService'):Create(tsnewlabel, TweenInfo.new(3), {TextTransparency = .5, BackgroundTransparency = .5, TextStrokeTransparency = .5}):Play()
+		end) if not success then tsnewlabel.TextTransparency = .5
+			tsnewlabel.BackgroundTransparency = .5
+			tsnewlabel.TextStrokeTransparency = .5 end
+		tsnewlabel.TextStrokeColor3 = Color3.new(0,0,0)
+		tsnewlabel.Size = UDim2.new(1,0,0,10)
+		tsnewlabel.BackgroundColor3 = Color3.new(1, 0, 0)
+	tsnewlabel.Position = UDim2.new(0,0,0,40)	
+		tsnewlabel.Parent = newlabel
+		newlabel.TextYAlignment = Enum.TextYAlignment.Center
+	tsnewlabel.TextScaled = true end
+	Instance.new('UICorner', newlabel) 
+	if instance >= 20 then
+		instance = 1
+	end
+	if script.Parent.ScrollingFrame:FindFirstChild(tostring(instance)) and script.Parent.ScrollingFrame:FindFirstChild(tostring(instance)).Name == tostring(instance) then
+		script.Parent.ScrollingFrame:FindFirstChild(tostring(instance)):Destroy()
+	end
+	newlabel.Name = tostring(instance)
+	instance += 1
+	game:GetService('Debris'):AddItem(newlabel, 600)
+end);
+(game:FindFirstChildOfClass('ReplicatedStorage') or game:GetService('ReplicatedStorage')):WaitForChild('Mailbox'):FireServer()]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{F6E51B92-666D-418E-946A-0C91E8F1CC00}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">LocalScript</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="Script" referent="RBX20D4058325DD47B982AF0E3D9C65F5BA">
+			<Properties>
+				<ProtectedString name="Source"><![CDATA[--fine backend, horrible ui design
+local SS = game:GetService('ServerStorage')
+local RS = game:GetService('ReplicatedStorage')
+local CacheAddress = SS:FindFirstChild('__CHATCACHE')
+local Mailbox = RS:WaitForChild('Mailbox')
+local txtserv = game:GetService('TextService')
+if not Mailbox or Mailbox.ClassName ~= 'RemoteEvent' then
+	if Mailbox then Mailbox:Destroy() end -- fraud
+	Mailbox = Instance.new('RemoteEvent', RS) Mailbox.Name = 'Mailbox'
+end
+if not CacheAddress then CacheAddress = Instance.new('Folder', SS) CacheAddress.Name = '__CHATCACHE' end
+local Cache = CacheAddress or Instance.new('Folder', SS) Cache.Name = '__CHATCACHE'
+local F_Waiting = CacheAddress:FindFirstChild('Waiting') or Instance.new('Folder', Cache) F_Waiting.Name = 'Waiting'
+local F_Filtered = CacheAddress:FindFirstChild('Filtered') or Instance.new('Folder', Cache) F_Filtered.Name = 'Filtered'
+local filtered = {}
+local failingtypesh = {}
+local shouldmention = true
+if CacheAddress  then -- preprovided/loaded cache
+	for i,v in F_Waiting:GetChildren() do
+		table.insert(failingtypesh, {timesent = v:GetAttribute('timesent'), cachelocation=v --[[extra]], Name = v:GetAttribute('name'), Message = v:GetAttribute('message'), ID = v:GetAttribute('id')})
+	end
+	for i,v in F_Filtered:GetChildren() do
+		table.insert(filtered, {timesent = v:GetAttribute('timesent'), cachelocation=v --[[extra]], Name = v:GetAttribute('name'), Message = v:GetAttribute('message'), ID = v:GetAttribute('id')})
+	end
+	table.sort(filtered, function(a,b) return a.timesent < b.timesent end)
+end
+Mailbox:FireAllClients('sys', 'GC Loaded!')
+local sendrunning = false
+local looprun
+local retryfilter = function()
+	if #failingtypesh > 0 then
+		--retry filtering
+		for i,v in pairs(failingtypesh) do
+			local went=pcall(function()
+				v.Message = txtserv:FilterStringAsync(v.Message, v.ID, Enum.TextFilterContext.PublicChat):GetNonChatStringForBroadcastAsync()
+			end)
+			if not went then v.tries = v.tries + 1 if v.tries > 5 then pcall(function() if v.cachelocation then v.cachelocation:Destroy() end end) table.remove(failingtypesh, i) end else table.insert(filtered, v) table.sort(filtered, function(a,b) return a.timesent < b.timesent end)  pcall(function() if v.cachelocation then v.cachelocation.Parent = F_Filtered end end)  table.remove(failingtypesh, i) end
+		end
+	end
+end
+local noearliermessages = function(time: number)
+	for i,v in failingtypesh do
+		if v.timesent < time then
+			return false
+		end
+	end
+	return true
+end
+local retrysend = function()
+	sendrunning = true
+	Mailbox:SetAttribute('disabled', true) -- signal the client to disable the chatbar from sending
+	table.sort(filtered, function(a,b) return a.timesent < b.timesent end)
+	local lasttime = 0
+	local endedlast = true
+	for i,v in filtered do 
+		if not noearliermessages(v.timesent) then sendrunning = false Mailbox:SetAttribute('disabled', nil) endedlast = false break end
+		if i == 1 then
+			--Mailbox:FireAllClients('sys', 'Relaying Message Playback... from '..tostring(v.timesent or '[[Unable to retrieve data]]') )
+		else
+			task.wait(v.timesent - lasttime) -- simulate time
+		end
+		lasttime = v.timesent
+		Mailbox:FireAllClients(v.Name, v.Message, lasttime) -- timestamp instead because the relay system went one by one for some reason 
+		pcall(function() if v.cachelocation then v.cachelocation:Destroy() end end)	table.remove(filtered, i) table.sort(filtered, function(a,b) return a.timesent < b.timesent end)
+	end 
+	--Mailbox:FireAllClients('sys', endedlast and 'Chat Relay Queue Finished'..(#failingtypesh > 0 and ", Waiting For More Messages to Be Filtered" or "") or 'Ended Relay Due To Messages Not Being Filtered!' )
+	sendrunning = false
+	Mailbox:SetAttribute('disabled', nil)
+end
+function queue(mes, plr, sucess)
+	if typeof(mes) ~= 'string' or typeof(plr) ~= 'Instance' or not plr.Parent or plr.ClassName:lower() ~= 'player'  then return end
+	local thecache = Instance.new('StringValue', sucess and F_Filtered or F_Waiting)
+	local now = os.clock()
+	thecache:SetAttribute('timesent', now)
+	thecache:SetAttribute('name', plr.Name)
+	thecache:SetAttribute('message', mes)
+	thecache:SetAttribute('id', plr.UserId)
+	local successhere=pcall(function()	table.insert(sucess and filtered or failingtypesh, {Name = plr.Name, ID = plr.UserId,Message = mes, tries = 1 --[[if exceed five cut the message]], timesent = now, cachelocation = thecache})
+	end)
+	if not successhere then return end -- if success then it gurantee atleast one message
+	runloop() -- on demand
+end
+function runloop()
+	if looprun then return end
+	if shouldmention then
+		shouldmention = false
+		task.delay(60, function() shouldmention = true end)
+		Mailbox:FireAllClients('sys', 'Chat Filtering Currently Has Issues... Messages Will Be Queued, Will result in delays.', os.clock(), true)
+	end looprun = task.spawn(function()
+		while task.wait(math.clamp(1 + #failingtypesh/50,1,20)) do
+			local breaknow = true
+			if #failingtypesh	> 0 then breaknow = false retryfilter() end
+			if #filtered > 0 and not sendrunning then
+				task.spawn(retrysend) end
+			if sendrunning then breaknow = false end
+			if breaknow then break end
+		end
+		looprun = nil
+	end)
+end
+
+function isSpam(message, player)
+	if typeof(message) ~= 'string' or typeof(player) ~= 'Instance' or not player.Parent then return true end
+	local punctCount = select(2, string.gsub(message, "[%p%s]", ""))
+	if punctCount / string.len(message) > 0.3 then return true end
+	local words = {}
+	for word in string.gmatch(message:lower(), "%w+") do
+		words[word] = (words[word] or 0) + 1
+		if words[word] > 2 then return true end
+	end
+	local uniqueChars = {}
+	local counted = 0
+	for char in string.gmatch(message:lower(), "%w") do
+		if uniqueChars[char] then continue end
+		uniqueChars[char] = true
+		counted += 1
+	end
+	if #message > 10 and counted < 3 then return true end
+	local currentTime = os.clock()
+
+	if not player:FindFirstChild('__LastMessages') then
+		local lastMessagesFolder = Instance.new("Folder")
+		lastMessagesFolder.Name = "__LastMessages"
+		lastMessagesFolder.Parent = player
+	else 
+		-- Check for similar recent messages
+		for _, oldMsg in ipairs(player:FindFirstChild('__LastMessages'):GetChildren()) do
+			if currentTime - oldMsg:GetAttribute('time') < 5 then -- 5 second window
+				local similarity = calculateSimilarity(message, oldMsg.Value)
+				if similarity > 0.7 then return true end
+			end
+		end
+	end
+	local messageValue = Instance.new("StringValue", player:FindFirstChild('__LastMessages'))
+	messageValue.Value = message
+	messageValue:SetAttribute('time', currentTime)
+	game:GetService('Debris'):AddItem(messageValue, 10)
+
+	return false
+end
+
+function calculateSimilarity(str1, str2)
+	local longer, shorter = str1, str2
+	if string.len(str2) > string.len(str1) then
+		longer, shorter = str2, str1
+	end
+
+	local editDistance = getEditDistance(longer, shorter)
+	return (string.len(longer) - editDistance) / string.len(longer)
+end
+
+function getEditDistance(str1, str2)
+	local matrix = {}
+	for i = 0, string.len(str1) do
+		matrix[i] = {[0] = i}
+	end
+	for j = 0, string.len(str2) do
+		matrix[0][j] = j
+	end
+
+	for i = 1, string.len(str1) do
+		for j = 1, string.len(str2) do
+			local cost = string.sub(str1, i, i) == string.sub(str2, j, j) and 0 or 1
+			matrix[i][j] = math.min(
+				matrix[i-1][j] + 1,
+				matrix[i][j-1] + 1,
+				matrix[i-1][j-1] + cost
+			)
+		end
+	end
+
+	return matrix[string.len(str1)][string.len(str2)]
+end
+Mailbox.OnServerEvent:Connect(function(plr,a, mes) -- message must be a string
+	if sendrunning or typeof(plr) ~= 'Instance' or plr:GetAttribute('Chat__Debounce') or not plr:IsA('Player') or not plr.Parent or typeof(a) ~= 'string' or typeof(mes) ~= 'string' then return end
+
+
+	if #failingtypesh > 1000 then
+		Mailbox:FireClient(plr, 'sys', 'HIGH SERVER LOAD, SORRY!') return
+	end
+	plr:SetAttribute('Chat__Debounce', true)
+	task.delay(.1 + (#failingtypesh or 0)/10, function()
+		plr:SetAttribute('Chat__Debounce', nil)
+	end)
+	if string.len(mes) > 200 then return end
+	if string.match(mes, "^%s*$") then return end
+	if string.match(mes, "[%c%z]") then return end
+	if string.match(mes, "(.)%1%1%1%1%1") then return end
+	if isSpam(mes, plr) then
+	pcall(function()	Mailbox:FireClient(plr, 'sys', 'Please Avoid Spamming!', os.clock(), true)
+		end) return
+	end
+	local went= pcall(function()
+		mes = txtserv:FilterStringAsync(mes, plr.UserId, Enum.TextFilterContext.PublicChat):GetNonChatStringForBroadcastAsync() 
+	end)
+	if not went then --[[Mailbox:FireClient(plr,  'sys', 'Messaged Failed To Filter :(, queuing that up for later')]] queue(mes, plr) runloop() return elseif #failingtypesh > 0 or #filtered > 0 or sendrunning then queue(mes, plr, true) retryfilter() if not sendrunning then task.spawn(retrysend) end return  end 
+	--if no fail it will just do normally
+	Mailbox:FireAllClients(plr.Name or 'null', mes)
+end)
+
+game:GetService('Players').PlayerAdded:Connect(function(plr)
+	local connectedwait
+	local des des = plr.Destroying:Once(function() if connectedwait then connectedwait:Disconnect() connectedwait = nil end if des then des:Disconnect() des=nil end end)
+	connectedwait = Mailbox.OnServerEvent:Connect(function(tplr, ...) -- client will send first time request(can also be triggered by either automatic connection started Firing or chat)
+		if plr ~= tplr then return end
+		if des then des:Disconnect() des= nil end
+		Mailbox:FireClient(plr, 'sys', "Welcome to chat, " .. plr.Name .. "!", os.clock(), true)
+		-- to be implemented Mailbox:FireClient(plr, 'sys', "/w {thingies} or /w <thingy> to whisper [[Thingy: @username, #userid, ?alias, !GroupChatName, $displayname]]", os.clock(), true)
+		if connectedwait then connectedwait:Disconnect() connectedwait = nil end
+	end)
+	if not plr.Parent then  if des then des:Disconnect() des = nil end if connectedwait then connectedwait:Disconnect() connectedwait = nil end end
+end)]]></ProtectedString>
+				<bool name="Disabled">true</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{5D60C0FB-396A-4260-B0C2-7BCBD7E8736C}</string>
+				<BinaryString name="AttributesSerialize">AQAAAAoAAABfX25vcmVtb3ZlAwE=</BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Chat Backend</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="BindableEvent" referent="RBXB9B7D9AD2E4E47A19288EB731F90A6C6">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Install</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="Script" referent="RBXDC2F9780795445598CA480E342D588C6">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[script.Parent.Event:Once(function()
+	if not game:GetService('ReplicatedStorage'):FindFirstChild('Mailbox') then
+		local box = Instance.new('RemoteEvent', game:GetService('ReplicatedStorage'))
+		box.Name = 'Mailbox'
+	end
+	local backend = script.Parent.Parent["Chat Backend"]:Clone()
+	backend.Parent = game:GetService('ServerScriptService')
+	backend.Enabled = true
+	--[[local gui = script.Parent.Parent["CHGUI"]:Clone()
+	gui.Parent = game:GetService('StarterGui')
+	gui.Enabled = true]]
+	local logged = {}
+	for i,v in game:GetService('Players'):GetChildren() do if not v:IsA('Player') or not v:FindFirstChildOfClass('PlayerGui') then continue end
+		pcall(function()
+		local gui = script.Parent.Parent["CHGUI"]:Clone()
+		gui.Parent = v:FindFirstChildOfClass('PlayerGui')
+		gui.Enabled = true
+	end) table.insert(logged, v.UserId) end
+	game:GetService('Players').PlayerAdded:Connect(function(plr)
+		if table.find(logged, plr.UserId) then
+			local plrgui = plr:WaitForChild('PlayerGui', 60)
+			if plrgui then
+			pcall(function()
+				local gui = script.Parent.Parent["CHGUI"]:Clone()
+				gui.Parent = plr:FindFirstChildOfClass('PlayerGui')
+				gui.Enabled = true
+			end) end
+		end
+	end)
+end)]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{B0B34A8A-A644-4D7A-909A-7653697AB409}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Script</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+	</Item>
+</roblox>

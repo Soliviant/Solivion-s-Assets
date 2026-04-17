@@ -1,0 +1,3707 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Script" referent="RBXFBEC3E5F74B64A2198E845012F5F7150">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[--By Solivion, mainly inspired by those IDV, FTF type games(Which is why the 'incapacitated' state exists seperately from the downed state), This is just the state engine.
+-- Sounds In The 'Soundcloud' Table Are Mostly Used, Excluding 'scream' and 'yap', That's for the funzies, remove it if you want to.
+
+--Functions usage at line 602+, edit it as you will
+local recoved = false
+local StartUp_Container: Instance = workspace -- the instances the characters contained as children gets integrated into system as of starting up, if you didn't update the default code
+local wordmodule = script:FindFirstChildOfClass('ModuleScript') and require(script:FindFirstChildOfClass('ModuleScript'))
+local wordlist = (wordmodule and wordmodule.Words) or {}
+local morseCode = {
+	["A"] = ".-",      ["B"] = "-...",    ["C"] = "-.-.",    ["D"] = "-..",
+	["E"] = ".",       ["F"] = "..-.",    ["G"] = "--.",     ["H"] = "....",
+	["I"] = "..",      ["J"] = ".---",    ["K"] = "-.-",     ["L"] = ".-..",
+	["M"] = "--",      ["N"] = "-.",      ["O"] = "---",     ["P"] = ".--.",
+	["Q"] = "--.-",    ["R"] = ".-.",     ["S"] = "...",     ["T"] = "-",
+	["U"] = "..-",     ["V"] = "...-",    ["W"] = ".--",     ["X"] = "-..-",
+	["Y"] = "-.--",    ["Z"] = "--..",
+	["1"] = ".----",   ["2"] = "..---",   ["3"] = "...--",   ["4"] = "....-", 
+	["5"] = ".....",   ["6"] = "-....",   ["7"] = "--...",   ["8"] = "---..", 
+	["9"] = "----.",   ["0"] = "-----",
+	[" "] = " "
+}
+
+local Uniheadsys 
+task.spawn(function()
+pcall(
+	function()
+		task.synchronize()
+			Uniheadsys = require((game:FindFirstChildOfClass('ServerStorage') or game:GetService('ServerStorage')):FindFirstChild('FacialUnification'))
+	end
+)
+end)
+
+local function filterAndSort(inputTable)
+	local seen = {}      -- Helper table to track duplicates
+	local uniqueList = {} -- The final list without duplicates
+
+	for _, str in ipairs(inputTable) do
+		if not seen[str] then
+			seen[str] = true
+			table.insert(uniqueList, str)
+		end
+	end
+	table.sort(uniqueList)
+
+	return uniqueList
+end
+coroutine.resume(coroutine.create(function()
+	wordlist = filterAndSort(wordlist)
+end))
+function isDimension(a: string)
+	a = trim(a):upper()
+	return table.find({'X', 'Y', 'Z'}, a), a
+end
+function isSection(a: string)
+	a = trim(a):upper()
+	return table.find({'LEG', 'ARM', 'HEAD'}, a), a
+end
+local chatlog = {[[Welcome To SafeChat! This message marks the start of the server!
+Try !safechatwordlist for wordlist
+Try !safechat {word from wordlist here} to test if it works!
+Try !safechatlog to view up to 100 messages into the past!]]}
+local Debug: boolean = false
+local DefaultSpeedSetting: number = 14 -- if number is 0 to 2 then it'll count as a speed multipler instead 
+local Soundcloud: {number} = {DOWNED = 4516507682, Scream = 8395374561 ,yap = 9091395418 , TRAUMA = 7076366171, TRAUMA_LEVEL_EXCEED = 1845391028}
+local Respawn: boolean = true -- default true
+local Max_Health: number? = nil -- default 100
+local Starter_Health: number? = nil -- default 100
+local Down_Recover_Time: number? = nil -- default 10
+local Carry_Keybind: Enum.KeyCode? = nil -- default Q
+local Recover_Keybind: Enum.KeyCode? = nil -- default E
+local DamageSpeedIncrease_Multiplier: number? = nil -- default 1
+local UpdateRate: number? = 1/60 -- Rate Limit Cuz Who Needs Infinite Ping From The Constant Updates, Not even I could notice much difference
+local BuffMultiplier: number? = 1.5
+local CacheFolder: Folder = game:GetService('ServerStorage') and game:GetService('ServerStorage'):FindFirstChild('__RESERVEDCACHE') and game:GetService('ServerStorage'):FindFirstChild('__RESERVEDCACHE'):FindFirstChild('__HSEng_C')
+local recovDat = {}
+local KeyChain = {}
+local Dataset: {[Model?]: CharacterData} = {}
+
+function randomStr()
+	local randomstring = ''
+	local possible = "+=_-*#%^&*(){}[]<>/?|:;:,.\~!@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	for i = 1, math.random(10,100) do
+		local chosen = math.random(1, #possible)
+		randomstring = randomstring..string.sub(possible, chosen, chosen)
+	end
+	return randomstring
+end
+function GenKey(forinstance: Instance)
+	local condition = false
+	local key 
+	repeat key = randomStr() if (typeof(forinstance) ~= 'Instance' or not forinstance.Parent)then break end condition = not table.find(KeyChain, key) for i,v in forinstance.Parent:GetChildren() do if v:GetAttribute('__KEY') == key then condition = false break end end until condition
+	return key
+end
+function CachePhys()
+	if not recoved then return end task.synchronize()
+	if CacheFolder then CacheFolder:ClearAllChildren() else CacheFolder = Instance.new("Folder", game:GetService('ServerStorage'):FindFirstChild('__RESERVEDCACHE')) CacheFolder.Name = '__HSEng_C'	 end
+	--local success = pcall(function()
+	for i,v in pairs(Dataset) do
+			if typeof(i) ~= 'Instance' or not i.Parent or typeof(v) ~= 'table' or typeof(v.Data) ~= 'table' then continue end
+			if v.Data.Cleansed then
+				continue
+			end			
+			local key = GenKey(i)
+			if typeof(i) ~= 'Instance' or not i.Parent then return end
+			table.insert(KeyChain, key)
+			local file = Instance.new('StringValue', CacheFolder)
+			file.Name = i:GetFullName()
+			file.Value = key
+			i:SetAttribute('__KEY', key)
+			for header, value in pairs(v.Data) do
+			if typeof(value) ~= 'table' and typeof(value) ~= 'Instance' then	file:SetAttribute(header, value) end
+		end 
+	end --end) return success -- feedback
+end
+--[[function CacheScr()
+	local success =pcall(function()
+		(game:FindFirstChildOfClass('ServerScriptService') or game:FindFirstChild('ServerScriptService') or game:WaitForChild("ServerScriptService",10) or game:GetService("ServerScriptService") or game['ServerScriptService']).CacheService:Fire('Append', '__HSEngine', Dataset)
+	end)
+	return success -- feedback 2
+end
+function CachePerChar()
+	-- last fallback, no Feedback
+	pcall(function()
+		for i,v in pairs(Dataset) do
+			if typeof(i) ~= 'Instance' or typeof(v) ~= 'table' then continue end
+			local collectedheaders = '' -- store the name list so it could be removed later
+			for header, value in v do
+				collectedheaders = ((typeof(collectedheaders) == 'string' and collectedheaders ~= '') and collectedheaders..','..header) or header
+				i:SetAttribute('HSECh__'..header, value)  -- codenamed to not interfere with other attributes
+			end
+			i:SetAttribute('HSECh__L', collectedheaders)
+			i:SetAttribute("__cachetime", os.clock())
+		end
+	end)
+end]]
+pcall(function()
+	if not (game:FindFirstChildOfClass('ServerStorage') or game:GetService('ServerStorage')):FindFirstChild('__RESERVEDCACHE') then Instance.new('Folder', game:GetService('ServerStorage')).Name = '__RESERVEDCACHE' end
+end) 
+function fromPath(string, verifkey: string?)
+	local path = string:split(".")
+	local current = game
+	local search = current
+	for i = 1, #path do
+		search = current
+		current = current:FindFirstChild(path[i])
+		if not current and not verifkey then return elseif not current and verifkey then break end
+	end
+	if verifkey and (not current or verifkey ~= current:GetAttribute('__KEY')) then for i,v in search:GetChildren() do if v:GetAttribute('__KEY') == verifkey then return v end end return nil end
+	return current
+end
+
+--<<Core, You get the context>>--
+if UpdateRate == nil then UpdateRate = 1/240 end
+if DefaultSpeedSetting < 2 then DefaultSpeedSetting = 16 * DefaultSpeedSetting end
+type Characters = Model?
+type HealthState = number
+type States = ('Downed' | 'Normal' | 'Incapacitated' | 'Dead')
+type Actions = ('Running' | 'Walking' | 'Crouching' | 'Crawling')
+type Interactions = ('Carrying' | 'Rescuing' | 'Healing')
+type Handler = thread?
+type Event = RBXScriptConnection?
+type CharacterData = {CharacterInstance: Characters, Data: {Current_State: States, Current_Oxygen: number, Current_Health: HealthState, Current_Action: Actions, StateChangedTick: number, RescuePrompt: ProximityPrompt?, CarryPrompt: ProximityPrompt?, Downed_Health: HealthState, Max_Health: HealthState, Interactions: {Interactions}, Fast_Recovery_Attempts: HealthState?, Recovery_Attempts: HealthState?, Self_Recovered: boolean?}, Handlers: {Health_Handler: Handler, State_Animation_Handler: Handler}, Events: {Removal_Connection: Event, Action_Change_Event: Event, UNSEAT: Event, Health_Changed: Event?}}
+local Debris: Debris, ServerStorage: ServerStorage, ReplicatedStorage: ReplicatedStorage, Players: Players = game:FindFirstChildOfClass('Debris'), game:FindFirstChildOfClass('ServerStorage'), game:FindFirstChildOfClass('ReplicatedStorage'), game:FindFirstChildOfClass('Players')
+local Running: boolean = false
+local RunningTick: number = 0
+local MajorOperationProcessing: boolean = false
+local ConnectedChats: {[Player?]: RBXScriptConnection} = {}
+local EventTrigger: BindableEvent? = (ServerStorage or ReplicatedStorage):FindFirstChild('GAME_EVENT_TRIGGER')
+if not EventTrigger then local new = Instance.new('BindableEvent') new.Name = 'GAME_EVENT_TRIGGER' new.Parent = (ServerStorage or ReplicatedStorage) EventTrigger = new end
+local _issynced = true
+local CommandList = {
+	--{Command = "!togglerandomfont", Arguments = "{{Toggle random chat font}}"},
+	{Command = "!face", Arguments = "{{wear face: EYES MOUTHS BROWS; invalid for nothing; number for choosing via index; string search via words}}"},
+	{Command = "!wear", Arguments = "{{wears accessory by ID, privateserver only}}"},
+	{Command = "!unwear", Arguments = "{{removes all !wear'ed accessories}}"},
+	{Command = "!replacehead_alt", Arguments = "{{a static fall back, fork of pixelwizard75's Code, my mesh}}"},
+	{Command = "!replacehead", Arguments = "{{Replace dynamic head with Classic ones, Powered by 'FacialUnification' Version 1.4}}"},
+	{Command = "!bodycolor", Arguments = "{{For classic avatar which utilizes BodyColor instance to represent clothings!}}"},
+	{Command = "!clear_anim", Arguments = "{{Clear the Motor6Ds' transform CFrame.}}"},
+	{Command = "!bgr6", Arguments = "{{BadGameplay, R6 edition, Need Custom Controller (!Alt_Control)}}"},
+	{Command = "!blocky", Arguments = "{{Make head blocky}}"},
+	{Command = "!blockh", Arguments = "{{attach a block to the head incase mesh didn't load}}"},
+	{Command = "!random_accessory", Arguments = "{{Give you random accessory, stack btw}}"},
+	{Command = "!remove_accessory", Arguments = "{{Remove accessory using name}}"},
+	{Command = "!remove_all_accessory", Arguments = "{{Remove accessory using name}}"},
+	{Command = "!accessory", Arguments = "{{Give you accessory}}"},
+	{Command = "!safechatwordlist", Arguments = "{{get list of available vocab for safechat}}"},
+	{Command = "!offset_relative", Arguments = "Argument >> [Dimension(X,Y,Z), Section(HEAD, ARM, LEG)] : {{A Power-User Solution To Private Server Limb Offset Modification (Will Make This Affect The Public Server Animation Soon)}}"},
+	{Command = "!alt_ui", Arguments = "{{Use another Stance controller UI}}"},
+	{Command = "!no_anim", Arguments = "{{Retro Roblox Animate Will Replace Animation Based Animate.}}"},
+	{Command = "!morse", Arguments = "{{get morsecode translation of any following string.}}"},
+	{Command = "!subtosafechat", Arguments = "{{get safechat messages delivered to your log in real time.}}"},
+	{Command = "!safechatlog", Arguments = "{{view up 100 safechat messages into the past}}"},
+	{Command = "!safechat", Arguments = "{{word list approved, put a single word behind, one at a time, can form quite a hefty line.}}"},
+	{Command = "!serverinfo", Arguments = "{{view server's current status}}"},
+	{Command = "!seathelper", Arguments = "{{Get An Item That Helps You Back In A Seat, Incase you fell off a boat}}"},
+	{Command = "!reset", Arguments = "<<Reset yourself>>"},
+	{Command = "!experimental", Arguments = "{{teleport to the old version of the game(modified to be atleast playable due to massive lag spike)}}"},
+	{Command = "!sitanchor", Arguments = "<<!SitAnchor: Sit on the nearby ground>>"},
+	{Command = "!r6", Arguments = "<<become R6 character>>"},
+	{Command = "!r15", Arguments = "<<become R15 character>>"},
+	{Command = "!relative", Arguments = "CFrame; only number(under 0.25 in all axis)"},
+	{Command = "!offset_lowertorso", Arguments = "CFrame; only number(under 0.25 in all axis)"},
+	{Command = "!offset_head", Arguments = "CFrame; only number(under 0.5 in all axis)"},
+	{Command = "!offset_arm", Arguments = "CFrame; only number(under 0.5 in all axis)"},
+	{Command = "!offset_leg", Arguments = "CFrame; only number(under 0.5 in all axis)"},
+	{Command = "!unstuck", Arguments = "<<unstuck and teleport above the ground>>"},
+	{Command = "!leave", Arguments = "<<Kick yourself from the game>>"},
+	{Command = "!rejoin", Arguments = "<<Rejoin the game>>"},
+	{Command = "!reserve", Arguments = "(Both can be 'SAME' or Number); [[FUN]] [[ISITRAINING]]"},
+	{Command = "!changechar", Arguments = "[[OUTFIT ID]]"},
+	{Command = "!trip", Arguments = "<<Trip Yourself>>"},
+	{Command = "!tospawn", Arguments = "<<TP to spawn, with small cooldown>>"},
+	{Command = '!help', Arguments = "Introduction to '!' Commands"},
+	{Command = '!faker6', Arguments = "<<Become Fake R6 Character with R15 rigs>>"},
+	{Command = '!offset_relative_y', Arguments = 'Set IF Offset Will Relate to Y as an inverse or no'},
+	{Command = '!rotation_relative', Arguments = 'Changes How Offset_ Rotation Works'},
+	{Command = '!ratelimitanim', Arguments = '1-60'},
+	{Command = '!joinrandom', Arguments = 'Self-Explanatory'},
+	{Command = '!lockjoint', Arguments = 'Lock R15 Limbs, Best used with Oldschool Animation Pack'},
+	{Command = '!mute', Arguments = 'Mute Notifications'},
+	{Command = '!nodisturb', Arguments = 'Mute Notifications'},
+	{Command = "!sit", Arguments = "<<!Sit: Sit unanchored>>"},
+	{Command = "!listcmd", Arguments = "<<Raw List of all the commands>>"},
+	{Command = "!stophandler", Arguments = "<<Raw List of all the commands>>"},
+	{Command = "!pausehandler", Arguments = "temporarily pause the handler, best for reducing pings caused by handlers when you don't need it"},
+	{Command = "!setscale", Arguments = "<<Number>>; Set your scale with the limit of 0.8-1.2"},
+	{Command = "!destroycharacter", Arguments = "Destroy your character, Only respawn with '!re'"},
+	{Command = '!offset_lowertorso', Arguments = "CFrame; only number(under 0.25 in all axis)"},
+	{Command = '!storage', Arguments = "Open Storage GUI With All the saved tool slots"},
+	{Command = '!saveto', Arguments = "!saveto [Slot number: {Whole Number Up To 10}] [Tool Name / Leave Nil For Equipped Tool]"},
+	{Command = '!takeout', Arguments = "!takeout [Slot number: {Whole Number Up To 10}]"},
+	{Command = '!badgameplay', Arguments = "makes the gameplay server based(not recommended)"},
+	{Command = '!gift', Arguments = "[Target Player] [Tool or leave nil for in-hand]"},
+	{Command ='!displayname', Arguments = "!displayname [[string]], the name will be filtered by TextService"},
+	{Command ='!censor', Arguments = "toggle censor on your Character's head, useful if they're dynamic heads."}
+}
+function trim(s)
+	if typeof(s) ~= 'string' then return '' end
+	return s:match("^%s*(.-)%s*$")
+end
+local CommandsTable = {
+	--[['!no_anim',
+	'!clear_anim',]]
+	'!random_accessory',
+	'!remove_accessory',
+	'!accessory',
+	'!replacehead_alt',
+	'!replacehead',
+	'!bodycolor',
+	'!safechatwordlist',
+	'!morse',
+	'!safechatlog',
+	'!subtosafechat',
+	'!safechat',
+	'!bbchat',
+	'!gift', '!offset_head', '!customchar', --allow choosing from generated r6 or r15
+	--{'!badgameplay'},
+	'!serverinfo',
+	'!seathelper',
+	--{"!experimental"},
+	"!cmdlist",
+	"!listcmd",
+	"!cmd",
+	"!pausehandler",
+	--{"!stophandler"},
+	"!setscale",
+	"!scale",
+	--{"!destroycharacter"},
+	"!help",
+	"!mute",
+	"!nodisturb",
+	"!offset_relative_y",
+	"!offset_relative",	
+	"!ratelimitanim",
+	"!lockjoint",
+	"!offset_arm",
+	"!offset_leg",
+	"!sitanchor",
+	--{"!rejoin"},
+	--{"!joinrandom"},
+	--{"!reserve"},
+	"!unstuck",
+	--{"!leave"},
+	"!faker6",
+	"!R6",
+	"!R15",
+	"!reset",
+	"!tospawn",
+	"!spawn",
+	"!char",
+	"!changechar",
+	"!trip",
+	'!offset_lowertorso',
+	'!displayname'
+}
+
+function Matchedcmd(String: string): boolean
+	if not String then return false end
+	for i,v in CommandsTable do
+		if String:sub(#v):lower():match(v:lower()) then
+			return true
+		end
+	end
+	return false
+end
+
+local RAWTEXT: string
+local CMD_RAWTEXT: string
+local Commandsa = {}
+for i,v in CommandList do
+	table.insert(Commandsa,v.Command)
+end
+local function newMatrix(N, M)
+	local mt = {}
+	for i = 0, N do
+		mt[i] = {}
+		for j = 0, M do
+			mt[i][j] = 0
+		end
+	end
+	return mt
+end
+function LevenshteinDistance(strA: string, strB: string): number
+	--if s1 == nil or s2 == nil or s1 == '' or s2 == '' then return 100 end
+	if not strA or not strB or math.abs(#strA - #strB) > #strA/2 or math.abs(#strA - #strB) > #strB/2 then return 100 end
+	local rows = string.len(strA) 
+	local cols = string.len(strB) 
+	if rows == 0 then --Length of a is 0? The distance is just the length of b, because it would take that many substitutions to make b
+		return cols
+	elseif cols == 0 then 
+		return rows
+	elseif strA == strB then --Same string? The distance is 0
+		return 0
+	end
+	local matrix = newMatrix(rows, cols) --Create a matrix or 2D array
+
+	--Initialize Matrix
+	for i = 1, rows do
+		matrix[i][0] = i
+	end
+	for j = 1, cols do
+		matrix[0][j] = j
+	end
+
+	for i = 1, rows do --If you initialized your matrix with 1s instead of 0s, start at 2 instead of 1 here
+		for j = 1, cols do
+			if (strA:byte(i) == strB:byte(i)) then
+				--If the two characters in both strings are the same
+				matrix[i][j] = matrix[i-1][j-1]
+			else
+				local insertion = matrix[i][j-1] + 1
+				local deletion = matrix[i - 1][j] + 1
+				local subsitution = matrix[i - 1][j - 1] + 1
+
+				matrix[i][j] = math.min(insertion, deletion, subsitution)
+			end
+
+
+		end
+	end
+	return matrix[rows][cols], matrix
+end
+
+-- Function to check if two strings are similar based on a threshold
+local function StringIsSimilar(s1, s2, threshold)
+	if not s1 or not s2 then return false end
+	threshold = not threshold and 5 or math.ceil(threshold)
+	local distance, matrix = LevenshteinDistance(s1, s2)
+	return distance <= (threshold or 5), distance
+end
+
+local function getCommandSuggestions(input: string)
+	if not input then return nil end
+	if input:lower():sub(1,4):match('/e ') then input = input:lower():sub(4,500) end
+	if input:sub(1,2):match('!_') and tonumber(input:sub(3,5)) and CommandsTable[tonumber(input:sub(3,5))] then return CommandsTable[tonumber(input:sub(3,5))]..input:sub(5,#input > 5 and #input or 20) end
+	if table.find(Commandsa, input:lower()) then return input end
+	local suggestions = input
+	local FinalResult = ''
+	local VanillaRes = ''
+	local Wit_Slash = input:lower():sub(1,4):match('/e ')
+	local splitargs = string.split(input, ' ')
+	if Wit_Slash then
+		table.remove(splitargs, 1)
+	end
+	if not splitargs[1] then
+		return nil
+	end
+	local commandneedsarg = #splitargs > 1
+	local latestdistance = #splitargs[1]
+	local vanilladist = #splitargs[1]
+	pcall( function()
+	for _, command:string in ipairs(CommandList) do
+		local leven = LevenshteinDistance(splitargs[1]:lower(), command:lower())
+			if leven < vanilladist then
+				vanilladist = leven
+				VanillaRes = command
+			end	
+		if Wit_Slash then command = '/e '..command end
+			local match = command:lower():match(splitargs[1]:lower()) 
+			local FA, Distance = StringIsSimilar(splitargs[1]:lower(), command:sub(1, #splitargs[1] + 1):lower(), math.ceil(#command:sub(1, #splitargs[1] + 1)/4))
+			local invFA, invDistance = StringIsSimilar(splitargs[1]:lower():sub(1, #command + 1), command:lower(), math.ceil(#command:sub(1, #splitargs[1] + 1)/4))
+		local DistanceResult = math.huge
+		if FA then
+			DistanceResult = Distance
+		end
+		if invFA and invDistance < DistanceResult then
+			DistanceResult = invDistance
+		end
+		if match and not invFA and not FA then
+			DistanceResult = math.abs(#splitargs[1] - #command) * 2
+		end
+		if DistanceResult and latestdistance > DistanceResult then
+			latestdistance = DistanceResult
+			FinalResult = command
+		end
+		end end)
+	
+	if not FinalResult and not VanillaRes then return nil end
+	local findist = (vanilladist < latestdistance)  and vanilladist or latestdistance
+	local answer = (vanilladist < latestdistance) and VanillaRes or FinalResult or splitargs[1]
+	if answer and trim(answer) ~= '' and findist < math.ceil(#input/2.5) and vanilladist < math.ceil(#input/1.5) and math.abs(#answer-#splitargs[1]) < math.ceil(#input/1.5) then
+		if trim(answer) == '' then answer = splitargs[1] end
+		suggestions = answer.. ((#splitargs > 1 and " ".. table.concat(splitargs, " ", 2)) or "")
+		--[[local replaceend = #FinalResult + 1
+		suggestions = FinalResult..input:sub(replaceend, #input)]]
+	end
+	return suggestions
+end
+
+function sync_() if script:GetActor() then _issynced = true task.synchronize() end end
+function desync_() if script:GetActor() then _issynced = false task.desynchronize() end end
+function _RemoveInstance(TargetInstance: Instance) 
+	if TargetInstance and typeof(TargetInstance) == 'Instance' then
+		local isCurrentlysynced = _issynced
+		if not isCurrentlysynced then
+			sync_()
+			pcall(function() TargetInstance:Destroy() end)
+			desync_()
+		else
+			pcall(function() TargetInstance:Destroy() end)
+		end
+	end
+end
+function _RegisterRemoval(TargetInstance: Instance, Time: number)
+	if not Time then Time = task.wait() end
+	if Debris and TargetInstance and typeof(TargetInstance) == 'Instance' and Time and typeof(Time) == 'number' then
+		local isCurrentlysynced = _issynced
+		if not isCurrentlysynced then
+			sync_()
+			pcall(function() TargetInstance:SetAttribute('Removing__', true) Debris:AddItem(TargetInstance, Time) end)
+			desync_()
+		else
+			pcall(function() TargetInstance:SetAttribute('Removing__', true) Debris:AddItem(TargetInstance, Time) end)
+		end
+	end
+end
+local Loop = 0
+sync_()
+game:FindFirstChildOfClass('RunService').Heartbeat:Connect(function(dt)
+	task.desynchronize()
+	Loop += dt
+	if Loop >= 360 then Loop -= 360 RunningTick -= 360
+		task.synchronize()
+		for i,v in pairs(Dataset) do
+			if v.Data then
+				v.Data.StateChangedTick = v.Data.StateChangedTick - 360
+				v.CharacterInstance:SetAttribute('__ResetTimer', true)
+			end
+		end end
+end)
+function runtime(): number
+	return Loop or 0
+end
+function APPLYFAKER6(Character, changehead)
+	local AppliedDescription: HumanoidDescription
+	if not Character or typeof(Character) ~= 'Instance' or not Character:IsA('Model') or not Character:FindFirstChild('UpperTorso') or not Character:FindFirstChildOfClass('Humanoid') or Character:FindFirstChild('Char_R6') then
+		Debug_Display('no char')
+		return
+	end
+	local Models = game:FindFirstChildOfClass('ServerStorage') and game:FindFirstChildOfClass('ServerStorage'):FindFirstChild("Rig") --and game:FindFirstChildOfClass('ServerStorage'):FindFirstChild("Rig"):FindFirstChild("Fake_R6_Rig")
+	if not Models or not Models:FindFirstChild("Fake_R6_Rig") then
+		Debug_Display('no model')
+		return
+	end
+	if Character:FindFirstChildOfClass("Humanoid") then
+		local humanoid = Character:FindFirstChildOfClass("Humanoid")
+		AppliedDescription = humanoid:GetAppliedDescription() 
+		humanoid.BodyDepthScale.Value = 1
+		humanoid.BodyHeightScale.Value = 1
+		humanoid.BodyProportionScale.Value = 0
+		humanoid.BodyTypeScale.Value = 0
+		humanoid.BodyWidthScale.Value = 1
+		humanoid.HeadScale.Value = 1
+	end
+
+	if Models and Models:FindFirstChild("Fake_R6_Rig") and Models:FindFirstChild("Fake_R6_Rig"):FindFirstChild("Char_R6") then
+		local rig = Models:FindFirstChild("Fake_R6_Rig"):FindFirstChild("Char_R6"):Clone()
+		rig.Parent = Character
+		if not rig then return end
+		if AppliedDescription and rig and rig:FindFirstChildOfClass('Humanoid') then
+			if rig:FindFirstChildOfClass('Humanoid') then
+				rig:FindFirstChildOfClass('Humanoid'):ApplyDescriptionResetAsync(AppliedDescription)
+			end
+			if Character:FindFirstChild("Head") and Character:FindFirstChild("Head"):FindFirstChild("face") then
+				local face = Character:FindFirstChild("Head"):FindFirstChild("face"):Clone()
+				if not changehead then
+				rig:FindFirstChild("HeadR6").Transparency = 1
+				Character:FindFirstChild("Head").Transparency = 0 end
+				face.Parent = rig:FindFirstChild("HeadR6")
+				Character:FindFirstChild("Head"):FindFirstChild("face").Color3 = Color3.new(0, 0, 0)
+				Character:FindFirstChild("Head"):FindFirstChild("face").Transparency = 1
+			end
+
+			if Character:FindFirstChild("Body Colors") then
+				local colors = Character:FindFirstChild("Body Colors"):Clone()
+				colors.Parent = rig
+				if rig:FindFirstChild("HeadR6") then
+					rig:FindFirstChild("HeadR6").Color = colors.HeadColor3
+				end
+			end
+		else
+			local plrmodel = Character:GetChildren()
+			for i, v in pairs(plrmodel) do
+				if v:IsA("MeshPart") and (changehead or v.Name ~= 'Head') then
+					v.Anchored = true
+					v.CanCollide = false
+					v.Transparency = 1
+				end
+			end
+
+			for i, v in pairs(plrmodel) do
+				if v:IsA("Accessory") then
+					v.Parent = rig
+				end
+			end
+
+			if Character:FindFirstChild("Head") and Character:FindFirstChild("Head"):FindFirstChild("face") then
+				local face = Character:FindFirstChild("Head"):FindFirstChild("face"):Clone()
+				face.Parent = rig:FindFirstChild("HeadR6")
+				Character:FindFirstChild("Head"):FindFirstChild("face").Color3 = Color3.new(0, 0, 0)
+				Character:FindFirstChild("Head"):FindFirstChild("face").Transparency = 1
+			end
+
+			if Character:FindFirstChild("Body Colors") then
+				local colors = Character:FindFirstChild("Body Colors"):Clone()
+				colors.Parent = rig
+				if rig:FindFirstChild("HeadR6") then
+					rig:FindFirstChild("HeadR6").Color = colors.HeadColor3
+				end
+			end
+		end
+		
+		--SET TEXTURE
+		if Character:FindFirstChildOfClass("Shirt") then
+			if rig:FindFirstChild('Right Arm') and rig:FindFirstChild('Right Arm'):FindFirstChildOfClass('SpecialMesh') then
+				Instance.new('Decal', rig:FindFirstChild('Right Arm')).Texture = Character:FindFirstChildOfClass("Shirt").ShirtTemplate
+			end
+			if rig:FindFirstChild('Left Arm') and rig:FindFirstChild('Left Arm'):FindFirstChildOfClass('SpecialMesh') then
+				Instance.new('Decal', rig:FindFirstChild('Left Arm')).Texture = Character:FindFirstChildOfClass("Shirt").ShirtTemplate
+			end
+			if rig:FindFirstChild('Torso') and rig:FindFirstChild('Torso'):FindFirstChildOfClass('SpecialMesh') then
+				Instance.new('Decal', rig:FindFirstChild('Torso')).Texture = Character:FindFirstChildOfClass("Shirt").ShirtTemplate
+			end
+			if not rig:FindFirstChildOfClass('Shirt') then Character:FindFirstChildOfClass("Shirt").Parent = rig end
+		end
+		if Character:FindFirstChildOfClass("ShirtGraphic") and not rig:FindFirstChildOfClass('ShirtGraphic') then
+			Character:FindFirstChildOfClass("ShirtGraphic").Parent = rig
+		end
+		if Character:FindFirstChildOfClass("Pants") then
+			if rig:FindFirstChild('Right Leg') and rig:FindFirstChild('Right Leg'):FindFirstChildOfClass('SpecialMesh') then
+				Instance.new('Decal', rig:FindFirstChild('Right Leg')).Texture = Character:FindFirstChildOfClass("Pants").PantsTemplate
+			end
+			if rig:FindFirstChild('Left Leg') and rig:FindFirstChild('Left Leg'):FindFirstChildOfClass('SpecialMesh') then
+				Instance.new('Decal', rig:FindFirstChild('Left Leg')).Texture = Character:FindFirstChildOfClass("Pants").PantsTemplate
+			end
+			if not rig:FindFirstChildOfClass('Pants') then Character:FindFirstChildOfClass("Pants").Parent = rig end
+		end
+		
+		if rig:FindFirstChild("Torso") and rig:FindFirstChild("Torso"):FindFirstChild("Torso") then
+			local weldtorso = rig["Torso"]["Torso"]
+			weldtorso.Part1 = rig["Torso"]
+			weldtorso.Part0 = Character:FindFirstChild("UpperTorso")
+		end
+
+		if rig:FindFirstChild("HeadR6") and rig:FindFirstChild("HeadR6"):FindFirstChild("HeadR6") then
+			local weldhead = rig["HeadR6"]["HeadR6"]
+			weldhead.Part1 = rig:FindFirstChild("HeadR6")
+			weldhead.Part0 = Character:FindFirstChild("Head")
+		end
+
+		if rig:FindFirstChild("Right Arm") and rig["Right Arm"]:FindFirstChild("Right Arm") then
+			local weldrarm = rig["Right Arm"]["Right Arm"]
+			weldrarm.Part1 = rig["Right Arm"]
+			weldrarm.Part0 = Character:FindFirstChild("RightLowerArm")
+		end
+
+		if rig:FindFirstChild("Left Arm") and rig["Left Arm"]:FindFirstChild("Left Arm") then
+			local weldlarm = rig["Left Arm"]["Left Arm"]
+			weldlarm.Part1 = rig["Left Arm"]
+			weldlarm.Part0 = Character:FindFirstChild("LeftLowerArm")
+		end
+
+		if rig:FindFirstChild("Left Leg") and rig["Left Leg"]:FindFirstChild("Left Leg") then
+			local weldlleg = rig["Left Leg"]["Left Leg"]
+			weldlleg.Part1 = rig["Left Leg"]
+			weldlleg.Part0 = Character:FindFirstChild("LeftLowerLeg")
+		end
+
+		if rig:FindFirstChild("Right Leg") and rig["Right Leg"]:FindFirstChild("Right Leg") then
+			local weldrleg = rig["Right Leg"]["Right Leg"]
+			weldrleg.Part1 = rig["Right Leg"]
+			weldrleg.Part0 = Character:FindFirstChild("RightLowerLeg")
+		end
+
+		for i, v in pairs(Character:GetChildren()) do
+			if v:IsA("MeshPart") and (changehead or v.Name ~= 'Head') then
+				v.Anchored = false
+				v.Transparency = 1
+			end
+			if v:IsA('Accessory') then
+				v:Destroy()
+			end
+		end
+
+		if rig:FindFirstChild("Char_R6") and rig:FindFirstChild("Char_R6"):FindFirstChildOfClass("Humanoid") then
+			rig:FindFirstChild("Char_R6"):FindFirstChildOfClass("Humanoid").HipHeight = 1.8
+			rig:FindFirstChild("Char_R6"):FindFirstChildOfClass("Humanoid").PlatformStand = true
+			rig:FindFirstChild("Char_R6"):FindFirstChildOfClass("Humanoid").EvaluateStateMachine = false
+		end
+	end
+end
+
+function LoadRig(Type: ('R6' | 'R15'), Character: Model, plr: Player)
+	if not Type then return end
+	if plr and Character then
+		local rig = game:FindFirstChildOfClass('ServerStorage') and game:FindFirstChildOfClass('ServerStorage'):FindFirstChild('Rig') and game:FindFirstChildOfClass('ServerStorage'):FindFirstChild('Rig'):FindFirstChild(Type or 'R6')
+		if not rig then return end
+		local clone = rig:Clone()
+		if not clone or not clone:FindFirstChildOfClass('Humanoid') then return end
+		local STUFF = Character and not Character:GetAttribute('__DEFAULT_CLOTHING_APPLIED') and Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid'):GetAppliedDescription()
+		clone.Parent = game:FindFirstChildOfClass('ServerStorage')
+		if STUFF and typeof(STUFF) ~= 'boolean' then
+			if clone and clone:FindFirstChildOfClass('Humanoid') then
+				clone:FindFirstChildOfClass('Humanoid'):ApplyDescriptionReset(STUFF)
+			end
+		else
+			if Character then
+				for i,v in Character:GetChildren() do
+					if not v:IsA('Humanoid') and not v:IsA('BasePart') then
+						v.Parent = clone
+					end
+				end
+			end
+		end
+		if clone and Character then
+			if clone:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid') then
+				clone:FindFirstChildOfClass('Humanoid').DisplayName = Character:FindFirstChildOfClass('Humanoid').DisplayName
+				clone:FindFirstChildOfClass('Humanoid').WalkSpeed = Character:FindFirstChildOfClass('Humanoid').WalkSpeed
+				clone:FindFirstChildOfClass('Humanoid').JumpPower = Character:FindFirstChildOfClass('Humanoid').JumpPower
+				clone:FindFirstChildOfClass('Humanoid').MaxHealth = Character:FindFirstChildOfClass('Humanoid').MaxHealth
+				clone:FindFirstChildOfClass('Humanoid').MaxSlopeAngle = Character:FindFirstChildOfClass('Humanoid').MaxSlopeAngle
+			end
+			for i,v in pairs(Character:GetAttributes()) do
+				clone:SetAttribute(i, v)
+			end
+			Integrate_Character(clone, plr, Dataset[Character] and table.clone(Dataset[Character].Data) or {})
+			if Character and Dataset[Character] then Dataset[clone] = Dataset[Character] SetState(clone, Dataset[Character].Current_State) end
+			sync_()
+			clone.Name = Character.Name
+			clone:PivotTo(Character:GetPivot())
+			if  Type == 'R6' then
+				clone:SetAttribute('R6', true)
+				clone:SetAttribute('NOT_R6', nil)
+			else 
+				clone:SetAttribute('R6', nil)
+				clone:SetAttribute('NOT_R6', true)
+				pcall(function()
+					clone:FindFirstChildOfClass('Humanoid').HipHeight = 2
+				end)
+			end
+			pcall(
+				function()
+					script:FindFirstAncestorWhichIsA('ServerScriptService'):FindFirstChild('Misc_Handler'):FindFirstChild('COLLISION CHECK'):FindFirstChildOfClass('BindableEvent'):Fire(clone)
+				end
+			)
+			if plr then
+				clone.Parent = Character.Parent
+				if Character then
+					CleanUp_Specific(Character, true, clone)
+				end
+				sync_()
+				task.synchronize()
+				plr.Character = clone
+				pcall(function()
+					for i,v in game:GetService('StarterPlayer'):FindFirstChildOfClass('StarterCharacterScripts'):GetChildren() do
+						v:Clone().Parent = clone
+					end 
+				end)
+			else
+				_RemoveInstance(clone)
+			end
+		else
+			if clone then
+				_RemoveInstance(clone)
+			end
+		end
+	end
+end
+
+local Text = function(...)
+	if game:FindFirstChildOfClass('ReplicatedStorage') and game:FindFirstChildOfClass('ReplicatedStorage'):FindFirstChild('LogMessageEvent') then
+		for i,v in game:FindFirstChildOfClass('Players'):GetChildren() do
+			if not v:GetAttribute('__NODISTURB') then
+				sync_()
+				game:FindFirstChildOfClass('ReplicatedStorage'):FindFirstChild('LogMessageEvent'):FireClient(v, ...)
+			end
+		end
+	end
+end
+local Text_ALT = function(PLR,...)
+	if game:FindFirstChildOfClass('ReplicatedStorage') and game:FindFirstChildOfClass('ReplicatedStorage'):FindFirstChild('LogMessageEvent') then
+		if PLR then
+			sync_()
+			game:FindFirstChildOfClass('ReplicatedStorage'):FindFirstChild('LogMessageEvent'):FireClient(PLR, ...)
+		end
+	end
+end 
+
+sync_()
+function DeltaT(number1: number, number2: number): number
+	return (number1 > number2 and math.abs(number1 - number2)) or math.abs(number1 - (number2 - 360))
+end
+function PlaySound(SoundName,ToWhere: Instance?)
+	sync_()
+	local Mainplayfunction = function(hmm)
+		hmm.PlaybackSpeed = math.random(100-20,100+20)/100
+		hmm:Play()
+	end
+	if ToWhere == nil then
+		return
+	end
+	if ToWhere and ToWhere:FindFirstChild(SoundName) and ToWhere:FindFirstChild(SoundName):IsA("Sound") then
+		Mainplayfunction(ToWhere:FindFirstChild(SoundName))
+	elseif ToWhere and not ToWhere:FindFirstChild(SoundName) then
+		if Soundcloud[SoundName] then
+			local sound = Instance.new("Sound")
+			local Where = ToWhere
+			sound.Parent = Where
+			sound.Volume = .075
+			sound.SoundId = typeof(Soundcloud[SoundName]) == 'string' and Soundcloud[SoundName] or 'http://www.roblox.com/asset/?id='..tostring(Soundcloud[SoundName])
+			sound.Name = SoundName
+			sound:Play()
+		else
+			warn("Sound >"..SoundName.."< Not Found In Database")
+		end
+	end
+end
+function LerpNum(start: number, goal: number, alpha: number): number
+	return (math.abs(goal - start) <= .05 and goal) or (start + (goal - start) * alpha)
+end
+function Debug_Display(...) if Debug then if not Running then --[[print('__Not Running')]] else print(...) end end end
+function StartUp(Bulk_Integrate: {Instance}?) if not MajorOperationProcessing and not Running then CleanUp() Running = true RunningTick = runtime()  else warn('Already_Running') end local exemption = {} pcall(function()
+		--saved by another script, wwill not be initizalized until not found after this.
+		--local RetrieveAndWaitForData = pcall(function() (game:FindFirstChildOfClass('ServerScriptService') or game:FindFirstChild('ServerScriptService') or game:WaitForChild("ServerScriptService",10) or game:GetService("ServerScriptService") or game['ServerScriptService']).CacheService:Fire('Request', '__HSEngine') --[[fire type, Dataslot]] end) --fire Bindable Event To Request Data Send Back
+		--if RetrieveAndWaitForData then
+		--	--Database-Based Cache Recovery
+		--	if game:GetService('ServerStorage'):FindFirstChild('__RESERVEDCACHE'):FindFirstChild('__HSEng_C') then game:GetService('ServerStorage'):FindFirstChild('__RESERVEDCACHE'):FindFirstChild('__HSEng_C'):ClearAllChildren() end
+		--	local thisone
+		--	thisone = script.Bindable.Event:Connect(function(from,data)
+		--		if from == (game:FindFirstChildOfClass('ServerScriptService') or game:FindFirstChild('ServerScriptService') or game:WaitForChild("ServerScriptService",10) or game:GetService("ServerScriptService") or game['ServerScriptService']).CacheService then
+		--			--recovDat = data or {} -- its all in the server, client can't spoof it.
+		--			if thisone then thisone:Disconnect() end
+		--			for i,v in pairs(data) do
+		--				if not i or not i.Parent then continue end
+		--				Integrate_Character(i, nil, v)
+		--			end
+		--			--recovDat = {}
+		--		end
+		--		end)
+		--else
+		--Local Cache Recovery
+
+		CacheFolder = game:FindFirstChildOfClass('ServerStorage'):FindFirstChild('__RESERVEDCACHE'):FindFirstChild('__HSEng_C')
+		if CacheFolder then
+			for i,v: StringValue in CacheFolder:GetChildren() do
+				--format Name: Character's Full Path, Other Than That Data In Attributes Form
+				local char = fromPath(v.Name, v.Value)
+				if not char then continue end
+				sync_()
+				char:SetAttribute('__KEY', nil)	
+				table.insert(exemption, char)	
+				Integrate_Character(char, nil, v:GetAttributes())
+				sync_()
+				v:Destroy()
+			end
+	else sync_() CacheFolder = Instance.new("Folder", game:FindFirstChildOfClass('ServerStorage'):FindFirstChild('__RESERVEDCACHE')) CacheFolder.Name = '__HSEng_C' end
+		CacheFolder:ClearAllChildren()
+		
+		--end
+
+	end) recoved = true
+	if Bulk_Integrate and Running then for i,v in Bulk_Integrate do if table.find(exemption, v) then continue end if v:IsA('Model') and v:FindFirstChildOfClass('Humanoid') then Integrate_Character(v) end end 
+		
+	end end
+function Shutdown() if not MajorOperationProcessing and Running then CleanUp() Running = false RunningTick = runtime() else warn('Already_Shutdown') end end
+function IsType(Value: any, TypeName: ('States' | 'Actions' | 'Interactions')): boolean?
+	if not Value or not TypeName then return end
+	if TypeName == 'Actions' then
+		if Value == 'Running' or Value == 'Walking' or Value == 'Crouching' or Value == 'Crawling' then return true end
+	elseif TypeName == 'States' then
+		if Value == 'Downed' or Value == 'Normal' or Value == 'Incapacitated' or Value == 'Dead' then return true end
+	elseif TypeName == 'Interactions' then
+		if Value == 'Carrying' or Value == 'Rescuing' or Value == 'Healing' then return true end
+	end
+	return false
+end
+function SetData(Character: Characters?, name: string, ...)
+	if Dataset and Character and Running and Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data[name] and name then
+		Dataset[Character].Data[name] = ...
+	end
+end
+function CreateNewData(Character: Characters?, OverwritesData: {string: any}?): CharacterData?
+	local NewDataset: CharacterData = {
+		Character = Character,
+		Data = {
+			Current_State = 'Normal',
+			Current_Health = Starter_Health or Max_Health or 100,
+			Max_Health = Max_Health or 100,
+			Current_Oxygen = Max_Health or 100,
+			LS_O = 0,
+			LS_HP = 0,
+			StateChangedTick = runtime(),
+			Current_Action = 'Running',
+			Downed_Health = Max_Health or 100,
+			Fast_Recovery_Attempts = (Max_Health or 100)/5,
+			Recovery_Attempts = (Max_Health or 100)/2,
+			Interactions = {}
+		},
+		Events = {},
+		Handlers = {}
+	}
+	if typeof(OverwritesData) == 'table' then
+		for i,v in pairs(OverwritesData) do
+			NewDataset.Data[i] = v
+			--print(tostring(i) , tostring(v))
+		end
+	end
+	return NewDataset
+end
+function CleanUp()
+	desync_()
+	MajorOperationProcessing = true
+	for i,v: CharacterData in pairs(Dataset) do
+		v.Data.Current_State = 'Dead'
+		v.Data.Current_Health = 0
+		if v.Data.RescuePrompt then
+			_RemoveInstance(v.Data.RescuePrompt)
+		end
+		sync_()
+		for i,v: RBXScriptConnection in pairs(v.Events) do v:Disconnect() end
+		for i,v: thread in pairs(v.Handlers) do coroutine.close(v) end
+		if v.CharacterInstance then if v.CharacterInstance:FindFirstChildOfClass('Humanoid') then v.CharacterInstance:FindFirstChildOfClass('Humanoid'):ChangeState(Enum.HumanoidStateType.Dead) v.CharacterInstance:FindFirstChildOfClass('Humanoid').Health = 0 else _RemoveInstance(v.CharacterInstance) end end
+	end
+	Dataset = {}
+	MajorOperationProcessing = false
+end
+function CleanUp_Specific(Character: Characters, RemoveCharacter: boolean?, PresetChar: Instance?)
+	desync_()
+	task.desynchronize()
+	local v: CharacterData = Dataset[Character]
+	if v and not (typeof(v.Data) == 'table' and v.Data.Cleansed) then
+		Dataset[Character].Data.Cleansed = true
+		Dataset[Character].Data.Current_State = 'Dead'
+		Dataset[Character].Data.Current_Health = 0
+		if Dataset[Character].Data.RescuePrompt then
+			_RemoveInstance(Dataset[Character].Data.RescuePrompt)
+		end
+		ShutdownEvents(Character)
+		ShutdownHandlers(Character)
+		if (RemoveCharacter) and v.CharacterInstance then task.synchronize()  v.CharacterInstance:SetAttribute('permaded', true) task.desynchronize() if v.CharacterInstance:FindFirstChildOfClass('Humanoid') then sync_() pcall(function() v.CharacterInstance:SetAttribute('Dead', true) v.CharacterInstance:FindFirstChildOfClass('Humanoid'):ChangeState(Enum.HumanoidStateType.Dead) v.CharacterInstance:FindFirstChildOfClass('Humanoid').Health = 0 v.CharacterInstance:FindFirstChildOfClass('Humanoid').PlatformStand = true  end) local isplr = Character and Players:GetPlayerFromCharacter(Character) if Respawn and isplr then task.delay(5, function() if Running and (DeltaT(runtime(), RunningTick) >= 5) and (isplr and isplr.Character == Character or not isplr.Character or not isplr.Character:FindFirstChild('HumanoidRootPart')) then if isplr and isplr.Parent==Players then pcall(function() if typeof(PresetChar) ~= 'Instance' or not PresetChar.Parent then isplr:LoadCharacterAsync() end end) end end end) end _RegisterRemoval(v.CharacterInstance, 5) else _RemoveInstance(v.CharacterInstance) end end
+		Dataset[Character] = nil
+	end
+end
+function FindFirstChildOfNameAndClass(Where: Instance, Name: string, Class: string)
+	local Found: boolean = false
+	if typeof(Where) ~= 'Instance' or typeof(Name) ~= 'string' or typeof(Class) ~= 'string' then
+		return
+	end
+	if Where:FindFirstChild(Name) and Where:FindFirstChild(Name).ClassName:upper():match(Class:upper()) then
+		return Where:FindFirstChild(Name)
+	end
+	for i,v in Where:GetChildren() do
+		if not Found then
+			if Where == nil then
+				Found = true
+				return nil
+			end
+			if v.Name:match(Name) and (v:IsA(Class) or v.ClassName:upper():match(Class:upper())) then
+				Found = true
+				return v
+			end
+		end
+	end
+end
+local Joints = {}
+function CreateWeldIfNeeded(AnimatedCharacter: Model, partName: string?, parentName: string?, part0Name: string?, part1Name: string?, weldName: string?, startcframe: CFrame?)
+	if typeof(AnimatedCharacter) ~= 'Instance' then return end
+	if not partName then partName = 'DICTIONARY_SLOT' end
+	if (typeof(part1Name) ~= 'string' and typeof(part1Name) ~= 'Instance') or (typeof(part0Name) ~= 'string' and typeof(part0Name) ~= 'Instance') then return end
+	if not Joints[AnimatedCharacter] then Joints[AnimatedCharacter] = {} Joints[AnimatedCharacter].destroycon = AnimatedCharacter.Destroying:Once(function() pcall(function() Joints[AnimatedCharacter].destroycon:Disconnect() end) Joints[AnimatedCharacter] = nil end) end
+	if not Joints[AnimatedCharacter][partName] then
+		local newWeld = Instance.new('Weld')
+		Joints[AnimatedCharacter][partName] = newWeld
+		if partName:match('Hip') or partName:match('Root') then newWeld.Enabled = false end
+		newWeld.Parent = typeof(parentName) == 'Instance' and parentName or parentName and FindFirstChildOfNameAndClass(AnimatedCharacter, parentName, 'BasePart') or AnimatedCharacter
+		newWeld.Part1 = typeof(part1Name) == 'Instance' and part1Name or part1Name and FindFirstChildOfNameAndClass(AnimatedCharacter, part1Name, 'BasePart') or FindFirstChildOfNameAndClass(AnimatedCharacter, 'UpperTorso', 'BasePart') or FindFirstChildOfNameAndClass(AnimatedCharacter, 'Torso', 'BasePart')
+		newWeld.Part0 = typeof(part0Name) == 'Instance' and part0Name or part0Name and FindFirstChildOfNameAndClass(AnimatedCharacter, part0Name, 'BasePart') or newWeld.Part1 or FindFirstChildOfNameAndClass(AnimatedCharacter, 'UpperTorso', 'BasePart') or FindFirstChildOfNameAndClass(AnimatedCharacter, 'Torso', 'BasePart') or nil
+		--print(tostring(newWeld.Parent)..','..tostring(newWeld.Part1)..','..tostring(newWeld.Part0)..partName)
+		newWeld.C0 = startcframe or CFrame.new()
+		if newWeld.Part1.Name:match('UpperArm') then
+			local SizeA: Vector3 = newWeld.Part1.Size
+			local SizeB: Vector3 = newWeld.Part0.Size
+			newWeld.C1 = CFrame.new(0,(SizeB.Y-SizeA.Y * 2)/2,0)
+		end
+		newWeld.Name = weldName or '__PLACEHOLDER'
+		return newWeld
+	end
+end
+function DeductHealth(Character: Characters, Amount: HealthState)
+	desync_()
+	task.desynchronize()
+	if not Character or not Amount then return end
+	if not Amount then Amount = 0 end
+	local Data: CharacterData = Dataset and Character and Dataset[Character]
+	if Character and Data and Dataset[Character].Data and Dataset[Character].Data.Current_Health then
+		if Dataset[Character].Data.Current_Health ~= Dataset[Character].Data.Current_Health or Dataset[Character].Data.Current_Health < 0 then
+			Dataset[Character].Data.Current_Health = 0
+		end
+		if Dataset[Character].Data.Current_State == 'Normal' then
+			if Amount < 0 and Dataset[Character].Data.Current_Health >= Dataset[Character].Data.Max_Health then Dataset[Character].Data.Downed_Health = math.clamp(Dataset[Character].Data.Downed_Health - Amount, 0, Dataset[Character].Data.Max_Health) end
+			Dataset[Character].Data.Current_Health = Dataset[Character].Data.Current_Health - Amount
+			if Dataset[Character].Data.Current_Health <= 0 then
+				SetState(Character, 'Downed')
+			end
+			Debug_Display(Character.Name.. ' Health is now '.. tostring(Dataset[Character].Data.Current_Health))
+		else
+			if Amount < 0 and Dataset[Character].Data.Fast_Recovery_Attempts > 0 and Dataset[Character].Data.Current_State == 'Downed' and (DeltaT(runtime(), Dataset[Character].Data.StateChangedTick)) < 2 and (Dataset[Character].Data.Downed_Health - Amount) > (Dataset[Character].Data.Max_Health or Max_Health or 100) then Dataset[Character].Data.Current_Health = (Dataset[Character].Data.Max_Health or Max_Health or 100)/10 Dataset[Character].Data.Downed_Health = (Dataset[Character].Data.Max_Health or Max_Health or 100) * (.2 + Dataset[Character].Data.Fast_Recovery_Attempts/Dataset[Character].Data.Max_Health * 15) Dataset[Character].Data.Fast_Recovery_Attempts = Dataset[Character].Data.Fast_Recovery_Attempts - 1 SetState(Character, 'Normal') end
+			Dataset[Character].Data.Downed_Health = Dataset[Character].Data.Downed_Health - Amount
+			Debug_Display(Character.Name.. ' Downed_Health is now '.. tostring(Dataset[Character].Data.Downed_Health))
+		end
+	end
+end
+function SetState(Character: Characters, State: States)
+	desync_()
+	task.desynchronize()
+	if not Character or not State or not IsType(State, 'States') then return end
+	if Character and Dataset[Character] and Dataset[Character].Data then
+		sync_()
+		task.synchronize()
+		if State ~= 'Normal' then
+			if Character and Character:FindFirstChildOfClass('Humanoid') then Character:FindFirstChildOfClass('Humanoid'):SetStateEnabled(Enum.HumanoidStateType.Seated, false) end
+		else
+			if Character and Character:FindFirstChildOfClass('Humanoid') then Character:FindFirstChildOfClass('Humanoid'):SetStateEnabled(Enum.HumanoidStateType.Seated, true) end
+		end
+		desync_()
+		Debug_Display(Character.Name..' Changed State To: '..State)
+		Dataset[Character].Data.Current_State = State
+	end
+end
+function SetAction(Character: Characters, Action: Actions)
+	desync_()
+	task.desynchronize()
+	if not Character or not Action or not IsType(Action, 'Actions') then return end
+	if Character and Dataset[Character] and Dataset[Character].Data then
+		Debug_Display(Character.Name..' Changed Action To: '..Action)
+		Dataset[Character].Data.Current_Action = Action
+	end
+end
+function AssignInteraction(Character: Characters, Interaction: Interactions, Type: boolean?)
+	local alr = _issynced
+	desync_()
+	task.desynchronize()
+	if not Character or not Interaction or not IsType(Interaction, 'Interactions') then return end
+	if Character and Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data.Interactions then
+		if Type then
+			if not table.find(Dataset[Character].Data.Interactions, Interaction) then
+				Debug_Display(Character.Name..' Has Been Assigned with Status: '..Interaction)
+				table.insert(Dataset[Character].Data.Interactions, Interaction)
+			end
+		else
+			if table.find(Dataset[Character].Data.Interactions, Interaction) then
+				Debug_Display(Character.Name..' Has Been Unassigned of Status: '..Interaction)
+				table.remove(Dataset[Character].Data.Interactions, table.find(Dataset[Character].Data.Interactions, Interaction))
+			end
+		end
+	end
+	if alr then
+		sync_()
+	end
+end
+function CheckInteraction(Character: Characters, Interaction: Interactions, Type: boolean?): boolean
+	desync_()
+	task.desynchronize()
+	if not Character or not Interaction or not IsType(Interaction, 'Interactions') then return true end
+	if Character and Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data.Interactions then
+		if Type then
+			if not table.find(Dataset[Character].Data.Interactions, Interaction) then
+				return false
+			end
+		else
+			if table.find(Dataset[Character].Data.Interactions, Interaction) then
+				return false
+			end
+		end
+	end
+	return true
+end
+function CreatePrompt(Character: Characters): ProximityPrompt?
+	desync_()
+	task.desynchronize()
+	if not Running or not Character then return end
+	if Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data.Recovery_Attempts > 0 then
+		if Dataset[Character].Data.CarryPrompt then _RemoveInstance(Dataset[Character].Data.CarryPrompt) end
+		if Dataset[Character].Data.RescuePrompt then _RemoveInstance(Dataset[Character].Data.RescuePrompt) end
+		local StartTick = runtime() StartTick = runtime()
+		sync_()
+		task.synchronize()
+		local NewPrompt: ProximityPrompt = Instance.new('ProximityPrompt')
+		NewPrompt.ObjectText = 'Rescue' NewPrompt.ActionText = Character.Name
+		NewPrompt.HoldDuration = math.huge
+		if Recover_Keybind then
+			NewPrompt.KeyboardKeyCode = Recover_Keybind
+		end
+		Dataset[Character].Data.RescuePrompt = NewPrompt
+		sync_()
+		local AlsoNewPrompt: ProximityPrompt = Instance.new('ProximityPrompt')
+		AlsoNewPrompt.ObjectText = 'Carry' AlsoNewPrompt.ActionText = Character.Name
+		AlsoNewPrompt.HoldDuration = math.huge
+		AlsoNewPrompt.KeyboardKeyCode = Carry_Keybind or Enum.KeyCode.Q
+		AlsoNewPrompt.UIOffset = Vector2.new(0, 75)
+		AlsoNewPrompt.HoldDuration = math.huge
+		Dataset[Character].Data.CarryPrompt = AlsoNewPrompt
+		local Raypar = RaycastParams.new()
+		Raypar.FilterType = Enum.RaycastFilterType.Exclude
+		Raypar.RespectCanCollide = true
+		Raypar.IgnoreWater = true
+		local lastCarry: number = 0
+		local WhoCarry: Model?
+		local Charhum: Humanoid? = Character:FindFirstChildOfClass('Humanoid')
+		local Charroot: BasePart? = Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid').RootPart or Character.PrimaryPart or Character:FindFirstChildOfClass('BasePart')
+		local CarryCoroute: thread?
+		local BeingCarried = false
+		local HelpNeeded = Dataset[Character].Data.Current_State == 'Incapacitated' and 2 or Down_Recover_Time or 10
+		local HelpReceived = 0
+		local Helper: number = 0
+		local HelperTables: { [Model?]: number } = {}
+		local CarrierTables: { [Model?]: number} = {}
+		local CarrierAttempts: {thread} = {}
+		local CarrierTask: {Characters: thread} = {}
+		local function StopHeal()
+			for i,v in pairs(HelperTables) do
+				if i and CheckInteraction(i, 'Healing', true) then
+					AssignInteraction(i, 'Healing', false)
+				end
+			end
+			Helper = 0
+		end
+		sync_()
+		Raypar.FilterDescendantsInstances = {Character, WhoCarry}
+		if AlsoNewPrompt then
+			local function Release()
+				if not BeingCarried then return end
+				if Character and NewPrompt and AlsoNewPrompt then
+					sync_()
+					NewPrompt.Enabled = true
+					AlsoNewPrompt.ObjectText = 'Carry'
+					AlsoNewPrompt.ActionText = Character.Name
+					desync_()
+				end
+				if WhoCarry then AssignInteraction(WhoCarry, 'Carrying', false) end
+				StopHeal()
+				BeingCarried = false
+				lastCarry = runtime()
+				if Character and Charroot and Dataset[Character] and (Dataset[Character].Data.Current_State == 'Downed' or Dataset[Character].Data.Current_State == 'Normal') then
+					desync_()
+					if Character and Character:FindFirstChildOfClass('Humanoid') then sync_() Character:FindFirstChildOfClass('Humanoid').AutoRotate = true end
+					sync_()
+					Charroot.Anchored = false
+					if Charhum then
+						Charhum.PlatformStand = false
+						Charhum:ChangeState(Enum.HumanoidStateType.Running)
+					end
+				end
+				if CarryCoroute then
+					pcall(function()
+						coroutine.close(CarryCoroute)
+					end)
+					CarryCoroute = nil
+				end
+			end
+			desync_()
+			if HelpNeeded == 2 then sync_() AlsoNewPrompt.ClickablePrompt = false AlsoNewPrompt.RequiresLineOfSight = true AlsoNewPrompt.HoldDuration = 0 AlsoNewPrompt.MaxActivationDistance = 0 end
+			if HelpNeeded ~= 2 then
+				sync_()
+				AlsoNewPrompt.RequiresLineOfSight = false
+				AlsoNewPrompt.PromptButtonHoldBegan:Connect(function(who)
+					if not NewPrompt then return end
+					if BeingCarried and who and who.Character == WhoCarry or who.Character == Character then
+						Release()
+					else
+						if BeingCarried or (DeltaT(runtime(), lastCarry)) < .5 or not AlsoNewPrompt.Enabled or who.Character == Character or CheckInteraction(who.Character, 'Carrying', true) or HelpNeeded == 2 or not who.Character or not Dataset[who.Character] then return end
+						local valid: boolean = true
+						local curtick: number = runtime() curtick = runtime()
+						CarrierTables[who.Character] = curtick
+						local Attempt: thread Attempt = coroutine.create(function()
+							while task.wait(UpdateRate) and Dataset and Dataset[Character] and (DeltaT(runtime(), curtick) < .6) and Helper < 3 and AlsoNewPrompt.Enabled == true and not tostring(Helper):match('.33') and not BeingCarried and who and who.Character and CheckInteraction(who.Character, 'Carrying', false) and CarrierTables[who.Character] == curtick and valid and Dataset[who.Character] do
+								if	Dataset[who.Character].Data.Current_State ~= 'Normal' or not Character or Dataset[Character].Data.Current_State ~= 'Downed' then
+									break
+								end
+							end
+							valid = false
+							CarrierTables[who.Character] = nil
+							if table.find(CarrierAttempts, Attempt) then table.remove(CarrierAttempts, table.find(CarrierAttempts, Attempt)) end
+						end)
+						if not BeingCarried and not table.find(CarrierAttempts, Attempt) and who and who.Character and CarrierTables[who.Character] == curtick then
+							table.insert(CarrierAttempts, Attempt)
+							coroutine.resume(Attempt)
+						end
+						if CarrierTask[who.Character] then task.cancel(CarrierTask[who.Character]) end
+						CarrierTask[who.Character] = task.spawn(function()
+							task.wait(.5)
+							if Helper < 3 and not tostring(Helper):match('.33') and not BeingCarried and valid and typeof(who) == 'Instance' and who.ClassName == 'Player' and typeof(who.Character) == 'Instance' and typeof(Character) == 'Instance' and Character:IsDescendantOf(workspace) and who.Character:IsDescendantOf(workspace) and not table.find(HelperTables, who.Character) and not table.find(HelperTables, Character) and not CheckInteraction(who.Character, 'Healing', true) and not CheckInteraction(Character, 'Healing', true) and table.find(CarrierAttempts, Attempt) and CarrierTables[who.Character] == curtick and who.Character and who.Character:FindFirstChildOfClass('Humanoid') and Dataset[who.Character] then
+								if CarryCoroute then
+									coroutine.close(CarryCoroute)
+									CarryCoroute = nil
+								end
+								BeingCarried = true
+								StopHeal()
+								sync_()
+								NewPrompt.Enabled = false
+								WhoCarry = who.Character
+								if WhoCarry then AssignInteraction(WhoCarry, 'Carrying', true) end
+								sync_()
+								task.synchronize()
+								Raypar.FilterDescendantsInstances = {Character, WhoCarry}
+								for i,v in CarrierAttempts do
+									coroutine.close(v)
+								end
+								for i,v in pairs(CarrierTask) do
+									if i ~= WhoCarry then
+										task.cancel(v)
+										CarrierTask[i] = nil
+									end
+								end
+								AlsoNewPrompt.ObjectText = 'Release'
+								CarrierAttempts = {}
+								local cur = runtime() cur = runtime()
+								lastCarry = cur
+								CarryCoroute = coroutine.create(function()
+									if not WhoCarry then return end
+									local RootA = WhoCarry and WhoCarry:FindFirstChildOfClass('Humanoid') and WhoCarry:FindFirstChildOfClass('Humanoid').RootPart
+									if not RootA then
+										Release()
+										return
+									end		
+									local siza = RootA.Size
+									--	local vel = RootA and RootA.Velocity
+									if Charroot then Charroot.Anchored = true end
+									if Charhum then
+										Charhum.PlatformStand = true
+									end
+									task.synchronize()
+									local param = RaycastParams.new()
+										param.FilterDescendantsInstances = {Character, WhoCarry}
+									param.FilterType = Enum.RaycastFilterType.Exclude
+									param.IgnoreWater = true
+									local scannar
+									local last = runtime()
+									pcall(function()
+										local posa = WhoCarry:GetPivot().Position
+										local posb = Character:GetPivot().Position
+										posb = Vector3.new(posb.X, posa.Y, posb.Z) 
+										posb = (posb + (2 * (posa - posb))) 
+										WhoCarry:PivotTo(CFrame.lookAt(posa, posb).Rotation + posa)
+									end)
+									local what
+									while typeof(what) == 'nil' and Dataset and BeingCarried and RootA and RootA.Parent and Charroot and Character and Character.Parent and WhoCarry and WhoCarry.Parent and Dataset[Character] and Dataset[WhoCarry] and Dataset[Character].Data.Current_State == 'Downed' and Dataset[WhoCarry].Data.Current_State == 'Normal' and WhoCarry:FindFirstChildOfClass('Humanoid') and table.find({Enum.HumanoidStateType.Running,Enum.HumanoidStateType.Jumping,Enum.HumanoidStateType.Freefall}, WhoCarry:FindFirstChildOfClass('Humanoid'):GetState()) and lastCarry == cur do
+										--vel = vel:Lerp(RootA and RootA.Velocity.Unit or Vector3.new(), 0.2)
+										--RootA.CanCollide = false
+										task.desynchronize()
+										local WhoCarryp = WhoCarry:GetPivot()
+										local dt = task.wait(UpdateRate) or DeltaT(runtime(), last)
+										last = runtime()
+										local DoesItHitWall = workspace:Raycast(WhoCarryp.Position, -RootA.CFrame.LookVector * Charroot.Size.Z/2 + (-RootA.CFrame.LookVector * ((RootA.Size.Z/2) + .1)), Raypar) or workspace:Blockcast(WhoCarryp, RootA.Size, -RootA.CFrame.LookVector * Charroot.Size.Z/2 + (-RootA.CFrame.LookVector * ((RootA.Size.Z/2) + .1)), Raypar)
+										local InverseDoesItHitWall
+										if not DoesItHitWall then
+											InverseDoesItHitWall = workspace:Raycast(WhoCarryp.Position -RootA.CFrame.LookVector * Charroot.Size.Z/2 + (-RootA.CFrame.LookVector * ((RootA.Size.Z/2) + .1)), -(-RootA.CFrame.LookVector * Charroot.Size.Z/2 + (-RootA.CFrame.LookVector * ((RootA.Size.Z/2) + .1))), Raypar)
+										end
+										what = workspace:Blockcast(WhoCarryp, siza, -WhoCarryp.LookVector * siza.Z, param)
+										if what then break end
+										task.synchronize()
+										AlsoNewPrompt.ActionText = Character.Name..'<{'..Dataset[Character].Data.Downed_Health..string.rep('!', math.floor((Dataset[Character].Data.Max_Health - Dataset[Character].Data.Downed_Health)/25))..'}>'
+										if Character:FindFirstChildOfClass('Humanoid').SeatPart then
+											pcall(function()
+												Character:FindFirstChildOfClass('Humanoid').PlatformStand = true
+												task.wait()
+												Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+											end)
+											--Character:FindFirstChildOfClass('Humanoid').PlatformStand = true task.wait() sync_() Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+										end
+										Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+										if (Character:GetPivot().Position - WhoCarryp.Position):Dot(WhoCarryp.LookVector) > 0 then
+											break -- shiftlock detected, You can't just swing them around!
+										else 
+										Character:PivotTo(Character:GetPivot():Lerp(WhoCarryp * CFrame.Angles(0,math.rad(180),0) + (-RootA.CFrame.LookVector * (DoesItHitWall and DoesItHitWall.Distance or InverseDoesItHitWall and ((RootA.Size.Z/2) + .1 + Charroot.Size.Z/2 - InverseDoesItHitWall.Distance) or (RootA.Size.Z/2) + .1 + Charroot.Size.Z/2)),1 - .0000025 ^ dt)) end
+									--[[	Character:MoveTo(WhoCarryp + RootA.CFrame.LookVector * RootA.Size.Z/2 + RootA.CFrame.RightVector * RootA.Size.X/2.1 + vel/2)
+										if Charroot then	Charroot.CFrame = WhoCarryp + RootA.CFrame.LookVector * RootA.Size.Z/2 + RootA.CFrame.RightVector * RootA.Size.X/2.1 + vel/2 end]]
+									end task.synchronize()
+									Release()
+								end)
+								if CarryCoroute and lastCarry == cur then
+									coroutine.resume(CarryCoroute)
+								end
+							end
+							CarrierTask[who.Character] = nil
+						end)
+					end
+				end)
+				AlsoNewPrompt.PromptButtonHoldEnded:Connect(function(who)
+					CarrierTables[who.Character] = nil
+				end)
+			end
+			AlsoNewPrompt.Destroying:Once(function() if NewPrompt and NewPrompt:IsDescendantOf(Character) then pcall(function() _RegisterRemoval(NewPrompt, .1) _RemoveInstance(NewPrompt) end) end end)
+		end
+		sync_()
+		NewPrompt.RequiresLineOfSight = false
+		NewPrompt.Destroying:Once(function() if AlsoNewPrompt and AlsoNewPrompt:IsDescendantOf(Character) then pcall(function() _RegisterRemoval(AlsoNewPrompt, .1) _RemoveInstance(AlsoNewPrompt) end) end end)
+		coroutine.resume(coroutine.create(function()
+			local LastTick = runtime()
+			while  Running and Character and Character.Parent and Dataset and Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data.Current_State ~= 'Dead' and Dataset[Character].Data.Current_State ~= 'Normal' and NewPrompt and HelpNeeded > HelpReceived do
+				desync_()
+				task.desynchronize()
+				Helper = math.clamp(Helper, 0, math.huge)
+				local Delta = task.wait(UpdateRate) or DeltaT(runtime(), LastTick)
+				LastTick = runtime()
+				--[[HelpReceived += Delta * Helper]]
+				if Helper > 0 then
+					for i,v in pairs(HelperTables) do
+						if i and not CheckInteraction(i, 'Healing', true) then HelperTables[i] = nil else
+							if i == Character or (Dataset[i] and Dataset[i].Data.Current_State == 'Normal') then
+								local Num = i == Character and DeltaT(LastTick, v)/(2 + math.clamp(Dataset[Character].Data.Max_Health/5 - Dataset[Character].Data.Fast_Recovery_Attempts,0,Dataset[Character].Data.Max_Health/5)) or DeltaT(LastTick, v) or Delta or DeltaT(runtime(), v)
+								Num = i == Character and math.clamp(Num,0,1/30) or math.clamp(Num,0,1/7.5)
+								HelpReceived += Num
+								Dataset[Character].Data.Downed_Health = Dataset[Character].Data.Downed_Health + Num/2
+								HelperTables[i] = runtime() 
+							else
+								HelperTables[i] = nil
+								Helper -= i == Character and .5 or 1
+								if AlsoNewPrompt then
+									sync_()
+									task.synchronize()
+									if Helper >= 3 or HelperTables[Character] or CheckInteraction(Character, 'Healing', true) then
+										AlsoNewPrompt.Enabled = false
+									else
+										AlsoNewPrompt.Enabled = true
+									end
+									desync_()
+									task.desynchronize()
+								end
+							end end
+					end
+				else
+					if Dataset and Character and Dataset[Character] and HelpReceived and Dataset[Character].Data and Dataset[Character].Data.Max_Health and Dataset[Character].Data.Recovery_Attempts then
+						HelpReceived = math.clamp(HelpReceived - Delta/(9 - math.clamp ((Dataset[Character].Data.Max_Health - (Dataset[Character].Data.Recovery_Attempts * 2))/Dataset[Character].Data.Max_Health,0,1) * 7), 0, math.huge)
+					else
+						if Dataset and Character and Dataset[Character] and Dataset[Character].Data then
+							if not HelpReceived then
+								HelpReceived = 0
+								if not Dataset[Character].Data.Max_Health then
+									Dataset[Character].Data.Max_Health = Max_Health or 100
+								end
+								if not Dataset[Character].Data.Recovery_Attempts then
+									Dataset[Character].Data.Recovery_Attempts = (Max_Health or 100)/2
+								end
+							end
+						end
+					end
+				end
+				if not BeingCarried then
+					sync_()
+					task.synchronize()
+					NewPrompt.ObjectText = 'Rescue['..string.sub(HelpReceived, 0, 7)..'/'..HelpNeeded..']'
+					NewPrompt.ActionText = Character.Name..'['..string.sub(Helper, 0, 7)..']'
+					task.desynchronize()	
+				end
+			end
+			if HelpNeeded <= HelpReceived then
+				if Dataset[Character] then
+					if DeltaT(runtime(), StartTick) < 2 and HelpNeeded > 2 then
+						Dataset[Character].Data.Fast_Recovery_Attempts = Dataset[Character].Data.Fast_Recovery_Attempts - 1
+					end
+					Dataset[Character].Data.Recovery_Attempts = Dataset[Character].Data.Recovery_Attempts + 1
+					Dataset[Character].Data.Current_Health = math.clamp(Dataset[Character].Data.Downed_Health/1.5 + Helper*1.5,0,Dataset[Character].Data.Max_Health)
+					Dataset[Character].Data.Downed_Health = math.clamp(Dataset[Character].Data.Downed_Health/1.25 + Helper*3,0,Dataset[Character].Data.Max_Health)
+				end
+				SetState(Character, 'Normal')
+			end
+			StopHeal()
+			task.synchronize()
+			if NewPrompt then _RemoveInstance(NewPrompt) end
+			if AlsoNewPrompt then	_RemoveInstance(AlsoNewPrompt) end
+		end))
+		task.synchronize()
+		NewPrompt.PromptButtonHoldBegan:Connect(function(who)
+			desync_()
+			task.desynchronize()
+			if (who.Character == Character and HelpNeeded == 2) or HelperTables[who.Character] or not Dataset[who.Character] or (Dataset[who.Character].Data.Current_State ~= 'Normal' and who.Character ~= Character) then return end
+			if (CheckInteraction(who.Character, 'Rescuing', true) and HelpNeeded == 2) or (CheckInteraction(who.Character, 'Healing', true) and HelpNeeded ~= 2)  then return end
+			Helper += who.Character == Character and .33 or 1
+			HelperTables[who.Character] = runtime()
+			if who.Character then if HelpNeeded ~= 2 then AssignInteraction(who.Character, 'Healing', true) else AssignInteraction(who.Character, 'Rescuing', true) end end
+			if AlsoNewPrompt then
+				sync_()
+				task.synchronize()
+				if Helper >= 3 or HelperTables[Character] then
+					AlsoNewPrompt.Enabled = false
+				else
+					AlsoNewPrompt.Enabled = true
+				end
+			end
+		end)
+		NewPrompt.PromptButtonHoldEnded:Connect(function(who)
+			desync_()
+			task.desynchronize()
+			if (who.Character == Character and HelpNeeded == 2) or not HelperTables[who.Character] then return end
+			Helper -= who.Character == Character and .33 or 1
+			HelperTables[who.Character] = nil
+			if who.Character then if HelpNeeded ~= 2 then AssignInteraction(who.Character, 'Healing', false) else AssignInteraction(who.Character, 'Rescuing', false) end end
+			sync_()
+			task.synchronize()
+			if AlsoNewPrompt then
+				if Helper < 3 and not HelperTables[Character] then
+					AlsoNewPrompt.Enabled = true
+				else
+					AlsoNewPrompt.Enabled = false
+				end
+			end
+		end)
+		desync_()
+		task.desynchronize()
+		if Character and (Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid').RootPart or Character:FindFirstChildOfClass('BasePart') or Character.PrimaryPart) then
+			sync_()
+			task.synchronize()
+			pcall(function()
+			if NewPrompt and not NewPrompt.Parent then	NewPrompt.Parent = Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid').RootPart or Character:FindFirstChildOfClass('BasePart') or Character.PrimaryPart end
+			if AlsoNewPrompt and not AlsoNewPrompt.Parent and AlsoNewPrompt.MaxActivationDistance > 0 then	AlsoNewPrompt.Parent = NewPrompt.Parent end
+			end)	
+		else
+			task.synchronize()
+			if NewPrompt then	pcall(function() _RegisterRemoval(NewPrompt,1) end) end
+			if AlsoNewPrompt then	pcall(function() _RegisterRemoval(AlsoNewPrompt,1) end) end
+		end
+		return NewPrompt, AlsoNewPrompt
+	else
+		if Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data.Recovery_Attempts <= 0 then
+			SetState(Character, 'Dead')
+		end
+	end
+	return
+end
+function ShutdownEvents(Character: Characters, Reconnect: boolean?)
+	desync_()
+	task.desynchronize()
+	if Character and Dataset[Character] and Dataset[Character].Events then
+		local Set: CharacterData = Dataset[Character]
+		sync_()
+		task.synchronize()
+		for i,v: RBXScriptConnection in pairs(Set.Events) do v:Disconnect() end
+		if Reconnect and Running then -- Rewire Thread
+			Debug_Display('REWIRING: '..Character.Name)
+			Debug_Display('a')
+			if Dataset[Character].CharacterInstance ~= Character then Dataset[Character].CharacterInstance = Character end
+			if Set and Set.CharacterInstance and Character == Set.CharacterInstance and Character and Dataset[Character] and Dataset[Character].Events then
+				Debug_Display('b')
+				if Dataset[Character].Events.Removal_Connection then Dataset[Character].Events.Removal_Connection:Disconnect() end
+				Dataset[Character].Events.Removal_Connection = Character.Destroying:Once(function()
+					CleanUp_Specific(Character)
+				end)
+				Debug_Display('c')
+				if Dataset[Character].Events.Action_Change_Event then Dataset[Character].Events.Action_Change_Event:Disconnect() end
+				Dataset[Character].Events.Action_Change_Event = Character:GetAttributeChangedSignal('__ACTION'):Connect(function()
+					Debug_Display('action_Changed')
+					if Character:GetAttribute('__ACTION') and IsType(Character:GetAttribute('__ACTION'), 'Actions') then
+						SetAction(Character, Character:GetAttribute('__ACTION'))
+					end
+				end)
+				Debug_Display('d')
+				if Character and Character:FindFirstChildOfClass('Humanoid')  then
+					Debug_Display('d+')
+					if not Character then return end
+					if Character and Dataset[Character] and Dataset[Character].Events.UNSEAT then Dataset[Character].Events.UNSEAT:Disconnect() end
+					local UNSEAT UNSEAT = Character:FindFirstChildOfClass('Humanoid'):GetPropertyChangedSignal('Sit'):Connect(function()
+						if not Character then if UNSEAT then UNSEAT:Disconnect() UNSEAT = nil end return end
+						if ((Character:FindFirstChildOfClass('Humanoid').Sit == false and Character:FindFirstChildOfClass('Humanoid'):GetState() ~= Enum.HumanoidStateType.Seated) and Character:FindFirstChildOfClass('Humanoid').SeatPart) then
+							_RemoveInstance(Character:FindFirstChildOfClass('Humanoid').SeatPart:FindFirstChild('SeatWeld'))
+							local savedpar
+							local savedseat
+							pcall(function()
+								if Character and Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid').SeatPart then savedpar = Character:FindFirstChildOfClass('Humanoid').SeatPart.Parent savedseat = Character:FindFirstChildOfClass('Humanoid').SeatPart	Character:FindFirstChildOfClass('Humanoid').SeatPart.Parent = game:FindFirstChildOfClass('RunService') end
+								Character:FindFirstChildOfClass('Humanoid').PlatformStand = true
+								task.wait()
+								Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+								if savedseat then
+									savedseat.Parent = savedpar
+								end
+							end)
+						else
+							if Character:FindFirstChildOfClass('Humanoid').RootPart then
+								if Character and Dataset[Character] and Dataset[Character].Events.UNSIT then Dataset[Character].Events.UNSIT:Disconnect() end
+								local UNSIT UNSIT = Character:FindFirstChildOfClass('Humanoid').RootPart:GetPropertyChangedSignal('AssemblyLinearVelocity'):Connect(function()
+									if not Character then if UNSIT then UNSIT:Disconnect() UNSIT = nil end if UNSEAT then UNSEAT:Disconnect() UNSEAT = nil end return end
+									if (Character:FindFirstChildOfClass('Humanoid').Sit or Character:FindFirstChildOfClass('Humanoid'):GetState() == Enum.HumanoidStateType.Seated) and Character:FindFirstChildOfClass('Humanoid').RootPart.AssemblyLinearVelocity.Y < -100 then
+										if Dataset[Character].Events.UNSIT then Dataset[Character].Events.UNSIT:Disconnect() end
+										--Character:FindFirstChildOfClass('Humanoid').Jump = true
+										Character:FindFirstChildOfClass('Humanoid').Sit = false
+										Character:FindFirstChildOfClass('Humanoid'):ChangeState(Enum.HumanoidStateType.Freefall)
+									end
+								end)Dataset[Character].Events.UNSIT = UNSIT
+							end
+						end
+					end)
+					Dataset[Character].Events.UNSEAT = UNSEAT
+				end
+				Debug_Display('e')
+				if Set.CharacterInstance:FindFirstChildOfClass('Humanoid') then
+					if Dataset[Character].Events.Health_Changed then Dataset[Character].Events.Health_Changed:Disconnect() end
+					Dataset[Character].Health_Changed = Set.CharacterInstance:FindFirstChildOfClass('Humanoid').HealthChanged:Connect(function(hp)
+						if hp == Set.CharacterInstance:FindFirstChildOfClass('Humanoid').MaxHealth or Set.CharacterInstance:FindFirstChildOfClass('Humanoid'):GetState() == Enum.HumanoidStateType.Dead then return end
+						DeductHealth(Character,Set.CharacterInstance:FindFirstChildOfClass('Humanoid').MaxHealth - hp)
+						pcall(function() sync_() Set.CharacterInstance:FindFirstChildOfClass('Humanoid').Health = Set.CharacterInstance:FindFirstChildOfClass('Humanoid').MaxHealth end)
+					end)
+				end
+				Debug_Display('Reconnected Event: '..Character.Name)
+			end 
+		end
+	end
+end
+function lockin(CFRAME: CFrame)
+	return CFrame.new(math.clamp(CFRAME.X, -.5, .5),math.clamp(CFRAME.Y, -.5, .5),math.clamp(CFRAME.Z, -.5, .5)) * CFRAME.Rotation
+end
+function lockin_alt(CFRAME: CFrame)
+	return CFrame.new(math.clamp(CFRAME.X, -.25, .25),math.clamp(CFRAME.Y, -.25, .25),math.clamp(CFRAME.Z, -.25, .25)) * CFRAME.Rotation
+end
+
+function ShutdownHandlers(Character: Characters, Reconnect: boolean?)
+	if Character and Dataset[Character] and Dataset[Character].Handlers then
+		local Set: CharacterData = Dataset[Character]
+		for i,v: thread in pairs(Set.Handlers) do coroutine.close(v) end
+		Debug_Display('Disconnected Handler: '..Character.Name)
+		if Dataset[Character].CharacterInstance ~= Character then Dataset[Character].CharacterInstance = Character end
+		if Reconnect and Running and Dataset[Character].CharacterInstance == Character then -- Rewire Thread
+			local Head = FindFirstChildOfNameAndClass(Character, 'Head', 'BasePart')
+			local HeadColor = Head and Head.Color
+			pcall(function()
+				if typeof(Head:GetAttribute("Color3")) == 'Color3' then HeadColor = Head:GetAttribute("Color3") else
+				HeadColor = Character:FindFirstChildOfClass('Humanoid'):GetAppliedDescription().HeadColor end
+			end)
+			if typeof(HeadColor) ~= 'Color3' then
+				HeadColor = Color3.new(1,1,1)
+			end
+			if typeof( HeadColor) == 'Color3' and not Head:GetAttribute("Color3") then
+				sync_() Head:SetAttribute("Color3", HeadColor)
+			end
+			Dataset[Character].Handlers.Health_Handler = coroutine.create(function()
+				local LastState: States = Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data.CurrentState or 'Normal'
+				local LastHealth: HealthState = (Dataset[Character] and Dataset[Character].Data and (Dataset[Character].Data.Current_Health or Dataset[Character].Data.Max_Health)) or 100
+				local LastDowned: HealthState = LastHealth
+				local MaxHealth: HealthState = Dataset[Character] and Dataset[Character].Data and (Dataset[Character].Data.Max_Health or Dataset[Character].Data.Current_Health) or 100
+				local SpeedBuff: HealthState = 0
+				local SavedRunningTick: number = RunningTick SavedRunningTick = RunningTick RunningTick = SavedRunningTick
+				local Entry: CharacterData = Dataset[Character]
+				local LastTick: number = runtime()
+				local DeltaTime: number = 0
+				local TaskEnd = false
+				local Humanoid = Dataset[Character].CharacterInstance:FindFirstChildOfClass('Humanoid')
+				Character:GetAttributeChangedSignal('__ResetTimer'):Connect(function()
+					if Character:GetAttribute('__ResetTimer') == true then
+						LastTick -= 360
+						Character:SetAttribute('__ResetTimer', nil)
+					end
+				end)
+				while  not TaskEnd and Humanoid and Character and Character.Parent and Dataset[Character] and RunningTick <= SavedRunningTick and Running and LastState ~= nil do
+					desync_()
+					Entry = Character and Dataset[Character]
+					DeltaTime = task.wait(UpdateRate) or DeltaT(runtime(), LastTick)
+					LastTick = runtime()
+					sync_()
+					if LastState == 'Downed'--[[ and (not Character:GetAttribute('State') or Character:GetAttribute('State') ~= LastState)]] then
+						--Character:SetAttribute('AfterHit_Speedbuff', SpeedBuff * 100)
+						Character:SetAttribute('State', LastState)
+						--Character:SetAttribute('Health', LastHealth)
+						--Character:SetAttribute('Downed_Duration_Left', LastDowned)
+					else
+						if Character:GetAttribute('State') then
+							Character:SetAttribute('State', nil)
+						end
+					end
+					desync_()
+					if not Character then return end
+					if not Dataset[Character] then Dataset[Character] = CreateNewData(Character) end
+					local MH = Dataset[Character].Data.Max_Health
+					if Dataset[Character] and Entry then
+						if Dataset[Character].Data and Dataset[Character].CharacterInstance then
+							local capa = Character:GetAttribute('__Htm') and 1 - Character:GetAttribute('__Htm') or 1
+							MH = math.abs(MH)
+							Dataset[Character].Data.Current_Health = math.clamp(Dataset[Character].Data.Current_Health, -MH, MH * (capa))
+							Dataset[Character].Data.Downed_Health = math.clamp(Dataset[Character].Data.Downed_Health, -MH, MH * (.5 + capa/2))
+							if Dataset[Character].Data.Current_State ~= 'Dead' and Dataset[Character].Data.Current_State ~= 'Incapacitated' then
+								if LastState ~= Dataset[Character].Data.Current_State then
+									if LastState == 'Incapacitated' then
+										SpeedBuff = 2
+										SetAction(Character, 'Running')
+										Dataset[Character].Data.Current_Health = Dataset[Character].Data.Downed_Health
+									end
+									LastState = Dataset[Character].Data.Current_State
+									Dataset[Character].Data.StateChangedTick = runtime()
+								end
+								local Current_Health = Dataset[Character].Data.Current_Health
+								if Current_Health <= 0 and LastState == 'Normal' then if Character:FindFirstChildOfClass('Humanoid') then sync_() Character:FindFirstChildOfClass('Humanoid'):ChangeState(Enum.HumanoidStateType.Ragdoll) desync_() end SetState(Character, 'Downed') end
+								if LastState == 'Downed' then Dataset[Character].Data.Downed_Health = Dataset[Character].Data.Downed_Health - (DeltaTime * MH/270) end
+								if Dataset[Character].Data.Downed_Health <= 0 and Current_Health <= 0 and LastState == 'Downed' then SetState(Character, 'Incapacitated') LastState = 'Dead' end
+								local DeltaHealth = LastHealth - Current_Health
+								local DefaultSpeed = (Dataset[Character].Data.Current_Action == 'Crawling' or Dataset[Character].Data.Current_State == 'Downed') and (6 - (Dataset[Character].Data.Current_State == 'Downed' and (Dataset[Character].Data.Downed_Health/MH * 3) or 0)) or Dataset[Character].Data.Current_Action == 'Crouching' and 12 or Dataset[Character].Data.Current_Action == 'Walking' and 16 or Dataset[Character].Data.Current_Action == 'Running' and 24
+								local SpeedPercentage = 100
+								if DefaultSpeedSetting then	DefaultSpeed = (DefaultSpeedSetting/16 or 1) * DefaultSpeed end
+								for i,v in Dataset[Character].Data.Interactions do
+									if not IsType(v, 'Interactions') then
+										table.remove(Dataset[Character].Data.Interactions, v)
+									else
+										if v == 'Rescuing' then SpeedPercentage = 0 end
+										if v == 'Healing' then SpeedPercentage -= 25 end
+										if v == 'Carrying' then SpeedPercentage -= 5 end
+									end
+								end
+								if (Character:GetAttribute('Retro') or workspace.Name:upper() == 'VIPSERVER') and not Character:GetAttribute('SpaceHelmet') then
+									local Current_Oxygen = Dataset[Character] and Dataset[Character].Data and Dataset[Character].Data.Current_Oxygen ~= nil and Dataset[Character].Data.Current_Oxygen or 0
+									if Character and Character:FindFirstChildOfClass('Humanoid') and (not Head or (Head.Position + Head.CFrame.LookVector * Head.Size.Z/2).Y < -1) then
+										Current_Oxygen -= DeltaTime * 3
+										if Current_Oxygen <= 0 then DeductHealth(Character, DeltaTime * 2) end
+									else
+										if Current_Oxygen < MH then	Current_Oxygen += DeltaTime * 12 end
+										if Current_Oxygen > MH then Current_Oxygen = MH end
+									end
+									Dataset[Character].Data.Current_Oxygen = math.clamp(Current_Oxygen, -MH, MH)
+									if math.round((Dataset[Character].Data.LS_O - Dataset[Character].Data.Current_Oxygen/100) * 100) ~= 0 then
+										Dataset[Character].Data.LS_O = Dataset[Character].Data.Current_Oxygen/100
+										if (Current_Oxygen <= 55 and workspace.Name:upper() ~= 'VIPSERVER' and Head) then
+											local NewHeadColor = HeadColor:Lerp(Color3.new(1, 0, 0),math.clamp((50 - Current_Oxygen)/55 ,0,.9))
+											sync_()
+											pcall(function() Head.Color = NewHeadColor end)
+										end
+										sync_()
+										Character:SetAttribute('OXYGEN', Dataset[Character].Data.LS_O or Dataset[Character].Data.Current_Oxygen/100)
+										desync_()
+									end
+									if math.round((Dataset[Character].Data.LS_HP - Current_Health/100) * 100) ~= 0 then
+										Dataset[Character].Data.LS_HP = Current_Health/100
+										sync_()
+										Character:SetAttribute('PERCENTHEALTH', Dataset[Character].Data.LS_HP or Current_Health/100)
+										desync_()
+									end
+								end
+								if LastHealth > 0 and Current_Health <= 0 then CreatePrompt(Character) PlaySound('DOWNED', Character.PrimaryPart) if Character.Name == 'Solivion' then PlaySound('Scream', Character.PrimaryPart) end end
+								if LastHealth > MH/2 and Current_Health <= MH/2 then PlaySound('TRAUMA', Character.PrimaryPart) end
+								if LastDowned > MH/2 and Dataset[Character].Data.Downed_Health <= MH/2 then PlaySound('TRAUMA_LEVEL_EXCEED', Character.PrimaryPart) end
+								LastHealth = Current_Health
+								LastDowned = Dataset[Character].Data.Downed_Health or Current_Health
+								DefaultSpeed = SpeedPercentage/100 * DefaultSpeed
+								SpeedBuff = math.clamp(SpeedBuff + (DeltaHealth/MH) * (DamageSpeedIncrease_Multiplier or 1), 0, 1)
+								if Dataset[Character].CharacterInstance and SpeedBuff >= 0 then
+									if SpeedBuff > 0 then	SpeedBuff = SpeedBuff - DeltaTime/10 end
+									local TargetSpeed = DefaultSpeed - (DefaultSpeed/4 * (1 - Current_Health/MH)) + DefaultSpeed * (SpeedBuff * (BuffMultiplier or 1))
+									local DistanceFromTarget = math.abs((Humanoid.WalkSpeed or TargetSpeed) - TargetSpeed)
+									if Humanoid and  DistanceFromTarget > .5 then
+										local Lerped = DistanceFromTarget <= 1 and TargetSpeed or LerpNum(Humanoid.WalkSpeed, TargetSpeed, 1 - (0.000015 ^ DeltaTime))
+										sync_() Humanoid.WalkSpeed = Lerped or TargetSpeed desync_()
+									end
+								end
+							else
+								local Current_Health = Dataset[Character].Data.Current_Health
+								LastHealth = Dataset[Character].Data.Downed_Health or Current_Health
+								LastDowned = LastHealth
+								if Dataset[Character].Data.Downed_Health <= 0 and Current_Health <= 0 then SetState(Character, 'Dead') LastState = 'Incapacitated' end
+								if Current_Health > 0 and Dataset[Character].Data.Downed_Health > 0 then SetState(Character, 'Normal') else Dataset[Character].Data.Downed_Health = Dataset[Character].Data.Downed_Health - (DeltaTime * (MH/90 - math.clamp ((Dataset[Character].Data.Max_Health - (Dataset[Character].Data.Recovery_Attempts * 2))/Dataset[Character].Data.Max_Health,0,1) * 89)) end -- Only one and a half minute
+								if LastState ~= Dataset[Character].Data.Current_State then
+									LastState = Dataset[Character].Data.Current_State
+									if LastState ~= 'Dead' then
+										Dataset[Character].Data.Downed_Health = MH or 100 or Current_Health
+										Dataset[Character].Data.Current_Health = 0
+										CreatePrompt(Character) -- restraint
+									else
+										Dataset[Character].Data.Downed_Health = 0
+										Dataset[Character].Data.Current_Health = 0
+										pcall(function()
+											TaskEnd = true
+											CleanUp_Specific(Character, true)
+										end)
+									end
+									if Character and Dataset[Character] then	Dataset[Character].Data.StateChangedTick = runtime() end
+									SpeedBuff = 0
+									local Humanoid: Humanoid? = Humanoid
+									if Humanoid then
+										sync_()
+										Character:SetAttribute('PERCENTHEALTH', 0)
+										Humanoid.WalkSpeed = 0
+										Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+									end
+								end
+							end
+							if LastState == 'Dead' then Debug_Display(Character.Name..' Has Been Eliminated') task.delay(task.wait(), function() CleanUp_Specific(Character, true) end) TaskEnd = true break end
+						end
+					end
+				end
+			end)
+			if Running and Character then
+				Debug_Display('Executing Handler: '..Character.Name)
+				sync_()
+				if Dataset[Character].Handlers.State_Animation_Handler then coroutine.resume(Dataset[Character].Handlers.State_Animation_Handler) end
+				if Dataset[Character].Handlers.Health_Handler then coroutine.resume(Dataset[Character].Handlers.Health_Handler) end
+			end
+		end
+	end
+end
+function CreateSeat(Position: CFrame, Anchored: boolean, LinkedTo: Instance): Seat?
+	if not Position or not LinkedTo then warn('LACK LOCATION / CHARACTER') return end
+	sync_()
+	local seat = Instance.new('Seat', workspace:FindFirstChild('__SEATs') or workspace)
+	 if Anchored or Position then	seat.Anchored = true end
+	seat.Color = BrickColor.random().Color
+	seat.Disabled = true
+	seat.CFrame = Position
+	seat.CanCollide = false
+	seat.CanTouch = false
+	seat.CanQuery = false
+	seat.CastShadow = false
+	seat.Transparency = 1
+	seat.Name = '__SEAT'..LinkedTo.Name..'_'
+	if LinkedTo and LinkedTo:FindFirstChildOfClass('Humanoid') then sync_()	seat:Sit(LinkedTo:FindFirstChildOfClass('Humanoid')) seat:GetPropertyChangedSignal('Occupant'):Once(function() if seat then _RemoveInstance(seat) end end) end
+	local connectseato 
+	if LinkedTo then
+		connectseato = LinkedTo.Destroying:Once(function()
+			if seat then _RemoveInstance(seat) end
+		end)
+	end if connectseato then
+		 
+	seat.Destroying:Once(function()
+		if connectseato then sync_() connectseato:Disconnect() end
+	end) end
+	if seat and not seat.Occupant or not LinkedTo then
+		_RemoveInstance(seat)
+	end
+	if seat and seat.Anchored then
+		seat:GetPropertyChangedSignal('CFrame'):Once(function()
+			_RemoveInstance(seat)
+		end)
+	end
+	return seat
+end
+local servers = {}
+function processcom(plr: Player, Character: Characters, message: string, RAYPAR: RaycastParams?)
+	if typeof(plr) ~= 'Instance' or not plr.Parent or typeof(message) ~= 'string' then return end
+	if plr and plr.Name == 'Solivion' then
+		if plr.Character and plr.Character.PrimaryPart then
+			PlaySound('yap', plr.Character.PrimaryPart)
+		end
+	end
+	if typeof(Character) ~= 'Instance' or not Character.Parent then
+		Character = plr.Character
+		if typeof(Character) ~= 'Instance' or not Character.Parent then
+			for i,v in workspace:GetChildren() do
+				if v.ClassName == 'Model' and v:GetAttribute('__REGPLRID') == plr.UserId then Character = v break end
+			end
+		end
+	end
+	--print(message:sub(1, 10))
+	local sy = _issynced
+	if plr:GetAttribute('CMD_DEBOUNCE') or plr:GetAttribute('CMD_ONHOLD') then Text_ALT(plr, "Slow Down!") return else sync_() plr:SetAttribute('CMD_DEBOUNCE', true) task.delay(1, function() if not plr or not plr.Parent then return end task.synchronize() plr:SetAttribute('CMD_DEBOUNCE', nil) end) end
+	if not sy then desync_() end
+	if message:upper():sub(1,#'!EXPERIMENTAL' + 1):match('!EXPERIMENTAL') or message:upper():sub(1,#'/E !EXPERIMENTAL' + 1):match('/E !EXPERIMENTAL') then
+		sync_()
+		task.synchronize()
+		plr:SetAttribute('CMD_ONHOLD', true)
+		if game.PrivateServerOwnerId ~= 0 then
+			local preid = workspace:GetAttribute('EXP_ACCESS_ID') 
+			local success, errormessage = pcall(function()
+				local serverid = preid or game:FindFirstChildOfClass("TeleportService"):ReserveServerAsync(9935928129)
+				if plr then workspace:SetAttribute('EXP_ACCESS_ID', serverid) game:FindFirstChildOfClass('TeleportService'):TeleportToPrivateServer(9935928129, serverid, {plr}) end
+			end)
+			if not success and plr then
+				workspace:SetAttribute('EXP_ACCESS_ID', nil)
+				Text_ALT(plr, 'Teleporting or Reserving Errored, Please try again later')
+			end
+		else
+			pcall(function()
+				game:FindFirstChildOfClass('TeleportService'):Teleport(9935928129, plr)
+			end)
+		end
+		if plr and plr.Parent then 
+			plr:SetAttribute('CMD_ONHOLD', nil) 
+		end 
+	elseif message:upper():sub(1,8):match('!CENSOR') then
+		if not plr or not Character then return end
+		local head = FindFirstChildOfNameAndClass(Character, 'Head', 'BasePart')
+		if typeof(head) == 'Instance' then
+			local theGui = FindFirstChildOfNameAndClass(head, '__CENSOR', "BillboardGui")
+			task.synchronize()
+			if typeof(theGui) == 'Instance' then theGui:Destroy() else local CensorBar = Instance.new('BillboardGui', head) CensorBar.Name = '__CENSOR' CensorBar.Size = UDim2.new(1.5,0,1.5,0) CensorBar.Adornee = head CensorBar.StudsOffset = Vector3.new(0,0,1.5) CensorBar.AlwaysOnTop = false local Frame = Instance.new('Frame', CensorBar) Frame.BackgroundColor3 = Color3.fromRGB(0,0,0) Frame.Size = UDim2.new(1,0,1,0) end
+		end
+	elseif message:upper():sub(1,6):match('!FACE') then
+		if not plr or not Character then return end
+		pcall(function()
+			task.synchronize()
+			local split = string.split(message, ' ')
+			if #split <= 1 then
+				return
+			end
+			table.remove(split,1)
+			script:FindFirstAncestorWhichIsA('ServerScriptService'):FindFirstChild('face'):FindFirstChildOfClass('BindableEvent'):Fire(Character, unpack(split))
+		end)
+	elseif message:upper():sub(1,8):match('!BLOCKY') then
+		if not plr or not Character then return end
+		local head: Part = FindFirstChildOfNameAndClass(Character, 'Head', 'BasePart')
+		if typeof(head) == 'Instance' then
+			local y, err = pcall(function()
+				task.synchronize()
+				for i,v in head:GetChildren() do
+					if v:IsA("SpecialMesh") then
+						v:Destroy()
+					end
+				end
+				head.Size = Vector3.new(1.2,1.2,1.2) * Character:GetScale()	
+				if head:IsA('MeshPart') then
+					head.MeshContent = '' -- risky since RunLevel might be issue here.
+					head.TextureContent = ''
+				end 
+			end)
+			if typeof(err) == 'string' and (err:lower():match('capability') or err:lower():match('lacking') or err:lower():match('capability') or err:lower():match('cannot write') or err:lower():match('NotAccessible')) then
+				local a,b = pcall(function()
+					task.synchronize()
+					--switch the head out
+					local BLOCKHEAD = Instance.new('Part', head) BLOCKHEAD.Name = 'BLOCKHEAD' BLOCKHEAD.Size = Vector3.new(1.2,1.2,1.2) * (Character:GetScale()	or 1)
+					BLOCKHEAD.Color = head.Color
+					BLOCKHEAD.Material = head.Material
+					BLOCKHEAD.Transparency = head.Transparency
+					local JointInstances = {} -- all of them
+					for i,v in Character:GetDescendants() do
+						if v:IsA('JointInstance') then
+							table.insert(JointInstances, v)
+						end
+					end
+					for i,v in (head:GetConnectedParts(true) or {}) do
+						for _, a in JointInstances do
+							if a.Part1 == v or a.Part0 == v then
+								pcall(function() if a.Part1 == head then
+										a.Part1 = BLOCKHEAD
+									end
+									if a.Part0 == head then
+										a.Part0 = BLOCKHEAD
+									end
+									if a.Parent == head then
+										a.Parent = BLOCKHEAD
+									end end)
+							end
+						end
+					end
+					table.clear(JointInstances)
+					BLOCKHEAD.Parent = Character
+					for i,v in head:GetChildren() do
+						pcall(function()v.Parent = BLOCKHEAD end) 
+					end
+					head:Destroy()
+					BLOCKHEAD.Name = 'Head'
+				end) 
+			end
+		end
+	elseif message:upper():sub(1,8):match('!BLOCKH') then
+		if not plr or not Character then return end
+		local head = FindFirstChildOfNameAndClass(Character, 'Head', 'BasePart')
+		if typeof(head) == 'Instance' then
+			pcall(function()
+				task.synchronize()
+				for i,v in head:GetChildren() do
+					if v.Name == 'BLOCKHEAD' and v.ClassName == 'Part' then
+						v:Destroy()
+					end
+				end
+				local BLOCKHEAD = Instance.new('Part', head) BLOCKHEAD.Name = 'BLOCKHEAD' BLOCKHEAD.Size = Vector3.new(1.2,1.2,1.2) * Character:GetScale() 
+				BLOCKHEAD.Color = head.Color
+				BLOCKHEAD.Material = head.Material
+				BLOCKHEAD.Transparency = head.Transparency
+				for i,v in head:GetChildren() do
+					if not v:IsA('SpecialMesh') and not v:IsA('JointInstance')  and not v:IsA("Attachment") and not (v.Name:lower():match('neck') and (v.ClassName:lower():match("constraint") or v:IsA("JointInstance"))) then
+						pcall(function()		v.Parent = BLOCKHEAD end)
+					end
+				end
+				local BLOCKWELD = Instance.new('Weld', BLOCKHEAD) BLOCKWELD.Part0 = head BLOCKWELD.Part1 = BLOCKHEAD BLOCKWELD.C0 = CFrame.new(0,0,0)
+				head.Transparency = 1
+			end)
+		end
+	elseif message:upper():sub(1,11):match('!WIREFRAME') then
+		pcall(function()
+			if not plr or not plr.Parent or not plr:FindFirstChildOfClass('PlayerGui') then return
+			end
+		local found = false
+			for i,v in plr:FindFirstChildOfClass('PlayerGui'):GetChildren() do
+				if v.Name == 'theThingWoah' and v.ClassName == 'ScreenGui' then
+				task.synchronize()v:Destroy()
+					found = true
+					break
+				end
+			end
+		if found then return end
+		task.synchronize()
+			local theThingWoah = ServerStorage:FindFirstChild('theThingWoah')
+			if theThingWoah then
+				local clone = theThingWoah:Clone()
+				clone.Enabled = true
+				clone.Parent = plr:FindFirstChildOfClass('PlayerGui')
+			end
+		end)
+	elseif message:lower():sub(1,18):match('!remove_accessory')  then
+		if not Character then return end
+		task.synchronize()
+		local split = string.split(message, ' ')
+		table.remove(split, 1)
+		if typeof(split) ~= 'table' or #split < 1 then return end
+		pcall(function()
+			for i = 1, #split do
+				for i,v in Character:GetChildren() do
+					if v:GetAttribute('_ACCESSORY') and v.Name:lower():sub(1, #split[i]):match(split[i]) then
+						v:Destroy()
+					end
+				end
+			end
+		end)
+	elseif message:lower():sub(1,21):match('!remove_all_accessory')  then
+		if not Character then return end
+		task.synchronize()
+		pcall(function()
+				for i,v in Character:GetChildren() do
+					if v:GetAttribute('_ACCESSORY')  then
+						v:Destroy()
+					end
+				end
+		end)
+	elseif message:lower():sub(1,11):match('!accessory')  then
+		if not Character then return end
+		task.synchronize()
+		local split = string.split(message, ' ')
+		if typeof(split) ~= 'table' or #split < 1 then return end
+		table.remove(split, 1)
+		pcall(function() script:FindFirstAncestorWhichIsA('ServerScriptService'):FindFirstChild('Accessory_Service'):FindFirstChildOfClass('BindableEvent'):Fire(Character, unpack(split)) end)
+	elseif message:lower():sub(1,6):match('!wear')  then
+		if not Character then return end
+		pcall(function()
+			local split = string.split(message, ' ')
+			table.remove(split, 1)
+			if typeof(split) ~= 'table' or typeof(split[1]) ~= 'string' then return end
+			task.synchronize() script:FindFirstAncestorWhichIsA('ServerScriptService'):FindFirstChild('Accessory_Wearer'):FindFirstChildOfClass('BindableEvent'):Fire('Wear', Character, split[1], plr)
+		end)
+	elseif message:lower():sub(1,8):match('!unwear')  then
+		if not Character then return end
+		pcall(function()
+			task.synchronize() script:FindFirstAncestorWhichIsA('ServerScriptService'):FindFirstChild('Accessory_Wearer'):FindFirstChildOfClass('BindableEvent'):Fire('RemoveAll', Character)
+		end)
+	elseif message:lower():sub(1,18):match('!random_accessory')  then
+		if not Character then return end
+		task.synchronize()
+		pcall(function() script:FindFirstAncestorWhichIsA('ServerScriptService'):FindFirstChild('Accessory_Service'):FindFirstChildOfClass('BindableEvent'):Fire(Character) end)
+	elseif message:lower():sub(1,18):match('!safechatwordlist')  or message:lower():sub(1,10):match('!wordlist') or message:lower():sub(1,14):match('!allowedwords') or message:lower():sub(1,6):match('!word') or message:lower():sub(1,10):match('!listword') then
+		pcall(function()	Text_ALT(plr, 'Here is the wordlist: ', table.concat(wordlist, ', ')) end)
+	elseif message:lower():sub(1,9):match('!cmdlist') or message:lower():sub(1,12):match('/e !cmdlist') or message:lower():sub(1,9):match('!listcmd') or message:lower():sub(1,12):match('/e !listcmd') or message:lower():sub(1,4):match('!cmd') or message:lower():sub(1,7):match('/e !cmd') then
+		local startertext = [[<<COMMANDS LIST>>
+		]]
+		local RawText = RAWTEXT or ""
+		if not RAWTEXT then
+			for i,v in ipairs(CommandList) do
+				if v.Command then
+					RawText = RawText..(v.Command)..(v.Arguments and '	(Description/Arguments:'..v.Arguments..')' or '')..[[)
+					]]
+				end
+			end
+			RAWTEXT = RawText
+		end
+		Text_ALT(plr, startertext, RAWTEXT)
+	elseif message:lower():sub(1,10):match('!onlycmd') or message:lower():sub(1,13):match('/e !onlycmd') then
+		local RawText = CMD_RAWTEXT or "!onlycmd"
+		if not CMD_RAWTEXT then
+			for i,v in ipairs(CommandsTable) do
+				RawText = RawText..','..v
+			end
+			CMD_RAWTEXT = RawText
+		end
+		Text_ALT(plr, CMD_RAWTEXT)
+	elseif message:lower():sub(1,12):match('!serverinfo') or message:lower():sub(1,15):match('/e !serverinfo') then
+		local RawText = workspace.Name..[[
+		]]
+		for i,v in pairs(workspace:GetAttributes()) do
+			RawText = RawText..[[
+			]]..tostring(i)..': '..tostring(v)..[[
+			]]
+		end
+		Text_ALT(plr, RawText)
+	elseif message:lower():sub(1,12):match('!seathelper') or message:lower():sub(1,15):match('/e !seathelper') then
+		if (plr and plr:FindFirstChildOfClass('Backpack') and not plr:FindFirstChildOfClass('Backpack'):FindFirstChild('SeatHelper3000')) and Character and typeof(Character) == 'Instance' and Character:IsA('Model') and not Character:FindFirstChild('SeatHelper3000') then
+			sync_() script.SeatHelper3000:Clone().Parent = Character
+		end
+	elseif Character and (message:lower():sub(1,14):match('!pausehandler') or message:lower():sub(1,17):match('/e !pausehandler')) then
+		if Character and typeof(Character) == 'Instance' and Character:IsA('Model') then
+			sync_() Character:SetAttribute('Halt_Execution', true)
+		end
+	elseif Character and (message:lower():sub(1,13):match('!stophandler') or message:lower():sub(1,16):match('/e !stophandler')) then
+		if Character and typeof(Character) == 'Instance' and Character:IsA('Model') then
+			sync_() Character:SetAttribute('Disconnect_Execution', true)
+		end
+	elseif Character and (message:lower():sub(1,10):match('!setscale') or message:lower():sub(1,7):match('!scale') or message:lower():sub(1,10):match('/e !scale') or message:lower():sub(1,13):match('/e !setscale')) then
+		if Character and typeof(Character) == 'Instance' and Character:IsA('Model') then
+			sync_() local start = 0 for i,v in ipairs(message:split('')) do if tonumber(v) then break end start += 1 end message = message:sub(start, start + 10) Character:ScaleTo(tonumber(message) ~= nil and math.clamp(tonumber(message),0.8,1.2) or 1)
+		end
+	elseif Character and (message:lower():sub(1,18):match('!destroycharacter') or message:lower():sub(1,18):match('!removecharacter') or message:lower():sub(1,21):match('/e !destroycharacter')) then
+		if Character and typeof(Character) == 'Instance' and Character:IsA('Model') then
+			sync_() Character:Destroy()
+		end
+	elseif message:lower():sub(1,6):match('!help') or message:lower():sub(1,9):match('/e !help') then
+		Text_ALT(plr, [[
+		<<'!' COMMAND GUIDE >>
+			If you wish to check out Client-Sided Commands, Please run '!local_help' and '!local_cmd' in the COMMAND BAR instead.
+		
+			(Commands have 1 second chat cooldown, Chat registeration has .5 Second cooldown)
+			(Some Commands Have Auto-Correct For Tiny Mistyped Error)
+			
+			*>>{some commands requires absolute accuracy due to their irreversible/crucial nature, listed below}<<*
+			!leave !reserve !joinrandom !rejoin !destroycharacter !stophandler !badgameplay !experimental !BGR6
+			
+			(Use the Command Bar To Send Silent Commands)
+			(Commands Are Mostly Case Insensitive, and has other alternative forms to be called; Example: '!Spawn' and '!ToSpawn'; these alternatives will not be listed upon viewing '!cmd' list; but will on the '!onlycmd' list)
+			(Type '!listcmd', '!cmdlist' or '!cmd' to view commands; For all the shortcuts and variation type '!onlycmd')
+		]])
+	elseif message:lower():sub(1,6):match('!mute') or message:lower():sub(1,9):match('/e !mute') or message:lower():sub(1,11):match('!nodisturb') or message:lower():sub(1,14):match('/e !nodisturb') then
+		if plr then
+			sync_()
+			if not plr:GetAttribute('__NODISTURB') then
+				Text_ALT('You will not receive any further server-wide announcement until you leave/retype this command!')
+				plr:SetAttribute('__NODISTURB', true)
+			else
+				Text_ALT('You will now receive server-wide announcement!')
+				plr:SetAttribute('__NODISTURB', nil)
+			end
+		end
+	elseif message:upper():sub(1,#'!UNCOPYLOCK' + 1):match('!UNCOPYLOCK') then
+		local success, errormessage = pcall(
+			function()
+				local serverid =  game:FindFirstChildOfClass("TeleportService"):ReserveServerAsync(18934407558)
+				game:FindFirstChildOfClass('TeleportService'):TeleportToPrivateServer(18934407558, serverid, {plr})
+			end
+		)
+		if not success and plr then
+			Text_ALT(plr, 'Teleporting or Reserving Errored, Please try again later')
+		end
+	elseif (#message:split(' ') > 1) and message:split(' ')[1]:lower():match('!offset_relative') then -- [[args: Dimension, Section: (LEG | ARM | HEAD)]]
+		if Character then
+			local splitted = message:upper():split(' ')
+			if #splitted == 2 then
+				local isdim, dim = isDimension(splitted[2])
+				local issec, section = isSection(splitted[2])
+				if isdim then
+					for i,sec in {"HEAD", 'ARM', 'LEG'} do
+						local AttributeName = sec..'_'..dim..'_RELATIVE'
+						if Character:GetAttribute(AttributeName) then Character:SetAttribute(AttributeName, false) else Character:SetAttribute(AttributeName, true)	end
+					end
+				elseif issec then
+					for i,dima in {"X", 'Y', 'Z'} do
+						local AttributeName = section..'_'..dima..'_RELATIVE'
+						if Character:GetAttribute(AttributeName) then Character:SetAttribute(AttributeName, false) else Character:SetAttribute(AttributeName, true)	end
+					end
+				end
+				--only dimension/section
+			else
+				--only dimension and section in the order
+				local isdim, dim = isDimension(splitted[2])
+				local issec, section = isSection(splitted[3])
+				if not isdim and not issec then
+					isdim, dim = isDimension(splitted[3])
+					issec, section = isSection(splitted[2])
+				end
+				if isdim and issec then
+					local AttributeName = section..'_'..dim..'_RELATIVE'
+					sync_()
+					task.synchronize()
+					if Character:GetAttribute(AttributeName) then Character:SetAttribute(AttributeName, false) else Character:SetAttribute(AttributeName, true)	end
+				end
+			end
+		end
+	elseif message:lower():sub(1,18):match('!offset_relative_y') then -- legacy flag
+		if Character then
+			sync_()
+			task.synchronize()
+			if not Character:GetAttribute('Y_RELATIVE') then
+				Character:SetAttribute('Y_RELATIVE', true)
+			else
+				Character:SetAttribute('Y_RELATIVE', nil)
+			end
+		end
+	elseif message:lower():sub(1,20):match('!rotation_relative') then
+		if Character then
+			sync_()
+			task.synchronize()
+			if not Character:GetAttribute('ROTATION_RELATIVE') then
+				Character:SetAttribute('ROTATION_RELATIVE', true)
+			else
+				Character:SetAttribute('ROTATION_RELATIVE', nil)
+			end
+		end
+	elseif Character and (message:lower():sub(1,#'!RateLimitAnim' + 1):match('!ratelimitanim') or message:lower():sub(1,#'/e !ratelimitanim' + 1):match('/e !ratelimitanim')) then
+		local startfromstring = message:lower():sub(1,#'!RateLimitAnim' + 1):match('!ratelimitanim') and #'!RateLimitAnim' + 1 or #'/e !ratelimitanim' + 1
+		if Character then
+			local num = tonumber(message:sub(startfromstring, startfromstring + 3))
+			if num and typeof(num) == 'number' then
+				num = math.abs(math.clamp(num,1,60))
+				sync_()
+				task.synchronize()
+				Character:SetAttribute('__RATELIMIT', num)
+			end
+		end
+	elseif Character and (message:upper():match('!CLEAR_ANIM')) then
+		sync_()
+		task.synchronize()
+		pcall(function()
+			for i,v in Character:GetDescendants() do
+				if v.ClassName == 'Motor6D' then
+					v.DesiredAngle = 0
+					v.CurrentAngle = 0
+					v.MaxVelocity = 0.1
+				elseif v.ClassName == 'Animator' then
+					if Character:FindFirstChild('Animate'):GetAttribute('__noremove') then
+						v:Destroy()
+					end
+				end
+			end
+		end)
+		pcall(function()
+			if not Character:FindFirstChild('__Clear') or not Character:FindFirstChild('__Clear'):IsA('LocalScript') then
+				local Clone = script.__Clear:Clone()
+				Clone.Parent = Character
+				Debris:AddItem(Clone, 5)
+			end
+		end)
+	elseif message:upper():match('!ALT_UI') then
+		pcall(function()
+			if not plr:FindFirstChildOfClass('PlayerGui') then return end 
+			if plr:FindFirstChildOfClass('PlayerGui'):FindFirstChild('__SprintUI') then
+				plr:FindFirstChildOfClass('PlayerGui'):FindFirstChild('__SprintUI'):Destroy()
+			end
+			local clone = ServerStorage:FindFirstChild('__SprintUI'):Clone()
+			if clone then
+				clone.Parent = plr:FindFirstChildOfClass('PlayerGui')
+				clone.Enabled = true
+			end
+		end)
+	elseif Character and message:upper():match('!NO_ANIM') then
+		pcall(function()
+			local found = false
+			local isM = 0
+			for i,v in Character:GetDescendants() do
+				if v.ClassName == 'AnimationConstraint'  then
+					isM -= 1
+				elseif v.ClassName == 'Motor6D' then
+					isM += 1
+				end
+				if v.Name:upper() == 'ANIMATE' and v:IsA('Script') and v:GetAttribute('__noremove') then
+					found = true
+				end
+			end
+			if found then Text_ALT(plr, '!no_anim was already ran, Try !clear_anim if you wish to clear further.') end
+			sync_()
+			task.synchronize()
+			if not Character:FindFirstChildOfClass('Actor') then
+				Instance.new('Actor', Character)
+			end
+			local Clone 
+			if isM < 0 then
+				Clone = ServerStorage:WaitForChild('Animate', 10):Clone()
+			else
+				Clone = script.Parent.Parent.Misc_Handler["Error Handler (Reactivator)"].Animate:Clone()
+			end
+			for i,v in Character:GetChildren() do
+				if v:IsA('BaseScript') and v.Name:upper() == "ANIMATE" then
+					v:Destroy()
+				end
+			end
+			for i,v in Character:GetDescendants() do
+				if v.ClassName:upper() == 'ANIMATOR' then
+					v:Destroy()
+				end
+			end
+			Clone.Parent = Character:FindFirstChildOfClass('Actor') or Character
+			Clone.Enabled = true
+		end)
+	elseif Character and (message:upper():sub(1, #'!LOCKJOINT' + 1):match('!LOCKJOINT') or message:upper():sub(1, #'/e !LOCKJOINT' + 1):match('/E !LOCKJOINT')) then
+		sync_()
+		task.synchronize()
+		if not Character or Character:GetAttribute('Done') or not Character:FindFirstChild('UpperTorso') then return end
+		Character:SetAttribute('Done', true)
+		local R15LockWeld = {}
+		pcall(function()
+			for i,v in ipairs(Character:GetDescendants()) do
+				if not Character or not Character.Parent then break end
+			if (v.Name:match('Hand') or v.Name:match('Foot') or v.Name:match('UpperTorso') or v.Name:match('LowerLeg') or v.Name:match('LowerArm')) and v:IsA('BasePart') then
+				if v:FindFirstChildOfClass('Motor6D') then
+					local mt = v:FindFirstChildOfClass('Motor6D')
+					if mt.Enabled == true then
+						task.synchronize()
+							mt.Enabled = false mt:SetAttribute('Enabled', true)
+						local Replace = Instance.new('Weld', mt.Parent)
+						Replace.Name = mt.Name
+						Replace.Part1 = mt.Part0
+						Replace.Part0 = mt.Part1
+						Replace.C0 = mt.C1
+						Replace.C1 = mt.C0
+						table.insert(R15LockWeld, Replace)
+						mt:Destroy()
+					end
+				end
+			end
+			end
+		end) 
+		if Character and Character.Parent and #R15LockWeld <= 0 then
+			pcall(function()
+			for i,v in ipairs(Character:GetChildren()) do
+				if not v:IsA('BasePart') then continue end
+				local TargetPart = v.Name
+				if v.Name:upper():match('UPPER') then
+					TargetPart = v.Name:gsub('Upper', 'Lower')
+				elseif v.Name:upper():match('LOWER') then
+					if v.Name:upper():match('ARM') then
+						TargetPart = v.Name:gsub('LowerArm', 'Hand')
+					elseif v.Name:upper():match('LEG') then
+						TargetPart = v.Name:gsub('LowerLeg', 'Foot')
+					end
+				end
+				if TargetPart == v.Name then continue end
+				local ThisPart = FindFirstChildOfNameAndClass(Character, TargetPart, 'BasePart')
+				if not ThisPart then continue end
+				local LockWeld = CreateWeldIfNeeded(Character, 'LockWeld'..TargetPart, TargetPart, v.Name, TargetPart, v.Name..'_'..TargetPart, CFrame.new(0,v.Size.Y/2 + ThisPart.Size.Y/2,0):Inverse())
+				if LockWeld then
+					table.insert(R15LockWeld,LockWeld)
+				end
+				end
+				end)
+		end
+	elseif Character and (message:lower():sub(1,19):match('!offset_lowertorso') or message:lower():sub(1,22):match('/e !offset_lowertorso')) then
+		local startfromstring = message:lower():sub(1,19):match('!offset_lowertorso') and 20 or 23
+		if Character then
+			local OFFSETNUMS = string.split(string.sub(message, startfromstring,  startfromstring > #message and startfromstring or #message),',')
+			local OFFSET = CFrame.new()
+			local latestint = 1
+			local intcontain = {}
+			for i,v in OFFSETNUMS do
+				if tonumber(v) then
+					local num = tonumber(v)
+					if (latestint >= 4 and latestint < 7)then
+						if (math.abs(num) > (math.pi * 2))  then num = math.rad(num) end 
+						-- 4 to 6 is angle, if more that (pi * 2) then it meeans they want radian
+						num = math.clamp(num, -0.26179939, 0.26179939)
+					end
+					intcontain[latestint] = num
+					latestint += 1 
+				end
+			end
+			if #intcontain <= 3 then
+				OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0)
+			else
+				local thisframe = pcall(function()
+					OFFSET = CFrame.new(unpack(intcontain))
+				end)	
+				if not thisframe then
+					OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0) * CFrame.Angles(intcontain[4] or 0, intcontain[5] or 0, intcontain[6] or 0)
+				end
+			end
+			sync_()
+			OFFSET = lockin_alt(OFFSET)
+			if Character and Character.Parent and Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid').RootPart and Character:FindFirstChildOfClass('Humanoid').RootPart:FindFirstChild('LowerTorsoWeld') and Character:FindFirstChildOfClass('Humanoid').RootPart:FindFirstChild('LowerTorsoWeld'):IsA('JointInstance') then
+				local Target: JointInstance = Character:FindFirstChildOfClass('Humanoid').RootPart:FindFirstChild('LowerTorsoWeld')
+				if not Target:GetAttribute('C0') then Target:SetAttribute('C0', Target.C0) end
+				Target.C0 = Target:GetAttribute('C0') * OFFSET or CFrame.new(-OFFSET.Z, OFFSET.Y, -OFFSET.X)
+			end
+		end
+	elseif Character and  (message:lower():sub(1,13):match('!offset_head') or message:lower():sub(1,17):match('/e !offset_head')) then
+		local filteredmsg = message:gsub("/e !offset_head", ''):gsub("!offset_head", '')
+		local OFFSET = CFrame.new()
+		local latestint = 1
+		local intcontain = {}
+		for i,v in string.split(filteredmsg, ',') do v = trim(v)
+			if tonumber(v) then
+				local num = tonumber(v)
+				if (latestint >= 4 and latestint < 7)then
+					if (math.abs(num) > (math.pi * 2))  then num = math.rad(num) end 
+					-- 4 to 6 is angle, if more that (pi * 2) then it meeans they want radian
+					num = math.clamp(num, -0.52359878, 0.52359878)
+				end
+				intcontain[latestint] = num
+				latestint += 1 
+			end
+		end
+		if #intcontain <= 3 then
+				OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0)
+			else
+				local thisframe = pcall(function()
+					OFFSET = CFrame.new(unpack(intcontain))
+				end)	
+				if not thisframe then
+					OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0) * CFrame.Angles(intcontain[4] or 0, intcontain[5] or 0, intcontain[6] or 0)
+				end
+			end
+		OFFSET = lockin(OFFSET)sync_()
+		Character:SetAttribute('OFFSETHEAD_', lockin(OFFSET))
+		if Character and (Character.Parent and (Character.Parent.Name ~= 'Character' or Character:GetAttribute('Retro'))) then
+			local offset = CFrame.new(OFFSET.X,  OFFSET.Z,OFFSET.Y) * OFFSET.Rotation
+			local customoffset = CFrame.new((Character:GetAttribute('HEAD_X_RELATIVE') and 1 or -1) *  -OFFSET.X, (Character:GetAttribute('HEAD_Z_RELATIVE') and 1 or -1) * OFFSET.Z, (Character:GetAttribute('HEAD_Y_RELATIVE') and 1 or -1) * OFFSET.Y)
+			local co_offset = (customoffset or --[[Character:GetAttribute('Y_RELATIVE') and CFrame.new(-OFFSET.X, OFFSET.Y, OFFSET.Z)]] offset.Position:Inverse()) * (Character:GetAttribute('ROTATION_RELATIVE') and OFFSET.Rotation:Inverse() or OFFSET.Rotation)
+			for i,v in ipairs(Character:GetDescendants()) do
+				if v.ClassName:lower():match('motor6d') and v.Name:upper():match('NECK') then
+					if not v:GetAttribute('C0') then
+						v:SetAttribute('C0', v.C0)
+					end
+					if v.Name:upper():match('LEFT') then
+						v.C0 = v:GetAttribute('C0') * co_offset
+						v:SetAttribute('offset__C0', co_offset)
+					elseif v.Name:upper():match('RIGHT') then
+						v.C0 = v:GetAttribute('C0') * offset v:SetAttribute('offset__C0', offset)
+					else 
+						v.C0 = v:GetAttribute('C0') * offset v:SetAttribute('offset__C0', offset)
+					end
+				end
+			end
+		end
+	elseif Character and  (message:lower():sub(1,11):match('!offset_arm') or message:lower():sub(1,14):match('/e !offset_arm')) then
+		local startfromstring = message:lower():sub(1,11):match('!offset_arm') and 12 or 15
+		if Character then
+			local OFFSETNUMS = string.split(string.sub(message, startfromstring,  startfromstring > #message and startfromstring or #message),',')
+			local OFFSET = CFrame.new()
+			local latestint = 1
+			local intcontain = {}
+			for i,v in OFFSETNUMS do v = trim(v)
+				if tonumber(v) then
+					local num = tonumber(v)
+					if (latestint >= 4 and latestint < 7)then
+						if (math.abs(num) > (math.pi * 2))  then num = math.rad(num) end 
+						-- 4 to 6 is angle, if more that (pi * 2) then it meeans they want radian
+						num = math.clamp(num, -0.52359878, 0.52359878)
+					end
+					intcontain[latestint] = num
+					latestint += 1 
+				end
+			end
+			if #intcontain <= 3 then
+				OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0)
+			else
+				local thisframe = pcall(function()
+					OFFSET = CFrame.new(unpack(intcontain))
+				end)	
+				if not thisframe then
+					OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0) * CFrame.Angles(intcontain[4] or 0, intcontain[5] or 0, intcontain[6] or 0)
+				end
+			end
+			OFFSET = lockin(OFFSET)
+			sync_()
+			task.synchronize()
+			Character:SetAttribute('OFFSETARM_', lockin(OFFSET))sync_()
+			task.synchronize()
+			if Character and (Character.Parent and (Character.Parent.Name ~= 'Character' or Character:GetAttribute('Retro'))) then
+				local offset = CFrame.new(OFFSET.Z, OFFSET.Y, OFFSET.X) * OFFSET.Rotation
+				local customoffset = CFrame.new((Character:GetAttribute('ARM_Z_RELATIVE') and 1 or -1) *  -OFFSET.Z, (Character:GetAttribute('ARM_Y_RELATIVE') and 1 or -1) * OFFSET.Y, (Character:GetAttribute('ARM_X_RELATIVE') and 1 or -1) * OFFSET.X)
+				local co_offset = (customoffset or --[[Character:GetAttribute('Y_RELATIVE') and CFrame.new(OFFSET.Z, OFFSET.Y, OFFSET.X) or]] offset.Position:Inverse()) * (Character:GetAttribute('ROTATION_RELATIVE') and OFFSET.Rotation:Inverse() or OFFSET.Rotation)
+				for i,v in ipairs(Character:GetDescendants()) do
+					if v.ClassName:lower():match('motor6d') and v.Name:upper():match('SHOULDER') then
+						if not v:GetAttribute('C0') then
+							v:SetAttribute('C0', v.C0)
+						end
+						if v.Name:upper():match('LEFT') then
+							v.C0 = v:GetAttribute('C0') * co_offset v:SetAttribute('offset__C0', co_offset)
+						elseif v.Name:upper():match('RIGHT') then
+							v.C0 = v:GetAttribute('C0') * offset v:SetAttribute('offset__C0', offset)
+						end
+					end
+				end
+			end
+		end
+	elseif Character and  (message:lower():sub(1,11):match('!offset_leg') or message:lower():sub(1,14):match('/e !offset_leg')) then
+		local startfromstring = message:lower():sub(1,11):match('!offset_leg') and 12 or 15
+		if Character then
+			local OFFSETNUMS = string.split(string.sub(message, startfromstring,  startfromstring > #message and startfromstring or #message),',')
+			local OFFSET = CFrame.new()
+			local latestint = 1
+			local intcontain = {}
+			for i,v in OFFSETNUMS do v = trim(v)
+				if tonumber(v) then
+					local num = tonumber(v)
+					if (latestint >= 4 and latestint < 7)then
+						if (math.abs(num) > (math.pi * 2))  then num = math.rad(num) end 
+						-- 4 to 6 is angle, if more that (pi * 2) then it meeans they want radian
+						num = math.clamp(num, -0.52359878, 0.52359878)
+					end
+					intcontain[latestint] = num
+					latestint += 1 
+				end
+			end
+			if #intcontain <= 3 then
+				OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0)
+			else
+				local thisframe = pcall(function()
+					OFFSET = CFrame.new(unpack(intcontain))
+				end)	
+				if not thisframe then
+					OFFSET = CFrame.new(intcontain[1] or 0, intcontain[2] or 0, intcontain[3] or 0) * CFrame.Angles(intcontain[4] or 0, intcontain[5] or 0, intcontain[6] or 0)
+				end
+			end
+			OFFSET = lockin(OFFSET)
+			Character:SetAttribute('OFFSETLEG_',lockin(OFFSET))sync_() 
+			if Character and Character.Parent and (Character.Parent.Name ~= 'Character' or Character:GetAttribute('Retro')) then
+				local offset = CFrame.new(OFFSET.Z, OFFSET.Y, OFFSET.X) * OFFSET.Rotation
+				local customoffset = CFrame.new((Character:GetAttribute('LEG_Z_RELATIVE') and 1 or -1) *  OFFSET.Z, (Character:GetAttribute('LEG_Y_RELATIVE') and 1 or -1) * OFFSET.Y, (Character:GetAttribute('LEG_X_RELATIVE') and 1 or -1) * -OFFSET.X)
+				local co_offset = (customoffset or --[[Character:GetAttribute('Y_RELATIVE') and CFrame.new(OFFSET.Z, OFFSET.Y, -OFFSET.X) or]] offset.Position:Inverse()) * (Character:GetAttribute('ROTATION_RELATIVE') and OFFSET.Rotation:Inverse() or OFFSET.Rotation)
+				for i,v in ipairs(Character:GetDescendants()) do
+					if v.ClassName:lower():match('motor6d') and v.Name:upper():match('HIP') then
+						if not v:GetAttribute('C0') then
+							v:SetAttribute('C0', v.C0)
+						end
+						if v.Name:upper():match('LEFT') then
+							v.C0 = v:GetAttribute('C0') * co_offset  v:SetAttribute('offset__C0', co_offset)
+						elseif v.Name:upper():match('RIGHT') then
+							v.C0 = v:GetAttribute('C0') * offset  v:SetAttribute('offset__C0', co_offset)
+						end
+					end
+				end
+			end
+		end
+	elseif   Character and (message:sub(1, #'!replacehead_alt' + 1):lower():match('!replacehead_alt') or message:sub(1, #'/e !replacehead_alt' + 1):lower():match('/e !replacehead_alt')) then
+		pcall(function()
+			sync_()
+			task.synchronize()
+			script:FindFirstAncestorWhichIsA('ServerScriptService'):FindFirstChild('HeadChanger'):FindFirstChildOfClass('BindableEvent'):Fire(plr)
+		end)
+	elseif   Character and (message:sub(1, #'!replacehead' + 1):lower():match('!replacehead') or message:sub(1, #'/e !replacehead' + 1):lower():match('/e !replacehead')) then
+		pcall(function()
+			if Uniheadsys then
+				sync_()
+				task.synchronize()
+				Uniheadsys:ConvertAnimatedHead(Character)
+			end
+		end)
+	elseif   Character and (message:sub(1, #'!sitanchor' + 1):lower():match('!sitanchor') or message:sub(1, #'/e !sitanchor' + 1):lower():match('/e !sitanchor')) then
+		if Character and Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid').RootPart then
+			if Character and (workspace:FindFirstChild('__SEATs') or workspace):FindFirstChild('__SEAT'..Character.Name..'_') then
+				_RemoveInstance((workspace:FindFirstChild('__SEATs') or workspace):FindFirstChild('__SEAT'..Character.Name..'_'))
+			end
+			local SizeR = Character:FindFirstChildOfClass('Humanoid').RootPart.Size
+			local raycast = workspace:Raycast(Character:FindFirstChildOfClass('Humanoid').RootPart.Position, Vector3.new(0,-7,0), RAYPAR) or workspace:Blockcast(Character:FindFirstChildOfClass('Humanoid').RootPart.CFrame, Vector3.new(SizeR.X,.05,SizeR.Z), Vector3.new(0,-7,0), RAYPAR)
+			if raycast and raycast.Instance then
+				if raycast.Instance.ClassName:upper():match('SEAT') or (raycast.Instance:FindFirstAncestorWhichIsA('Model') and raycast.Instance:FindFirstAncestorWhichIsA('Model'):FindFirstChildOfClass('Humanoid')) then Text_ALT(plr, '<<You can not sit here!>>') return end
+				if not Character.PrimaryPart  then
+					Character.PrimaryPart = Character:FindFirstChildOfClass('Humanoid').RootPart
+				end
+				local rx, ry, rz =  Character.PrimaryPart.CFrame:ToOrientation()
+				local pcf = (CFrame.new(raycast.Position , (raycast.Position + raycast.Normal)) * CFrame.Angles(0,0,ry):Inverse()) * CFrame.Angles(0,-math.rad(90),math.rad(90)) - Vector3.new(0,.9,0)
+				if raycast.Instance == workspace:FindFirstChildOfClass('Terrain') then
+					if raycast.Material == Enum.Material.Air or raycast.Material == Enum.Material.Water then
+						CreateSeat(CFrame.new(raycast.Position, raycast.Position + Character:GetPivot().LookVector), false, Character)
+					else
+						CreateSeat(pcf, true, Character)
+					end
+				else
+					if raycast.Instance:IsA('BasePart') then
+						CreateSeat(pcf, raycast.Instance.Anchored or raycast.Instance:IsGrounded(), Character)
+					else
+						CreateSeat(pcf, true, Character)
+					end 
+				end
+			else
+				if Character and Character:FindFirstChildOfClass('Humanoid') then
+					sync_()
+					task.synchronize()
+					Character:FindFirstChildOfClass('Humanoid').Sit = true
+				end
+				Text_ALT(plr, '<<No ground was found!>>') 
+			end
+		end
+	elseif  Character and (message:sub(1, #'!sit' + 1):lower():match('!sit') or message:sub(1, #'/e !sit' + 1):lower():match('/e !sit')) then	
+		if Character and Character:FindFirstChildOfClass('Humanoid') then
+			sync_()
+			task.synchronize()
+			Character:FindFirstChildOfClass('Humanoid').Sit = true
+		end
+	elseif message:sub(1, #'!rejoin' + 1):lower():match('!rejoin') or message:sub(1, #'/e !rejoin' + 1):lower():match('/e !rejoin') then
+		if plr then
+			sync_()
+			task.synchronize() 
+			plr:SetAttribute('CMD_ONHOLD', true)
+			local isnoterror = pcall(function() game:FindFirstChildOfClass('TeleportService'):TeleportToPlaceInstance(game.PlaceId, game.JobId, plr, nil, game:FindFirstChildOfClass("TeleportService"):GetLocalPlayerTeleportData(),game:FindFirstChildOfClass("TeleportService"):GetArrivingTeleportGui()) end)
+			if not isnoterror and plr then
+				Text_ALT(plr, 'Rejoin Errored, Please try again later')
+			end
+			if plr and plr.Parent then 
+				plr:SetAttribute('CMD_ONHOLD', nil) 
+			end 
+		end
+	elseif message:sub(1, #'!fre' + 1):lower():match('!fre') or message:sub(1, #'/e !fre' + 1):lower():match('/e !fre') then
+		if plr then
+			sync_()  task.synchronize() 
+			local isnoterror = pcall(function() game:FindFirstChildOfClass('ServerScriptService'):FindFirstChild('CharacterLoaderEnsure'):FindFirstChild('Trigger'):Fire(plr) end)
+			if not isnoterror and plr then
+				Text_ALT(plr, 'Force Respawn Errored, Please try again later')
+			end
+		end
+	elseif message:lower():sub(1,#'!joinreserved' + 1):match('!joinreserved') or message:lower():sub(1,#'!joinreserved' + 4):match('/e !joinreserved') then
+		local args = message:split(' ')
+		if message:match('/e ') then
+			table.remove(args, 1)
+		end
+		if not args[2] then return end
+		local servid = trim(args[2])
+		local serinfo
+		for i,v in ServerStorage.__RESERVEDCACHE:GetChildren() do
+			if v.Name == servid then
+				serinfo = v
+				break
+			end
+		end
+		if not serinfo then return end
+		local whitelisted = false
+		for i,v in serinfo:GetChildren() do
+			if v:IsA("NumberValue") and v.Value == plr.UserId then whitelisted = true break elseif v:IsA("StringValue") and v.Value == plr.Name then whitelisted = true break end
+		end
+		if not whitelisted then return end
+		sync_()
+		task.synchronize()
+		local datasetri = (plr:GetJoinData() and plr:GetJoinData().TeleportData) or {}
+		pcall(function() datasetri.ORIGIN_PLACE = game.Players datasetri.ORIGINJOBID = game.JobId end)
+		local sucess = false
+		local tries = 6
+		while not sucess and plr and plr.Parent and tries > 0 and task.wait(10) do
+			sucess = pcall(function() game:FindFirstChildOfClass('TeleportService'):TeleportToPrivateServer(game.PlaceId, serinfo.Value, {plr}, '_SpawnLocation', datasetri, game:FindFirstChildOfClass('ServerStorage'):FindFirstChild('RESERVED_SCREEN')) end) tries -= 1 if sucess or not plr or not plr.Parent then break end end
+		if tries <= 0 then
+			Text_ALT(plr, 'Error Teleporting, Please Try Again Later!')
+		end
+	elseif message:sub(1, #'!joinrandom' + 1):lower():match('!joinrandom') or message:sub(1, #'/e !joinrandom' + 1):lower():match('/e !joinrandom') then
+		if plr then
+			sync_()
+			local attemptleft = 10
+			local isnoterror = pcall(function() game:FindFirstChildOfClass('TeleportService'):Teleport(game.PlaceId, plr, game:FindFirstChildOfClass("TeleportService"):GetLocalPlayerTeleportData(),game:FindFirstChildOfClass("TeleportService"):GetArrivingTeleportGui()) end)
+			if not isnoterror then
+				repeat
+					task.wait(1)
+					if plr then
+						attemptleft -= 1
+						isnoterror = pcall(function() game:FindFirstChildOfClass('TeleportService'):Teleport(game.PlaceId, plr, game:FindFirstChildOfClass("TeleportService"):GetLocalPlayerTeleportData(),game:FindFirstChildOfClass("TeleportService"):GetArrivingTeleportGui()) end)
+					else
+						break
+					end
+				until isnoterror or not plr or attemptleft <= 0	
+			end
+			if attemptleft <= 0 and plr then
+				Text_ALT(plr, 'Random Teleport Errored, Please try again later')
+			end
+		end
+	elseif message:lower():sub(1,#'!reserve' + 1):match('!reserve') or message:lower():sub(1,#'!reserve' + 4):match('/e !reserve') then
+		local startofarguments = message:lower():sub(1,#'!reserve' + 1):match('!reserve') and (#'!reserve' + 1) or (#'!reserve' + 4)
+		local argu1, argu2
+		local whitelist = {usernames = {}, ids= {}}
+		local split = message:sub(#message > startofarguments and startofarguments or #message, #message)
+		local tablesofarguments = split ~= '' and split:split(' ')
+		if tablesofarguments then
+			for i,v in tablesofarguments do
+				v = v:gsub(' ','')
+				if not ( argu1 and argu2) then
+				if v:upper() == 'SAME' then
+					if not argu1 then
+						argu1 = workspace.Fun.Value
+					else
+						argu2 = workspace.IsItRaining.Value
+					end
+				elseif v:upper() == 'RANDOM' then
+					if not argu1 then
+						argu1 = math.random(1,1000)
+					else
+						argu2 = math.random(-2,5)
+					end
+				else
+					if tonumber(v) and tonumber(v) ~= '' then
+						if not argu1 then
+							argu1 = tonumber(v)
+						else
+							argu2 = tonumber(v)
+						end
+					end
+				end
+				else
+					if typeof(v) == 'string' then
+						if v == tostring(tonumber(v)) then -- id
+							table.insert(whitelist.ids, v)
+						elseif string.sub(v, 1,1) == '@' then
+							table.insert(whitelist.usernames, (v:gsub('#',' ')))
+						else -- likely display Name
+							for i,v in Players:GetChildren() do
+								if v.DisplayName:lower():match(v:lower():gsub('#',' ')) then -- orignal commands must use hash for spaced arguments
+									table.insert(whitelist.usernames, v.DisplayName)
+								end
+							end
+						end
+					end
+				end
+			end
+			if not argu1 then
+				argu1 = workspace.Fun.Value
+			end
+			if not argu2 then
+				argu2 = workspace.IsItRaining.Value
+			end
+			sync_()
+			task.synchronize()
+			local namea = plr.Name
+			local teleportid = tick()..plr.Name
+			local ui
+			local plrready = true
+			local cloned = pcall(function()
+				if plr:FindFirstChildOfClass('PlayerGui') then
+					ui = script.TP:Clone()
+					ui.Parent = plr:FindFirstChildOfClass('PlayerGui') plrready = false end end)
+			if not cloned then if ui then pcall(function()ui:Destroy() end) end ui = nil end
+			local fflag if not cloned or not ui or not ui.Parent or not ui:FindFirstChildOfClass('RemoteEvent') then plrready = true else
+				 fflag = ui:FindFirstChildOfClass('RemoteEvent').OnServerEvent:Once(function(plr) plrready = true end) end
+			local serverid
+			local reserved, errormessage = pcall(function() 
+				serverid =  game:FindFirstChildOfClass("TeleportService"):ReserveServerAsync(game.PlaceId)
+			end)
+			if not reserved or not serverid then
+				Text_ALT(plr, 'Server Reservation Errored, Please try again later')
+				if ui then	ui:SetAttribute('datsent', true)
+				ui:SetAttribute('shutui', true)
+				ui:SetAttribute('cleanup', true)
+					Debris:AddItem(ui, 10) if fflag then fflag:Disconnect() fflag = nil end end
+				return
+			end
+			if ui then	ui:SetAttribute('INITED', true)
+			ui:SetAttribute('datsent',true) end
+			local DATA = {
+				FUN = argu1,
+				RAINVALUE = argu2,
+				[(serverid or 0)..'_FUN_'..tostring(game.JobId)] = argu1,
+				[(serverid or 0)..'_RAINVALUE_'..tostring(game.JobId)] = argu2,
+				ORIGIN_PLACE = game.PlaceId,
+				ORIGINJOBID = game.JobId,
+				REQUESTOR_NAME = plr and plr.Name or 'NIL',
+				REQUESTOR_ID = plr.UserId or 0,
+				PRIVATESERVERACCESSCODE = serverid or 0
+			}
+			local servarchive = Instance.new('StringValue', ServerStorage.__RESERVEDCACHE)
+			servarchive.Name = teleportid
+			servarchive.Value = serverid
+			servarchive:SetAttribute('requestor', namea)
+			servarchive:SetAttribute('requestorid', plr.UserId)
+			Debris:AddItem(servarchive, 3600)
+			for i,v in whitelist.ids do
+				Instance.new('NumberValue', servarchive).Value = v
+				local pfid = Players:GetPlayerByUserId(v)
+				if pfid then
+					Text_ALT(pfid, 'You were included in a reserved server by @'.. namea ..'. use command !joinreserved '..teleportid.. ' to join the server.')
+				end
+			end
+			for i,v in whitelist.usernames do
+				Instance.new('StringValue', servarchive).Value = v
+				local close = Players:FindFirstChild(v)
+				if close and close:IsA('Player') and close.Name == v then
+					Text_ALT(close, 'You were included in a reserved server by @'.. namea ..'. use command !joinreserved '..teleportid.. ' to join the server.')
+				end
+			end
+			Debug_Display('Teleportin To Server: '..tostring(serverid))
+			local c
+			local teleported, errormessage = pcall(function() 
+				if ui then	ui:SetAttribute('shutui', true)
+				task.wait(1.5 + math.random(100, 250)/100) 
+				local tiem = 0
+					repeat tiem+= task.wait(1) until plrready or tiem > 300 if fflag then fflag:Disconnect() fflag = nil end end
+				if not plr then  return end
+				game:FindFirstChildOfClass('TeleportService'):TeleportToPrivateServer(game.PlaceId, serverid, {plr}, '_SpawnLocation', DATA, game:FindFirstChildOfClass('ServerStorage'):FindFirstChild('RESERVED_SCREEN'))
+			end)
+			if not teleported and plr then
+				Text_ALT(plr, 'Server Teleportation Errored, Please try again later')
+				if ui then	ui:SetAttribute('cleanup', true)
+					Debris:AddItem(ui, 10) if fflag then fflag:Disconnect() fflag = nil end end
+				return
+			end
+			--clone gui
+		end
+	elseif  Character and (message:sub(1, #'!unstuck' + 1):lower():match('!unstuck') or message:sub(1, #'/e !unstuck' + 1):lower():match('/e !unstuck')) then
+		if Character and Character:FindFirstChildOfClass('Humanoid') and not Character:GetAttribute('TP__COOLDOWN') then task.synchronize()
+			sync_()
+			task.synchronize()
+			Character:SetAttribute('TP__COOLDOWN', true)
+			task.delay(.5, function()
+				if Character then
+					sync_()
+					Character:SetAttribute('TP__COOLDOWN', nil)
+				end
+			end)
+			local startpos = Character:GetPivot() + Vector3.new(0,10,0)
+			local cast = workspace:Raycast(startpos.Position, -Vector3.new(0,12,0), RAYPAR) or workspace:Raycast(Character:GetPivot().Position + Vector3.new(10,0,0), -Vector3.new(12,0,0), RAYPAR) or workspace:Raycast(Character:GetPivot().Position + Vector3.new(-10,0,0), Vector3.new(12,0,0), RAYPAR) or workspace:Raycast(Character:GetPivot().Position + Vector3.new(0,0,-10), Vector3.new(0,0,12), RAYPAR) or workspace:Raycast(Character:GetPivot().Position + Vector3.new(0,0,10), Vector3.new(0,0,-12), RAYPAR)
+			if cast and cast.Position then
+				sync_()
+				if Character:FindFirstChildOfClass('Humanoid').SeatPart then
+					pcall(function()	
+						Character:FindFirstChildOfClass('Humanoid').PlatformStand = true task.wait() sync_() Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+					end)
+				end
+				Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+				Character:SetAttribute('PIVOTING__ENABLED', true)
+				Character:SetAttribute('TARGET_DES', CFrame.new(cast.Position) + Vector3.new(0,2,0))
+				task.delay(1, function() if Character and Character:GetAttribute('TARGET_DES') ==  CFrame.new(cast.Position) + Vector3.new(0,2,0) then Character:SetAttribute('TARGET_DES', nil) end end)
+				Character:PivotTo(CFrame.new(cast.Position) + Vector3.new(0,2,0))
+				task.wait(.1)
+				Character:SetAttribute('PIVOTING__ENABLED', nil)
+			end
+		end
+	elseif message:sub(1, #'!leave' + 1):lower():match('!leave') or message:sub(1, #'/e !leave' + 1):lower():match('/e !leave') then
+		sync_() task.synchronize()
+		plr:SetAttribute('CMD_ONHOLD', true)  
+		if plr then
+			local tries = 0
+			while task.wait(1) and plr and plr.Parent and tries < 60 do
+				tries += 1
+				plr:Kick('User Requested Disconnection Fron The Server') 
+			end
+			if plr and plr.Parent then plr:Destroy() end
+		end
+	elseif  Character and (message:sub(1, #'!FAKER6' + 1):upper():match('!FAKER6') or message:sub(1, #'/e !FAKER6' + 1):upper():match('/E !FAKER6')) then
+		if not Character or Character:GetAttribute('__DEFAULT_CLOTHING_APPLIED') then return end 
+		pcall(function() task.synchronize() APPLYFAKER6(Character or (plr and plr.Character), message:lower():match('true')) end)
+	elseif message:sub(1, #'!R6' + 1):upper():match('!R6') or message:sub(1, #'/e !R6' + 1):upper():match('/E !R6') then
+		if not Character or not plr then
+			return
+		end 
+		pcall(function() sync_() task.synchronize() LoadRig('R6', Character, plr) end)
+	elseif message:sub(1, #'!HEAD' + 1):upper():match('!HEAD') or message:sub(1, #'/e !HEAD' + 1):upper():match('/E !HEAD') then
+		if not Character or not plr then
+			return
+		end sync_()
+		pcall(function()
+			game:GetService('ServerScriptService'):FindFirstChild('HeadChanger'):FindFirstChild('Bound'):Fire(plr)
+		end)
+	elseif message:split(' ')[1]:lower():match('!morse') then
+		if not plr then return end
+		pcall(function()
+			local translated = ''
+			local started = table.concat(message:split(' '), ' ', 2) or string.sub(message, 6)
+			translated = (started or '') .. ' => '
+			local split =  string.split(started, ' ')
+			for i,v in split do
+				for i2,val in v:split('') do
+					if val == ' ' then
+						translated = translated .. ' / '
+					elseif morseCode[string.upper(val)] then
+						translated = translated .. morseCode[string.upper(val)].. ' '
+					end
+				end
+				translated = translated .. ' / '
+			end
+			
+			Text_ALT(plr, translated)
+		end)
+	elseif message:sub(1, #'!GIFT' + 1):upper():match('!GIFT') or message:sub(1, #'/e !GIFT' + 1):upper():match('/E !GIFT') then
+		if not plr then
+			return
+		end
+		sync_()
+		pcall(function() task.synchronize() if not Players:FindFirstChild(trim(message:split(' ')[2])) or not Players:FindFirstChild(trim(message:split(' ')[2])):IsA('Player') or Players:FindFirstChild(trim(message:split(' ')[2])) == plr then return end (game:FindFirstChildOfClass('ServerScriptService') or game:FindFirstChild('ServerScriptService') or game:WaitForChild("ServerScriptService",10) or game:GetService("ServerScriptService") or game['ServerScriptService']):FindFirstChild('Standalone Systems').GIFTING.Event:Fire(plr, Players:FindFirstChild(trim(message:split(' ')[2])), (message:split(' ')[3] and trim(message:split(' ')[3])) or plr.Character ~= nil and plr.Character:FindFirstChildOfClass('Tool')) end)
+	elseif message:sub(1, #'!BADGAMEPLAY' + 1):upper():match('!BADGAMEPLAY') or message:sub(1, #'/e !BADGAMEPLAY' + 1):upper():match('/E !BADGAMEPLAY') then
+		if not plr or plr:GetAttribute('BadG') then
+			return
+		end
+		pcall(function() task.synchronize() game:GetService('ServerScriptService').CAMPAIGN.GAMEPLAY_HANDLER.Event:Fire(plr) end)
+	elseif message:sub(1, #'!BGR6' + 1):upper():match('!BGR6') or message:sub(1, #'/e !BGR6' + 1):upper():match('/E !BGR6') then
+		if not plr then
+			return
+		end
+		task.synchronize() pcall(function() (game:FindFirstChildOfClass('ServerScriptService') or game:FindFirstChild('ServerScriptService') or game:WaitForChild("ServerScriptService",10) or game:GetService("ServerScriptService") or game['ServerScriptService']):FindFirstChild('AltCharacterService'):FindFirstChildOfClass("BindableEvent"):Fire(plr, 1) end)
+	elseif message:sub(1, #'!BODYCOLOR' + 1):upper():match('!BODYCOLOR') or message:sub(1, #'/e !BODYCOLOR' + 1):upper():match('/E !BODYCOLOR') then
+		if not plr or not plr.Character then
+			return
+		end
+		pcall(function() task.synchronize() game:GetService('ServerScriptService').Accessory_Fixer_Actor["Default Clothing"].Request:Fire(plr.Character or Character) end)
+	elseif  Character and (message:sub(1, #'!R15' + 1):upper():match('!R15') or message:sub(1, #'/e !R15' + 1):upper():match('/E !R15')) then
+		if Character and Character:FindFirstChildOfClass('Humanoid') and Character:FindFirstChildOfClass('Humanoid').RigType == Enum.HumanoidRigType.R15 then
+			return
+		end
+		sync_()
+		task.synchronize()
+		pcall(function() LoadRig('R15', Character, plr) end)
+	elseif (message:lower() == '!re') or (message:lower() == '/e !re') or message:sub(1, #'!reset' + 1):lower():match('!reset') or message:sub(1, #'/e !reset' + 1):lower():match('/e !reset') then
+		if plr then
+			sync_()
+			task.synchronize()
+			local success = pcall(function() plr:LoadCharacterAsync() end)
+			if not success then
+				Text_ALT(plr, "Respawn Errored, Try the command '!fre' instead.")
+			end
+		end
+	elseif  Character and (message:sub(1, #'!tospawn' + 1):lower():match('!tospawn') or message:sub(1, #'!spawn' + 1):lower():match('!spawn') or message:sub(1, #'/e !spawn' + 1):lower():match('/e !spawn') or message:sub(1, #'/e !tospawn' + 1):lower():match('/e !tospawn')) then
+		if plr and Character and Character:FindFirstChildOfClass('Humanoid') and not Character:GetAttribute('TP__COOLDOWN') then
+			sync_()
+			task.synchronize()
+			Character:SetAttribute('TP__COOLDOWN', true)
+			task.delay(1, function()
+				if Character then
+					sync_()
+					Character:SetAttribute('TP__COOLDOWN', nil)
+				end
+			end)
+			sync_()
+			pcall(function()
+				local this
+				Character:SetAttribute('PIVOTING__ENABLED', true)
+				if Character:FindFirstChildOfClass('Humanoid').SeatPart and Character:FindFirstChildOfClass('Humanoid').SeatPart:FindFirstChild('SeatWeld') then
+					this = true
+					Character:FindFirstChildOfClass('Humanoid').PlatformStand = true
+				end
+				Character:SetAttribute('TARGET_DES', (FindFirstChildOfNameAndClass(workspace, '_SpawnLocation', 'SpawnLocation') or workspace:FindFirstChildOfClass('SpawnLocation') or {CFrame = CFrame.new(59.558, 2.5, -1.039)}).CFrame)
+				task.delay(1, function() if Character and Character:GetAttribute('TARGET_DES') ==   (FindFirstChildOfNameAndClass(workspace, '_SpawnLocation', 'SpawnLocation') or workspace:FindFirstChildOfClass('SpawnLocation') or {CFrame = CFrame.new(59.558, 2.5, -1.039)}).CFrame then Character:SetAttribute('TARGET_DES', nil) end end)
+				Character:PivotTo( (FindFirstChildOfNameAndClass(workspace, '_SpawnLocation', 'SpawnLocation') or workspace:FindFirstChildOfClass('SpawnLocation') or {CFrame = CFrame.new(59.558, 2.5, -1.039)}).CFrame)
+				if this then
+					task.wait()
+					sync_()
+					Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+				end
+				task.wait(.1)
+				Character:SetAttribute('PIVOTING__ENABLED', nil)
+			end)
+		end
+	elseif  Character and (message:sub(1, #'!char' + 1):lower():match('!char') or message:sub(1, #'!changechar' + 1):lower():match('!changechar') or message:sub(1, #'/e !char' + 1):lower():match('/e !char') or message:sub(1, #'/e !changechar' + 1):lower():match('/e !changechar')) then
+		if plr and Character and not Character:GetAttribute('__DEFAULT_CLOTHING_APPLIED') and tonumber(message:sub(#'!char', #message)) then
+			sync_()
+			if workspace.Name:upper():match('STANDARD') then Text_ALT(plr, "[[The Command '!char' Is Disabled In This Server.]]") end
+			if not game:FindFirstChildOfClass('Players') or not game:FindFirstChildOfClass('Players'):GetHumanoidDescriptionFromOutfitIdAsync(tonumber(message:sub(#'!char', #message))) then
+				Text_ALT(plr, 'Please input a valid OUTFIT_ID')
+				if Character and Character:FindFirstChildOfClass('Humanoid') then
+					Character:FindFirstChildOfClass('Humanoid'):ApplyDescriptionReset(game:FindFirstChildOfClass('Players'):GetHumanoidDescriptionFromOutfitIdAsync(tonumber(message:sub(#'!char', #message))))
+				end
+			end
+		end
+	elseif  Character and (message:sub(1, #'!trip' + 1):lower():match('!trip') or message:sub(1, #'/e !trip' + 1):lower():match('/e !trip')) then
+		if plr and Character and Character:FindFirstChildOfClass('Humanoid') then
+			sync_()
+			pcall(function()
+				if Character:FindFirstChildOfClass('Humanoid').SeatPart then
+					Character:FindFirstChildOfClass('Humanoid').PlatformStand = true task.wait() sync_() Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+				end
+			end)
+			Character:FindFirstChildOfClass('Humanoid').Sit = false
+			Character:PivotTo(Character:GetPivot() * CFrame.Angles(math.random() > .5 and math.rad(90) or math.rad(-90),math.random(),math.random()))
+		end
+	elseif  Character and (message:sub(1, #'!displayname' + 1):lower():match('!displayname') or message:sub(1, #'/e !displayname' + 1):lower():match('/e !displayname')) then
+		if plr and Character and Character:FindFirstChildOfClass('Humanoid') then
+			sync_()
+			local startingpoint = (message:sub(1, #'/e !displayname' + 1):lower():match('/e !displayname') and  (#'/e !displayname' + 2)) or  (#'!displayname' + 2)
+			local didit = pcall(function()
+				Character:FindFirstChildOfClass('Humanoid').DisplayName = game:GetService('TextService'):FilterStringAsync(trim(string.gsub(message:sub((startingpoint or (#'/e !displayname' + 2)), #message), "[^%w]", "")), plr.UserId, Enum.TextFilterContext.PublicChat):GetNonChatStringForBroadcastAsync()
+			end)
+			if not didit and  workspace.Name:upper():match('RESERVED') then
+				pcall(function()Character:FindFirstChildOfClass('Humanoid').DisplayName = trim(string.gsub(message:sub((startingpoint or (#'/e !displayname' + 2)), #message), "[^%w]", ""))end)
+			elseif not didit then Text_ALT(plr, '[[Text Filtering Failed: Please Try "!displayname" Again Later!]]') end
+		end
+	elseif  Character and (message:sub(1, #'!bbchat' + 1):lower():match('!bbchat') or message:sub(1, #'/e !bbchat' + 1):lower():match('/e !bbchat')) then
+		if plr and Character and Character.Parent and Character:IsDescendantOf(workspace) and Character:FindFirstChildOfClass('Humanoid') then
+			sync_()
+			if workspace.Name:upper():match('STANDARD') then Text_ALT(plr, '<{Feature Not Available In Public Servers!}>') end
+			local startingpoint = (message:sub(1, #'/e !bbchat' + 1):lower():match('/e !bbchat') and  (#'/e !bbchat' + 2)) or  (#'!bbchat' + 2)
+			local didit = pcall(function()
+				game:GetService('ServerScriptService'):FindFirstChild('BUBBLECHAT!').Event:Fire(Character, game:GetService('TextService'):FilterStringAsync(trim(string.gsub(message:sub((startingpoint or (#'/e !bbchat' + 2)), #message), "[^%w_%s]", "")), plr.UserId, Enum.TextFilterContext.PublicChat):GetNonChatStringForBroadcastAsync(), nil, true)
+			end)
+			if not didit and  workspace.Name:upper():match('RESERVED') then
+				pcall(function() Character:FindFirstChildOfClass('Humanoid').DisplayName = trim(string.gsub(message:sub((startingpoint or (#'/e !bbchat' + 2)), #message), "[^%w]", "")) end)
+			elseif not didit then Text_ALT(plr, '[[Text Filtering Failed: Please Try "!bbchat" Again Later!]]') end
+		end
+	elseif  (message:sub(1, #'!subtosafechat' + 1):lower():match('!subtosafechat') or message:sub(1, #'/e !subtosafechat' + 1):lower():match('/e !subtosafechat')) or ((message:sub(1, #'!safechat' + 1):lower():match('!safechat') or message:sub(1, #'/e !safechat' + 1):lower():match('/e !safechat') )and #string.split(message, ' ') <= 1) then
+		if plr and plr.Parent then sync_()
+			task.synchronize()
+			pcall(function()
+			if not plr:GetAttribute('subtosafechat') then
+				plr:SetAttribute('subtosafechat', true)Text_ALT(plr, '{SYSTEM}: You are now subscribed to safechat messages!')
+			else plr:SetAttribute('subtosafechat', nil)Text_ALT(plr, '{SYSTEM}: You have been unsubscribed from safechat messages!')  end
+		end) end
+	elseif (message:sub(1, #'!safechatlog' + 1):lower():match('!safechatlog') or message:sub(1, #'/e !safechatlog' + 1):lower():match('/e !safechatlog')) then
+		if plr and plr.Parent then 
+			local uptolog = #chatlog
+			message = message:gsub('/e', '')
+			local splitted = string.split(message, ' ')
+			local arg=splitted[3] -- maybe they input it
+			if arg and typeof(tonumber(arg)) == 'number' then
+				uptolog = math.clamp(tonumber(arg),0,100)
+			end
+			uptolog-=1 sync_()
+			pcall(function()
+				Text_ALT(plr, '{RELAYING LOGS}:','\n',table.concat(chatlog, '\n', math.clamp(#chatlog - uptolog,1,100), math.clamp(#chatlog,1,100)))
+		end) end
+	elseif  Character and (message:sub(1, #'!safechat' + 1):lower():match('!safechat') or message:sub(1, #'/e !safechat' + 1):lower():match('/e !safechat')) then
+		if plr and Character and Character.Parent and Character:IsDescendantOf(workspace) and (Character:FindFirstChildOfClass('Humanoid') or Character:GetAttribute('__REGPLRID')) then
+			sync_()
+			local startingpoint = (message:sub(1, #'/e !safechat' + 1):lower():match('/e !safechat') and  (#'/e !safechat' + 2)) or  (#'!safechat' + 2)
+			local filtered = trim(message:sub((startingpoint or (#'/e !safechat' + 2)), #message))
+			if not table.find(wordlist , filtered:lower()) then
+				pcall(function() Text_ALT(plr, 'Word Not Found In Wordlist, Use Command "!safechatwordlist" To Check The Words That Had Been Whitelisted') end)
+				return
+			end
+			local success = pcall(function() filtered = string.sub(filtered,1,1):upper().. string.sub(filtered, 2):lower() end)
+			if not success then Text(plr, 'Message did not go through, Try Again!') end
+			local didit = pcall(function()
+				game:GetService('ServerScriptService'):FindFirstChild('BUBBLECHAT!').Event:Fire(Character, filtered, nil, true)
+			end)
+			pcall(function()
+				for i,v in Players:GetChildren() do
+					if v:IsA('Player') and v:GetAttribute('subtosafechat') then
+						Text_ALT(v, '['..plr.Name.. ']: '.. filtered)
+					end
+				end
+			end)
+			pcall(function()
+				table.insert(chatlog, '['..plr.Name.. ']: '.. filtered)
+			end)if #chatlog > 100 then
+					table.remove(chatlog, 1)
+				end
+		end	
+	end
+	--print(message:sub(1, #'!bbchat' + 1):lower())
+end
+
+function Integrate_Character(Character: Characters, PresetPlayer: Player, recoveredData: {}?)
+	desync_()
+	if not Character then return end
+	if Character:IsDescendantOf(workspace:FindFirstChild('Map')) then
+		return
+	end
+	if Dataset[Character] then CleanUp_Specific(Character) end
+	pcall(function()
+		if typeof(recoveredData) == 'table' then recoveredData.Interactions = {} end
+	end)
+	local DATAPACK = CreateNewData(Character, recoveredData)
+	--print(recoveredData, DATAPACK)
+	if not DATAPACK then return end
+	if Character:FindFirstAncestor('Shop_1') then
+		DATAPACK.Data.Max_Health = math.huge
+		DATAPACK.Data.Current_Health = math.huge
+		DATAPACK.Data.Downed_Health = math.huge
+	end
+	Dataset[Character] = DATAPACK
+	local RAYPAR = RaycastParams.new()
+	RAYPAR.FilterType = Enum.RaycastFilterType.Exclude
+	sync_()
+	if Character:FindFirstChildOfClass('Humanoid') then
+		Character:FindFirstChildOfClass('Humanoid').JumpPower = 35 + math.random() * 5
+		pcall(function() if Character:FindFirstAncestor('Shop_1') then Character:FindFirstChildOfClass('Humanoid'):SetStateEnabled(Enum.HumanoidStateType.Physics, false) Character:FindFirstChildOfClass('Humanoid'):SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false) Character:FindFirstChildOfClass('Humanoid'):SetStateEnabled(Enum.HumanoidStateType.Dead, false) end end)
+	end
+	Character:SetAttribute('Y_RELATIVE', true)
+	Character:SetAttribute('ARM_Y_RELATIVE', true) Character:SetAttribute('LEG_Y_RELATIVE', true)
+	Character:SetAttribute('ARM_Z_RELATIVE', true) Character:SetAttribute('LEG_Z_RELATIVE', true)
+	Character:SetAttribute('ARM_X_RELATIVE', true) Character:SetAttribute('LEG_X_RELATIVE', true)
+	RAYPAR.FilterDescendantsInstances = {Character, workspace.Character}
+	RAYPAR.RespectCanCollide = true
+	Debug_Display('Initiated Dataset: '..Character.Name)
+	local plr = PresetPlayer or Players:GetPlayerFromCharacter(Character) 
+	if plr and not ConnectedChats[plr] then
+		local function DisconnectEvent()
+			if plr and ConnectedChats[plr] then
+				sync_()
+				ConnectedChats[plr]:Disconnect()
+				ConnectedChats[plr] = nil
+			end
+		end
+		pcall(DisconnectEvent)
+		plr.Destroying:Once(DisconnectEvent)
+		Debug_Display('establishing new connection')
+		local connection
+		local debounce = false
+		local receptiondebounce = false
+		local count = 0
+		local repeatmessage = 0
+		local lastmessage = ''
+		pcall(function() 
+			local event = plr:WaitForChild('ChatEvent', 60) if not plr or not plr.Parent then return end if plr and plr.Parent and not event then local newvent = Instance.new('BindableEvent', plr)
+				newvent.Name = 'ChatEvent'
+			end
+		connection = ((event and event.Event) or plr.Chatted):Connect(function(message: string, Player: Player)
+			if typeof(message) ~= 'string' then return end
+				message = trim(message)
+			if lastmessage:sub(1, #message + 1):lower():match(message:lower()) then
+				repeatmessage += 1
+				if repeatmessage >= 25 and plr then sync_() pcall(function() plr:Kick('Say Something Else!') end) end
+			else
+				repeatmessage = 0
+			end
+			lastmessage = message
+			if receptiondebounce then count += 1 if plr and count >= 10 then sync_() plr:Kick('Slow Down Those Chats!') end return end
+			receptiondebounce = true
+			count = 0
+			task.delay(.5, function() receptiondebounce = false end)
+			if Player or not message or (not message:sub(1,2):match('!') and not message:sub(1,5):match('/e !')) then return end
+			Debug_Display('message pass a')
+			if not plr or not Character or plr.Character ~= Character then
+				if plr then
+					Character = plr.Character
+				else
+					if connection then
+						sync_()
+						Debug_Display('message fail requirement a')
+						connection:Disconnect()
+						return
+					end
+				end
+			end
+			if debounce then return end
+			debounce = true
+			task.delay(1, function() debounce = false end)
+			Debug_Display('processing message a')
+			if not table.find(RAYPAR.FilterDescendantsInstances, plr.Character) then
+				sync_()
+				RAYPAR.FilterDescendantsInstances = {plr.Character,workspace.Character}
+			end
+				desync_()
+				pcall(function() if not Matchedcmd(message) and not table.find(Commandsa, message:lower()) then message = getCommandSuggestions(message) or message end end)
+				pcall(function()	processcom(plr, Character or plr.Character, message, RAYPAR) end)
+			Debug_Display('processed message a')
+		end)
+		ConnectedChats[plr] = connection end)
+		if plr then
+			if Character then	Character:SetAttribute('offset_relative_y', true) end
+			end
+	end
+	ShutdownEvents(Character, true)
+	ShutdownHandlers(Character, true)
+	if Dataset[Character] then Dataset[Character].CharacterInstance = Character	Debug_Display('Character_Intergrated, '.. Character:GetFullName()) else Debug_Display('Character Integration Failed:'..Character.Name) end
+end
+local FinalContainerInstance: Instance | Workspace = (StartUp_Container or workspace) if not FinalContainerInstance then warn('No Instance Is Available For Use') return end
+--[[Usage]]--
+StartUp(FinalContainerInstance:GetChildren())
+sync_()
+FinalContainerInstance.DescendantAdded:Connect(function(CHILD)
+	if CHILD:IsA('Model') and not CHILD:GetAttribute('decor') and CHILD:FindFirstChildOfClass('Humanoid') then
+		local AnimationConstraintRig = CHILD
+		task.synchronize()
+		if CHILD:FindFirstChildOfClass('Humanoid') and FindFirstChildOfNameAndClass(CHILD, "Animate", 'LocalScript') and CHILD:FindFirstChildOfClass('Humanoid').RigType == Enum.HumanoidRigType.R15 then
+			CHILD:SetAttribute('NOT_R6', true)
+		end
+		pcall(function() 
+			for i, Joint in ipairs(AnimationConstraintRig:GetDescendants()) do
+				local s, isC = pcall(function()
+					return Joint:IsA('AnimationConstraint')
+				end)
+				if Joint.ClassName == "AnimationConstraint" or (s and isC) then
+					task.spawn(function() repeat task.wait() until Joint.Attachment0 and Joint.Attachment1 or not Joint or not Joint.Parent 
+					if Joint.Attachment0 ~= nil and Joint.Attachment1 ~= nil then
+						local Motor6D = Instance.new("Motor6D")
+						Motor6D.C0 = Joint.Attachment0.CFrame
+						Motor6D.C1 = Joint.Attachment1.CFrame
+						Motor6D.Part0 = Joint.Attachment0.Parent
+						Motor6D.Part1 = Joint.Attachment1.Parent
+						Motor6D.Name = Joint.Name
+						Motor6D.Parent = Joint.Parent
+						Joint.Attachment0:Destroy()
+						Joint.Attachment1:Destroy()
+						Joint:Destroy()
+					end end)
+				elseif Joint.ClassName == "Humanoid" then
+					if not CHILD:GetAttribute('LEAVEITBE') and char:FindFirstChild('UpperTorso') and not CHILD:GetAttribute('IsRagdoll') and not CHILD:GetAttribute('PermRag') and not CHILD:GetAttribute('Dead') then	Joint.HipHeight = 2 end
+				end
+			end end)
+pcall(function() -- roblox not detecting ts, might be bug or Intention, gotta patch
+	local LowerTorso = FindFirstChildOfNameAndClass(AnimationConstraintRig, 'LowerTorso', 'BasePart')
+	if LowerTorso then
+		local Joint = FindFirstChildOfNameAndClass(LowerTorso, 'Root', 'AnimationConstraint')
+		if Joint then
+			local Motor6D = Instance.new("Motor6D")
+			Motor6D.C0 = Joint.Attachment0.CFrame
+			Motor6D.C1 = Joint.Attachment1.CFrame
+			Motor6D.Part0 = Joint.Attachment0.Parent
+			Motor6D.Part1 = Joint.Attachment1.Parent
+			Motor6D.Name = Joint.Name
+			Motor6D.Parent = Joint.Parent
+			Joint.Attachment0:Destroy()
+			Joint.Attachment1:Destroy()
+			Joint:Destroy()
+		end
+	end
+end)
+		
+		Integrate_Character(CHILD)
+	end
+end)
+game.Close:Connect(Shutdown)
+if ServerStorage and EventTrigger then
+	sync_()
+	EventTrigger.Event:Connect(function(Target, First_Value, ...)
+		desync_()
+		Debug_Display('Signal Received')
+		if Target and First_Value then
+			Debug_Display('Required Value Received')
+			if Dataset[Target] then
+				DeductHealth(Target, First_Value)
+			else
+				if Target and typeof(Target) == 'string' then
+					if Target:upper():match('CLEAN_SPECIFIC') then
+						CleanUp_Specific(First_Value,...)
+					elseif Target:upper():match('DAMAGE') then
+						DeductHealth(First_Value, ...)
+					elseif Target:upper():match('SETMAXHP') then
+						SetData(First_Value, 'Max_Health', ...)
+					elseif Target:upper():match('SETHP') then
+						SetData(First_Value, 'Current_Health', ...)
+					elseif Target:upper():match('SETSTATE') then
+						SetState(First_Value,...)
+					elseif Target:upper():match('SETACTION') then
+						SetAction(First_Value,...)
+					elseif Target:upper():match('CLEAN') then
+						CleanUp()
+					elseif Target:upper():match('END') then
+						Shutdown()
+					elseif Target:upper():match('START') then	
+						StartUp()
+					elseif Target:upper():match('INTEGRATE') then	
+						Integrate_Character(First_Value)
+					end
+				end
+			end
+		end
+	end)
+end
+
+script.Destroying:Once(function()
+	CachePhys()
+	Text('ERROR >> Health And State System Errored')
+end)
+
+
+sync_()
+script:SetAttribute('Removing', nil) script:SetAttribute('ReadyToBRemoved', nil)
+script:GetAttributeChangedSignal('Removing'):Once(function() task.synchronize() CachePhys() task.synchronize() script:SetAttribute('ReadyToBRemoved', true) end)
+CachePhys()
+coroutine.resume(coroutine.create(function()
+	while task.wait(240) do --//stray cases, events not picked up
+		task.desynchronize()
+		for i,v in pairs(Dataset) do
+			if not i or not i.Parent then Dataset[i] = nil end
+		end
+		for i,v in pairs(ConnectedChats) do
+			if not i or not i.Parent then if v then task.synchronize() pcall(function() v:Disconnect() end) task.desynchronize() end pcall(function() ConnectedChats[i] = nil end) end
+		end
+		pcall(function()	CachePhys() end)
+	end
+end))
+]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{F4617F66-5611-4B18-8C4D-0D884639922C}</string>
+			<BinaryString name="AttributesSerialize">AQAAAAoAAABfX25vcmVtb3ZlAwE=</BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">HEATH&amp;STATE_ENGINE</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="Tool" referent="RBX58545D189A8B4A48B8EE181B68B352EE">
+			<Properties>
+				<bool name="CanBeDropped">false</bool>
+				<bool name="Enabled">true</bool>
+				<CoordinateFrame name="Grip">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<bool name="ManualActivationOnly">false</bool>
+				<bool name="RequiresHandle">false</bool>
+				<string name="ToolTip">Get yourself back in the seat!</string>
+				<Content name="TextureId"><null></null></Content>
+				<token name="LevelOfDetail">0</token>
+				<CoordinateFrame name="ModelMeshCFrame">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<SharedString name="ModelMeshData">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+				<Vector3 name="ModelMeshSize">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="ModelStreamingMode">0</token>
+				<bool name="NeedsPivotMigration">false</bool>
+				<Ref name="PrimaryPart">null</Ref>
+				<float name="ScaleFactor">1</float>
+				<SharedString name="SlimHash">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+				<OptionalCoordinateFrame name="WorldPivotData"></OptionalCoordinateFrame>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">SeatHelper3000</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="Script" referent="RBX5C7E26C03D824851BDA808736B2DE57A">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[local Tool: Tool = script.Parent
+local timer: number = 0
+repeat timer += task.wait(1) until  not script:FindFirstAncestorWhichIsA('ServerScriptService') or timer > 5
+if timer > 5 then return end
+if not Tool or not Tool:IsA('Tool') then return end
+Tool.ToolTip = '[[Ready, for use with boat seats only]]'
+local Debounce = false
+local LapParam = OverlapParams.new()
+LapParam.MaxParts = 50
+LapParam.Tolerance = 0.05
+LapParam.RespectCanCollide = false
+LapParam.FilterType = Enum.RaycastFilterType.Exclude
+Tool.Activated:Connect(function()
+	if Debounce or not Tool or not Tool.Parent or not Tool.Parent:IsA('Model') or not Tool.Parent:FindFirstChildOfClass('Humanoid') or Tool.Parent:FindFirstChildOfClass('Humanoid').SeatPart then return end
+	Debounce = true
+	Tool.ToolTip = '[[On Cooldown]]'
+	task.delay(.5,function()
+		Debounce = false
+		Tool.ToolTip = '[[Ready, for use with boat seats only]]'
+	end)
+	local Character: Model = Tool.Parent
+	local CharacterExtentSize: Vector3 = Character:GetExtentsSize()/1.5
+	local CharacterPivot: CFrame = Character:GetPivot()
+	local EpicMagicalScanSize: Vector3 = Vector3.new(CharacterExtentSize.X * 2,CharacterExtentSize.Y * 3,CharacterExtentSize.Z * 4)
+	local HorizontalLookVector: Vector3 = Vector3.new(CharacterPivot.LookVector.X, 0, CharacterPivot.LookVector.Z).Unit
+	local FinalScanPosition: CFrame = CharacterPivot + (HorizontalLookVector * CharacterExtentSize.Z)
+	LapParam:AddToFilter(Character)
+	local ScannedResult: RaycastResult = workspace:GetPartBoundsInBox(FinalScanPosition, EpicMagicalScanSize, LapParam)
+	local NearestDistance: number = EpicMagicalScanSize.Z * 2
+	local NearestSeat: Seat
+	for i,v in ScannedResult do
+		if (v:IsA('Seat') or v:IsA('VehicleSeat')) and (v.Position - FinalScanPosition.Position).Magnitude < NearestDistance then
+			NearestDistance = (v.Position - FinalScanPosition.Position).Magnitude
+			NearestSeat = v
+		end
+		if not Character or Tool.Parent ~= Character then break end
+	end
+	if NearestSeat and Character and Tool.Parent == Character and Character:FindFirstChildOfClass('Humanoid') and not Character:FindFirstChildOfClass('Humanoid').SeatPart then
+		local success = pcall(function() NearestSeat:Sit(Character:FindFirstChildOfClass('Humanoid')) end) if not success then	Character:PivotTo(NearestSeat.CFrame + Vector3.new(0,math.max(0, -NearestSeat.CFrame.Y) + Character:FindFirstChildOfClass('Humanoid').HipHeight + 5,0)) end
+	end
+end)]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{C1142A9A-D240-4364-ADF9-FE4FBC72DEB1}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Script</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="ScreenGui" referent="RBXBB4F43CB91614CF99B85BE4FDF28AC38">
+			<Properties>
+				<bool name="ClipToDeviceSafeArea">true</bool>
+				<int name="DisplayOrder">4</int>
+				<token name="SafeAreaCompatibility">1</token>
+				<token name="ScreenInsets">1</token>
+				<bool name="Enabled">true</bool>
+				<bool name="ResetOnSpawn">false</bool>
+				<token name="ZIndexBehavior">0</token>
+				<bool name="AutoLocalize">true</bool>
+				<Ref name="RootLocalizationTable">null</Ref>
+				<token name="SelectionBehaviorDown">0</token>
+				<token name="SelectionBehaviorLeft">0</token>
+				<token name="SelectionBehaviorRight">0</token>
+				<token name="SelectionBehaviorUp">0</token>
+				<bool name="SelectionGroup">false</bool>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">TP</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="ImageLabel" referent="RBX82B0B9D118814E8E8C6E0D28245AB7CD">
+				<Properties>
+					<Content name="Image"><url>http://www.roblox.com/asset/?id=10143093104</url></Content>
+					<Color3 name="ImageColor3">
+						<R>1</R>
+						<G>1</G>
+						<B>1</B>
+					</Color3>
+					<Vector2 name="ImageRectOffset">
+						<X>0</X>
+						<Y>0</Y>
+					</Vector2>
+					<Vector2 name="ImageRectSize">
+						<X>0</X>
+						<Y>0</Y>
+					</Vector2>
+					<float name="ImageTransparency">0</float>
+					<token name="ResampleMode">0</token>
+					<token name="ScaleType">0</token>
+					<Rect2D name="SliceCenter">
+						<min>
+							<X>0</X>
+							<Y>0</Y>
+						</min>
+						<max>
+							<X>0</X>
+							<Y>0</Y>
+						</max>
+					</Rect2D>
+					<float name="SliceScale">1</float>
+					<UDim2 name="TileSize">
+						<XS>1</XS>
+						<XO>0</XO>
+						<YS>1</YS>
+						<YO>0</YO>
+					</UDim2>
+					<bool name="Active">false</bool>
+					<Vector2 name="AnchorPoint">
+						<X>0</X>
+						<Y>0</Y>
+					</Vector2>
+					<token name="AutomaticSize">0</token>
+					<Color3 name="BackgroundColor3">
+						<R>1</R>
+						<G>1</G>
+						<B>1</B>
+					</Color3>
+					<float name="BackgroundTransparency">1</float>
+					<Color3 name="BorderColor3">
+						<R>0.105882362</R>
+						<G>0.164705887</G>
+						<B>0.207843155</B>
+					</Color3>
+					<token name="BorderMode">0</token>
+					<int name="BorderSizePixel">1</int>
+					<bool name="ClipsDescendants">false</bool>
+					<bool name="Draggable">false</bool>
+					<token name="InputSink">0</token>
+					<bool name="Interactable">true</bool>
+					<int name="LayoutOrder">5</int>
+					<Ref name="NextSelectionDown">null</Ref>
+					<Ref name="NextSelectionLeft">null</Ref>
+					<Ref name="NextSelectionRight">null</Ref>
+					<Ref name="NextSelectionUp">null</Ref>
+					<UDim2 name="Position">
+						<XS>0</XS>
+						<XO>0</XO>
+						<YS>0</YS>
+						<YO>0</YO>
+					</UDim2>
+					<float name="Rotation">0</float>
+					<bool name="Selectable">true</bool>
+					<Ref name="SelectionImageObject">null</Ref>
+					<int name="SelectionOrder">0</int>
+					<UDim2 name="Size">
+						<XS>1</XS>
+						<XO>0</XO>
+						<YS>1</YS>
+						<YO>0</YO>
+					</UDim2>
+					<token name="SizeConstraint">0</token>
+					<bool name="Visible">false</bool>
+					<int name="ZIndex">1</int>
+					<bool name="AutoLocalize">true</bool>
+					<Ref name="RootLocalizationTable">null</Ref>
+					<token name="SelectionBehaviorDown">0</token>
+					<token name="SelectionBehaviorLeft">0</token>
+					<token name="SelectionBehaviorRight">0</token>
+					<token name="SelectionBehaviorUp">0</token>
+					<bool name="SelectionGroup">false</bool>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">ImageLabel</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="UICorner" referent="RBX9940760B68B34BC3BCC332CC68F8CC8F">
+					<Properties>
+						<UDim name="CornerRadius">
+							<S>0</S>
+							<O>0</O>
+						</UDim>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UICorner</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="UIStroke" referent="RBX109A5BD82B70477A9B5B5AD361B08A27">
+					<Properties>
+						<token name="ApplyStrokeMode">0</token>
+						<UDim name="BorderOffset">
+							<S>0</S>
+							<O>0</O>
+						</UDim>
+						<token name="BorderStrokePosition">0</token>
+						<Color3 name="Color">
+							<R>1</R>
+							<G>1</G>
+							<B>1</B>
+						</Color3>
+						<bool name="Enabled">true</bool>
+						<token name="LineJoinMode">0</token>
+						<token name="StrokeSizingMode">1</token>
+						<float name="Thickness">0</float>
+						<float name="Transparency">1</float>
+						<int name="ZIndex">1</int>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">UIStroke</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+			<Item class="LocalScript" referent="RBX11315C29AA914062A23C5C5E775C2BF5">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[task.wait(math.random())
+if not script:FindFirstAncestorWhichIsA('PlayerGui') or not script:FindFirstAncestorWhichIsA('Player') or not script:FindFirstAncestorWhichIsA('Players') then return end
+local alr = script:GetAttribute("Alr") or (script:GetAttribute('start') ~= nil)
+local connections = {}
+local savedpar: {Instance: Instance} = {}
+local dark = {}
+if not script:FindFirstAncestorWhichIsA('ScreenGui') or script:FindFirstAncestorWhichIsA('ScreenGui'):GetAttribute('cleanup') or script:GetAttribute('endkernel') then return end
+if script:GetAttribute('kernel') then
+	pcall(function()
+	for i,v in workspace.CurrentCamera:GetChildren() do
+		table.insert(dark, v)
+	end end)
+end
+if not script:FindFirstChildOfClass('Folder') then
+	Instance.new('Folder', script)
+end
+function loopdestroy(v, perma, par)
+	if typeof(v) ~= 'Instance' then return end
+	if not perma then
+		if not savedpar[v] then savedpar[v] = par or v.Parent end
+	end
+	coroutine.resume(coroutine.create(function()
+		while v and v.Parent and v.Parent ~= script:FindFirstChildOfClass('Folder')  do
+			pcall(function() if perma then v:Destroy() else v.Parent = script:FindFirstChildOfClass('Folder') or Instance.new('Folder', script) end end)
+			task.wait()
+		end
+	end))
+end
+if not alr then task.wait(5) end
+table.insert(connections, game.DescendantAdded:Connect(function(chr)
+	if chr:IsA('Sound') then loopdestroy(chr, true) end
+end) )
+for i,v in game:GetDescendants() do
+	if v:IsA('Sound') then game:GetService('TweenService'):Create(v, TweenInfo.new(5),
+		{Volume = 0}
+		):Play() game:GetService('Debris'):AddItem(v, 5) end
+end local cc = workspace.CurrentCamera:FindFirstChild('___TP') 
+
+if not alr and not (cc and cc:IsA('ColorCorrectionEffect')) then
+	cc = Instance.new('ColorCorrectionEffect', workspace.CurrentCamera)
+	cc.Name ='___TP'
+game:GetService('TweenService'):Create(cc, TweenInfo.new(5),
+	{Contrast = 1, Saturation = -1, TintColor = Color3.fromRGB(255, 255, 255)}
+):Play()
+task.wait(5) end
+if not script:FindFirstAncestorWhichIsA('PlayerGui') then return end
+local savedscreenie = workspace.CurrentCamera.ViewportSize
+local ratioXtoY = savedscreenie.X/savedscreenie.Y
+local StarterGui = game:GetService("StarterGui")
+local gui = script:FindFirstAncestorWhichIsA('ScreenGui')
+local image = gui:FindFirstChildOfClass("ImageLabel") or gui:WaitForChild('ImageLabel', 15)
+local corner = image:FindFirstChildOfClass('UICorner') or image:FindFirstChild('UICorner',15) or Instance.new('UICorner', image)
+if not alr then corner.CornerRadius = UDim.new(0,0) end
+local stroke = image:FindFirstChildOfClass('UIStroke') or image:FindFirstChild('UIStroke',15) or Instance.new('UIStroke', image)
+if not alr then stroke.Thickness = 0
+stroke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+stroke.Transparency = 1 end
+
+game:GetService("CaptureService"):CaptureScreenshot(function(contentId)
+	if not alr then 
+	image.Image = contentId script:SetAttribute('Alr', true) end
+	image.Visible = true
+	task.wait(.1)
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+	gui.DisplayOrder = 9999
+	local background = gui:FindFirstChildOfClass('Frame') or Instance.new('Frame', gui)
+	background.Size = UDim2.new(1,0,1,0)
+	background.BackgroundTransparency = 0
+	background.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	background.ZIndex = -9999
+end)
+if not alr then task.wait(.1) end
+if script:FindFirstAncestorWhichIsA('PlayerGui') then
+table.insert(connections, script:FindFirstAncestorWhichIsA('PlayerGui').ChildAdded:Connect(function(chd)
+		loopdestroy(chd, false, script:FindFirstAncestorWhichIsA('PlayerGui'))
+end))
+for i,v in script:FindFirstAncestorWhichIsA('PlayerGui'):GetChildren() do
+	if v:IsA('ScreenGui') and v ~= gui then v.Enabled = false loopdestroy(v) end
+end end
+if game:GetService('Players') then
+	table.insert(connections, game:GetService('Players').PlayerAdded:Connect(function(chd)
+	loopdestroy(chd, true)
+end) )
+for i,v in game:GetService('Players'):GetChildren() do
+	if v ~= game:GetService('Players').LocalPlayer then
+			loopdestroy(v, true)
+	end
+	end  end
+cleanup = function()
+	pcall(function() cc:Destroy() end)
+	for i,v in gui:GetDescendants() do
+		pcall(function()
+			game:GetService('TweenService'):Create(v, TweenInfo.new(5), {Transparency = 1})
+		end)
+	end
+	for i,v in connections do
+		pcall(function() v:Disconnect() end)
+	end
+	for i,v in dark do
+		pcall(function() v:Destroy() end)
+	end
+	for i,v in pairs(savedpar) do
+		pcall(function() if not v then i:Destroy() return end i.Parent = v end)
+	end
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+	if not script:FindFirstChildOfClass('Folder') then return end
+	for i,v in script:FindFirstChildOfClass('Folder'):GetChildren() do
+		if v:IsA("ScreenGui") then
+			v.Parent = script:FindFirstAncestorWhichIsA('PlayerGui')
+		end
+	end
+	task.wait(10)
+	if not gui or not gui.Parent then return end
+	gui:Destroy()
+end
+if gui:GetAttribute('cleanup') then 
+	cleanup()
+	return
+else
+	gui:GetAttributeChangedSignal('cleanup'):Once(cleanup)
+end
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) 
+local start -- null
+coroutine.resume(coroutine.create(function()
+	pcall(function()	game:GetService('TeleportService'):SetTeleportGui(gui) end)
+	if not script:GetAttribute('kernel') then 
+		while typeof(start) ~= 'number' or start <= 10 do
+			if gui:GetAttribute('cleanup') then break end
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+		local dt = task.wait()
+		if typeof(start) == 'number' and start < 10 then
+			if start > 5 then start += dt * (((12/start) - 1)) image.ImageTransparency = (start-5)/5 stroke.Transparency = math.max(0, (start-5)/5) else	start += dt * (5.5-start)/2.5 stroke.Thickness = math.min(1, start/500) stroke.Transparency = math.max(0, 1 - start/5) corner.CornerRadius = UDim.new(math.min(1, start/50),0)  end
+		end
+		script:SetAttribute('start', start)
+		local ang = typeof(start) == 'number' and math.acos((start-5)/5) or 0 -- remove five to make it start from zero(divide five to make it [0,1] in range for acos conversion to [0,90] degree angle), I'm thinking of the viewpoint as it it had started from the first quadrant
+		local sinear =  math.sin(ang) * 5 -- like a circular size up effect, times five because I'm too lazy to change the formula and would preferably only replace the variable and change the single formula using it to an inverse(Higher Sin Meant Further Away in this angle, Sin here should directly inverse with SIZE)
+		image.Size = (typeof(start) ~= 'number' or start < 5) and UDim2.new(0,image.AbsoluteSize.Y * ratioXtoY,1 - (typeof(start) == 'number' and math.min(start, 5)/10 or 0),0) or UDim2.new(0,image.AbsoluteSize.Y * ratioXtoY, .5 + ((5 - sinear)/10),0)
+		local vps = workspace.CurrentCamera.ViewportSize
+		image.Position = UDim2.new((typeof(start) == 'number' and (math.max(start, 5)-5)/5.25 or 0), (vps.X - image.AbsoluteSize.X)/2, (typeof(start) == 'number' and (start < 5 and (math.min(start, 5)/10) or (.5 - math.max(5 - sinear, 0)/10))) or 0, -(vps.Y - image.AbsoluteSize.Y)/2)
+	end end
+	--fake kernel
+	if script:GetAttribute('endkernel') or gui:GetAttribute('cleanup')  then return end
+ 	if script:GetAttribute('kernel') then if gui and gui:FindFirstChild('Frame') and gui.Parent and gui:FindFirstChild('Frame'):FindFirstChildOfClass('TextLabel') then gui:FindFirstChild('Frame'):FindFirstChildOfClass('TextLabel'):Destroy() end  end
+	script:SetAttribute(
+		'kernel', true
+	)
+	local newtext = Instance.new('TextLabel', gui:FindFirstChild('Frame'))
+	newtext.BackgroundColor3 = Color3.new(0,0,0)
+	newtext.BackgroundTransparency = 1
+	newtext.Text = ''
+	newtext.Size = UDim2.fromScale(.5,0)
+	newtext.Position = UDim2.fromScale(.25,.5)
+	local corner = Instance.new('UICorner', newtext)
+	corner.CornerRadius = UDim.new(1,0)
+	local stoke = Instance.new('UIStroke', newtext)
+	stoke.Color = Color3.new(0,0,0)
+	stoke.Thickness = 0
+	stoke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stoke.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+	game:GetService('TweenService'):Create(corner, TweenInfo.new(1, Enum.EasingStyle.Circular, Enum.EasingDirection.Out), {CornerRadius = UDim.new(0.025, 0)}):Play()
+	game:GetService('TweenService'):Create(stoke, TweenInfo.new(1.25, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {Color = Color3.new(1,1,1), Thickness = 0.0075}):Play()
+	game:GetService('TweenService'):Create(newtext, TweenInfo.new(1.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(.5,.5), Position = UDim2.fromScale(.25,.25)}):Play()
+	task.wait(1)
+	game:GetService('TweenService'):Create(newtext, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0, BackgroundColor3 = Color3.new(0.2,0.2,0.2)}):Play()
+	task.wait(2)
+	newtext.TextYAlignment = Enum.TextYAlignment.Top
+	newtext.TextXAlignment = Enum.TextXAlignment.Left
+	newtext.TextColor3 = Color3.new(1, 1, 1)
+	newtext.TextSize = 24
+	newtext.Font = Enum.Font.Code
+	task.wait(math.random())
+	newtext.Text = 'loading... '
+	local curtext = 'loading... '
+	coroutine.resume(coroutine.create(function()
+		local phase = 1
+		local spin = {'|', '/', '-', [[\]]}
+		while newtext and newtext.Parent and task.wait(math.max(.05, math.random()/3)) do
+			phase = phase + 1
+			if phase > 4 then phase = 1 end
+			newtext.Text = (curtext or '') .. (spin[phase] or '')
+		end
+	end))
+	task.wait(math.random())
+	newtext.Text = [[loading... done
+	inititalizing server... ]]
+	curtext = [[loading... done
+	inititalizing server... ]]
+	task.wait(math.max(1,math.random() * 5))
+	local waittime = 0
+	repeat waittime += task.wait(1) until gui:GetAttribute('datsent') or waittime > 3600
+	local condit = gui:GetAttribute('INITED')
+	newtext.Text = condit and [[loading... done
+	inititalizing server... success 
+	connecting... ]] or [[loading... done	
+	inititalizing server... failed
+	cleaning up... ]]
+	curtext = condit and [[loading... done
+	inititalizing server... success 
+	connecting... ]] or [[loading... done
+	inititalizing server... failed
+	cleaning up... ]]
+	task.wait(math.random())pcall(function()
+	game:GetService('TeleportService'):SetTeleportGui(gui) end)
+	newtext.Text = condit and [[loading... done
+	inititalizing server... success 
+	connecting... ]] or [[loading... done	
+	inititalizing server... failed
+	cleaning up... done
+	rebooting... ]]
+	curtext =condit and [[loading... done
+	inititalizing server... success 
+	connecting... ]] or [[loading... done
+	inititalizing server... failed
+	cleaning up... done
+	rebooting... ]]
+	task.wait(math.random())
+	if not condit then for i = 1, 100 do local darker = Instance.new('ColorCorrectionEffect', workspace.CurrentCamera) darker:SetAttribute('__tp', true) darker.Brightness = -1 darker.Contrast = -1 darker.Saturation = -1 darker.TintColor = Color3.new(0,0,0) darker.Enabled = true end --[[ensure darkness after gui's destruction from directly removing client]]	if waittime >= 300 then game:GetService('Players').LocalPlayer:Remove() end return end -- server will handle the teleport as it had already informed a success in creating a reserved server via attribute
+	newtext.Text = condit and [[loading... done
+	inititalizing server... success 
+	connecting... connected
+	opening client... ]] or [[loading... done
+	inititalizing server... failed
+	cleaning up... done
+	rebooting... ]]
+	curtext = condit and [[loading... done
+	inititalizing server... success 
+	connecting... connected
+	opening client... ]] or [[loading... done
+	inititalizing server... failed
+	cleaning up... done
+	rebooting... ]]
+	script:SetAttribute(
+		'endkernel', true
+	)
+	shutui = function()
+		newtext.Text = ''
+		curtext = ''
+		newtext.TextWrapped = true
+		newtext.TextScaled = true
+		game:GetService('TweenService'):Create(corner, TweenInfo.new(1, Enum.EasingStyle.Circular, Enum.EasingDirection.In), {CornerRadius = UDim.new(1, 0)}):Play()
+		game:GetService('TweenService'):Create(stoke, TweenInfo.new(1.25, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {Color = Color3.new(1,1,1), Thickness = 0}):Play()
+		game:GetService('TweenService'):Create(newtext, TweenInfo.new(1.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromScale(0,0), Position = UDim2.fromScale(.5,.5)}):Play()
+		game:GetService('TweenService'):Create(newtext, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 0, BackgroundColor3 = Color3.new(1,1,1)}):Play()
+		task.wait(1.5)
+		newtext.Text = ''
+		pcall(function()
+			game:GetService('TeleportService'):SetTeleportGui(gui) end)
+	end
+	if gui:GetAttribute('shutui') then
+		shutui()
+		else gui:GetAttributeChangedSignal('shutui'):Once(shutui)
+	end
+	if gui:FindFirstChildOfClass('RemoteEvent') then
+		task.wait(2)
+		gui:FindFirstChildOfClass('RemoteEvent'):FireServer()
+	end
+	--fire event to the server to confirm teleport
+end))
+if not script:GetAttribute('start') then 
+task.wait(1)
+start = 0	script:SetAttribute('start', 0) 
+else start = script:GetAttribute('start') end
+]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{B7300413-0C3A-4B03-80A7-59928C396074}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">LocalScript</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="RemoteEvent" referent="RBXA6C84440297D436F993BF22093F79C2A">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">ready</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="ModuleScript" referent="RBX76B097092A20478891C475FF0A442DDA">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local module = {}
+module.Words = {'host','lay', 'say', 'bay', 'way', 'violet' , 'crimson', 'deep', 'shallow', 'dew', 'grow', 'show', 'mow', 'though', 'loath', 'both', 'all', 'mall', 'hall', 'doll', 'lol', 'so', 'YOLO', 'seal', 'deal', 'meal', 'clean', 'bean', 'seen', 'lean', 'dope', 'cope','solve', 'mope', 'hope', 'shove', 'loaf', 'bread', 'grain', 'wheat', 'vain', 'gain', 'main', 'sane', 'in', 'pain', 'maine', 'bane', 'wane', 'drain', 'train', 'brain', 'use', 'your', 'sour', 'bitter', 'sweet', 'spicy', 'dice', 'mice', 'might', 'sight', 'slice', 'delight', 'demise', 'side', 'abide', 'sight', 'bite', '*', '#', '%', ')', '(', 'lost', 'sauce', 'most', 'majority', 'least', 'minority', 'major', 'minor', 'note', 'wrote', 'quote', 'match', 'hatch', 'latch', 'watch', 'bunch', 'many', 'any', 'anybody', 'every', 'sometimes' ,'hear', 'feel', 'smell', 'flowers'
+	, 'field', 'sanctuary', 'words', 'speak', 'chat', 'cast', 'last', 'blast', 'disgust', 'crust', 'rust', 'must', 'cruel', 'crawl', 'slide', 'sleep', 'hide', 'side', 'ride', 'abide', 'glide', 'metal', 'gear', 'solid', 'liquid', 'gas', 'orchestral', 'jazz', 'rock', 'roll', 'thy', 'soul', 'seep', 'heap', 'keep', 'cheap', 'leap', 'bump', 'clump', 'jump', 'way', 'say', 'safechat', 'none', 'none', 'nothing', 'crouch', 'coin', 'canned', 'lowkey', 'wth', 'sigh', 'shush', 'trust', 'en masse', 'english', 'bits', 
+	'lit', 'wit', 'sit', 'jump', 'run', 'sun','roll', 'cloud', '-ing', 'revolt', 'sky', 
+	'gradient', 'sandy', 'mandatory', 'glory', 'sorry', 'glossy', 'plain',
+	'pattern','scary', 'plaid', 'glade', 'blade', 'hny', 'wear', 'tear', 'play',
+	'boast', 'roast', 'boat', 'goat', 'code', 'shell', 'grail', 'sail', 'set', 'get',
+	'read', 'sold', 'sell', 'tell', 'bell', 'mail','red', 'orange', 'purple', 'green',
+	'blue', 'yellow', 'crimson', 'cyan', 'light', 'dark', 'heavy', 'height', 'bright', 
+	'slight', 'hundred', 'thousand', 'ten-', 'ten', 'million', 'billion', 'trillion', 'concert', 'attend', 'rent', 'mend', 'construction', 'recognize', 'recognition', 'cognitive', 'imparative', 'impossible', 'parallel', 'diverge', 'converge', 'concave', 'divert', 'convert', 'revert', 'assert', 'insert', 'output', 'safe', 'pave', 'rave', 'cave', 'gift', 'borrow', 'lend' , 'return', 'back', 'free', 'expensive', 'cheap', 'well', 'priced', 'unique', 'entriguing', 'interest', 'interested', 'favorite', 'guess', 'best', 'rest', 'crest', 'mess', 'less', 'obsessed', 'regret', 'meet', 'greet', 'greetings', 'morning', 'noon', 'evening', 'visit', 'think', 'wink', 'chop', 'hop', 'slop','mop', 'clean', 'mean', 'bean', 'lean', 'seen', 'gravy', 'hazy', 'rainbow', 'eyes', 'ears', 'nose', 'lie', 'bye', 'goodbye', 'gg', 'ez', 'later', 'gtg', 'brb', 'zero', 'hero', 'please', 'chocolate', 'lantern', 'flashlight', 'allternative', 'cola', 'bloxy', 'basic', 'in', 'out', 'camera', 'photo', 'picture', 'imagine', 'realistic', 'realism', 'realize', 'trivial', 'reveal', 'conceal', 'drill', 'meal', 'wheel', 'brew', 'crew', 'sew', 'dew', 'bean', 'can', 'paint', 'water', 'edit', '-tion', 'combat', 'fight', 'technique', 'fire', 'work', 'sword', 'katana', 'grapple', 'lighter', 'juice', 'pizza', 'noodle', 'instance', 'instant', 'push', 'shove', 'block', 'knock', 'lock', 'rose', 'sign', 'develop', '-ment', 'dev', 'occasion', 'ally', 'enemy', 'snow', 'glow', 'blow', 'lighting', 'crowd', 'bleak', 'creak', 'reek', 'place', 'base', 'mace', 'door', 'bunker', 'bulb', 'force', 'cost', 'chose', 'an', 'a', 'umbrella', "knife", 'baseball', 'bat', 'rod', 'bait', 'state', 'villian', 'grill', 'make', 'cake', 'bake', 'take', 'wake', 'sake', 'rake', 'forest', 'city', 'urban', 'abandoned', 'bleak', 'empty', 'ambient', 'ambiance' ,'decade', 'stare', 'glare', 'frequent', 'recent', 'decent', 'descent', 'ascent', 'rapid', 'rabid', 'forbid', 'condone', 'radish', 'morse', 'pause', 'clause', 'check', 'close', 'open', 'sight', 'delight', 'smite', 'fright', 'glide', 'slide', 'hide', 'collide', 'suffice', 'seldom', 'usually', 'always', 'little', 'large', 'extra', 'load', 'pre-', 're-', 'route', 'clout', 'about', 'mouth', 'salt', 'pepper', 'mint', 'glint', 'hint', 'bin', 'trash', 'cash', 'wash', 'mash', 'glad', 'slash', 'had', 'class', 'mollases', 'doctor', 'emergency', 'police', 'respond', 'comply', 'refuse', 'apply', 'exit', 'enter', 'leave', 'leaf', 'leaves', 'grieve', 'grief', 'brief', 'case', 'heap', 'leap', 'creep', 'beep', 'food', 'drink', 'water', 'break', 'go', 'went', 'gone', 'did', 'done', 'do', 'know', 'knew', 'known', 'nice', 'nasty', 'ego', 'yeah', 'dollar', 'pound', 'cent', 'comprehend', 'blend', 'ascend', 'pretend', 'reten', 'gluten', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'time', 'times', 'often', 'bare', 'rare', 'legend', 'legendary', 'epic', 'exotic', 'transcendant', 'uncommon', 'common', 'require', 'aqquire', 'attrie', 'smile', 'frown', 'skeptical', 'magical', 'lyrical', 'banger', 'slang', 'apple', 'tomato', 'banana', 'kiwi', '?', '!', ';)', ':)', ':(', ';(',':<',':>', ';<' , 'century','year', 'years', 'months', 'month', 'day', 'days', 'will', 'soon', 'in the future', 'might', 'high', 'fest', 'festival', 'festive', 'decor', 'decorative', 'low', 'hot', 'cold', 'winter', 'summer', 'autumn', 'rain', 'spring', '-y', '-est', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august','september', 'october', 'december', 'november', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'vacation' , 'holiday', 'abroad', '(s)', 'foggy', 'cloudy', 'humid', 'snowy', 'windy', 'blizzard', 'tornado', 'lake', 'bay', 'say', 'way', 'hype', 'fall off', 'craze', 'haze', 'base', 'bass', 'maze', 'grace', 'waste', 'raise', 'beige', 'mage',  'rage', 'sage', 'wage', 'manage', 'phage', 'micro', 'macro', 'nano', 'kilo', 'meter', 'metre', 'square' , 'circle', 'triangle', 'octa', 'deca', 'mono', 'di', 'tri', 'penta', 'tetra', 'hexa', 'nona', 'power', 'to', 'too', 'pico', 'milli', 'deci', 'centi', 'gram', 'pascal', 'per', 'acres', 'the', 'ago', 'today', 'tomorrow', 'last', 'new', 'old', 'mysterious', 'cat', 'dog', 'hamsters', 'day', 'night', 'late','yep', 'nuh uh','crazy', 'mad', 'insane', 'breathtaking', 'calm', 'serious', 'anxious', 'lit', 'burnt', 'book', 'fishing', 'boat', 'fall', 'swim', 'dance', '._.', '>.<', 'woah', 'whoops','opponent', 'op', 'peak', 'fire', 'run', 'walk', 'let', 'talk', 'neat', 'amazing', 'outlandish', 'great', 'work', '...', 'ugh', 'ouch', 'oops','hello', 'hi', 'sup', 'yo' , 'now', 'quick', 'fast', 'make haste', 'pace', 'never', 'mind', 'keep', 'up', 'down', 'left', "right", 'front', 'back', 'top', 'bottom', 'behind', 'side', 'look', 'there', 'this', 'that', 'then', 'the', 'do', 'slow', 'steady', 'careful', 'not', 'think', '-ed', 'how', 'why', 'where' , 'when' , 'who', 'follow', 'stop' , 'away' , 'no chat', 'erm', 'nah', 'no', 'yes', 'ofc', 'of course', 'what', 'really?', 'omg', 'cool', 'so', 'eww', 'wth', 'real', 'cap', 'no!', 'sure', 'absolutely', 'maybe', 'kinda', 'kind of', 'you', 'me', 'him', 'her', 'they', 'them', 'end', 'start', '1','2','3','4','5','6','7','8','9','10','woah', 'bad', 'are', 'good', 'is', 'am', 'out of', 'wwww', '5555', 'ha', 'hahaha', 'hehehehah', 'true', 'false', 'amazing', 'fantastic', 'mid', 'cooked', 'rip', 'no way', 'fortunate', '-ly', 'un-' , 'only', 'nevermind', 'welcome', 'your', 'mine' , '-s' , 'my', 'I', 'his', 'her' , 'their', 'our', '-self', '-selves', 'them' , 'us', 'angry', 'sad', 'happy', 'silly', 'fun', 'him', 'be'}
+
+return module
+]]></ProtectedString>
+				<string name="ScriptGuid">{6E06598A-B9AF-418B-B3E1-BA5D4BB8A438}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Wordlist</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="LocalScript" referent="RBX386835AF02314AFCBACFAEFEF8E9609D">
+			<Properties>
+				<ProtectedString name="Source"><![CDATA[if not script:FindFirstAncestorWhichIsA('Model') then return end
+pcall(function()
+for i,v in script:FindFirstAncestorWhichIsA('Model'):GetDescendants() do
+	if v.ClassName:lower():match('motor6d') then
+		v.Transform = CFrame.new()
+	end
+end
+end)
+pcall(function()
+	local chr = script:FindFirstAncestorWhichIsA('Model')
+	local AnimateSc = chr:FindFirstChild('Animate')
+	if AnimateSc.ClassName == 'Script' and AnimateSc:GetAttribute('__noremove') then
+		chr:FindFirstChildOfClass('Humanoid'):FindFirstChildOfClass('Animator'):Destroy()
+	end
+end)
+]]></ProtectedString>
+				<bool name="Disabled">false</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{7E98E569-E626-435A-8C8C-4F3D88B7B0F6}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">__Clear</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+	</Item>
+	<SharedStrings>
+		<SharedString md5="yuZpQdnvvUBOTYh1jqZ2cA=="></SharedString>
+	</SharedStrings>
+</roblox>

@@ -1,0 +1,2158 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Script" referent="RBX64F7259984444B81AF0DD83066465FD6">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[--[[
+  ToolClasses = 'Catcher' or 'Jar'
+  Manages:
+    - Catcher tools: swing to capture Fireflies
+    - Jar tools: open/close to release or hold captured Fireflies
+--]]
+local map = workspace.Map or workspace:WaitForChild('Map', 60)
+task.wait(2)
+repeat task.wait(1) until game:GetService('Lighting'):FindFirstChildOfClass('Sky')
+if game:GetService('Lighting'):FindFirstChildOfClass('Sky').Name == 'Default_RTX_SKY' then return end
+local RQ = require(script.FireflyRoamingLogic)
+function DeterminePartBias(Part: BasePart)
+	return RQ.GetRoamingPercentage(Part)
+end
+local TweenService = game:GetService('TweenService')
+local CStables = game:GetService('CollectionService'):GetTagged('__FFFollowable') or {}
+local Bias = {}
+if #CStables > 0 then 
+	for i,v in CStables do
+	if not v:IsA('BasePart') then table.remove(CStables, i) 
+		if v:FindFirstChildOfClass('BasePart') then
+			table.insert(CStables, v:FindFirstChildOfClass('BasePart'))
+			Bias[v:FindFirstChildOfClass('BasePart')] = DeterminePartBias(v:FindFirstChildOfClass('BasePart')) 
+		end
+		continue
+	end
+	Bias[v] = DeterminePartBias(v)
+end
+	for i,v in CStables do if not v:IsA('BasePart') then table.remove(CStables, i) end end
+end
+
+type ToolClasses = ('Catcher' | 'Jar')
+type FirefliesState = ('Follow' | 'Random' | 'Captured')
+type CatcherState = ('Swing' | 'Idle' | 'Unequipped')
+
+-- Fireflies struct
+type FF = {
+	Part: Part,
+	Follow: Part,
+	CF: CFrame,
+	Velocity: Vector3,
+	State: FirefliesState,
+	EnclosedIn: BasePart,
+	LockedInTool: Tool,
+	LFC: number
+}
+
+-- Jar struct
+type JarForFireflies = {
+	Fireflies: { FF },
+	Handle: BasePart,
+	Opened: boolean,
+	HolsterHandle: BasePart,
+	LinkedCatcher: Tool,
+	Connections: {Temp: {RBXScriptConnection}, Perma: {RBXScriptConnection}},
+	Cooldown: boolean,
+	Task: thread,
+}
+
+-- Catcher struct
+type Catcher = {
+	State: CatcherState,
+	Connections: {Temp: {RBXScriptConnection}, Perma: {RBXScriptConnection}} ,
+	LinkedJarTool: Tool?,
+	Cooldown: boolean,
+	Task: thread,
+	Handle: BasePart,
+}
+
+local CharANDJar: {Model: {Jar: Tool, Catcher: Tool}} = {}
+local Catchers: { [Tool]: Catcher } = {}
+local Jars: { [Tool]: JarForFireflies } = {}
+local Fireflies: { BasePart: FF } = {}  -- Your existing swarm of fly-flies
+local DestructionConnection : {Istance: RbxscriptConnection} = {}
+local FF_Parent = workspace:FindFirstChild('__Fireflies')
+if not FF_Parent then local newfolder = Instance.new('Folder', workspace) newfolder.Name = '__Fireflies' FF_Parent = newfolder end
+
+local OPM = OverlapParams.new()
+OPM.FilterDescendantsInstances = {FF_Parent}
+OPM.FilterType = Enum.RaycastFilterType.Include
+OPM.MaxParts = 10
+
+local AOPM = OverlapParams.new()
+AOPM.FilterDescendantsInstances = {FF_Parent, workspace.BOUND}
+AOPM.FilterType = Enum.RaycastFilterType.Exclude
+AOPM.RespectCanCollide = true
+
+local RPM = RaycastParams.new()
+RPM.FilterDescendantsInstances = {FF_Parent}
+RPM.FilterType = Enum.RaycastFilterType.Exclude
+RPM.RespectCanCollide = true
+
+-- Utility to clean up connections
+local function disconnectAll(connections)
+	if not connections then return end
+	task.synchronize()
+	for _, conn in ipairs(connections) do
+		if conn then
+			conn:Disconnect()
+		end
+	end
+end
+local function DC_Init(In: Instance, Con: RBXScriptConnection)
+	if typeof(In) ~= 'Instance' then return end
+	task.synchronize()
+	if DestructionConnection[In] then DestructionConnection[In]:Disconnect() DestructionConnection[In] = nil end
+	DestructionConnection[In] = Con
+end
+
+-- ===== Firefly =====
+local RunService = game:GetService("RunService")
+local Workspace   = workspace
+
+-- settings
+local MAX_SPEED       = 10             -- studs/sec
+local NOISE_SCALE     = 0.5            -- how much noise perturbs direction
+local NOISE_FREQ      = 0.2            -- Perlin noise frequency
+local AVOID_DISTANCE  = 2              -- start avoidance this close
+local AVOID_STRENGTH  = 5              -- how sharply to turn when avoiding
+local ORBIT_RADIUS    = 3              -- desired orbit distance when following
+local FOLLOW_STRENGTH = 4              -- how strongly to steer toward target
+
+-- helper: clamp a Vector3 to lie within an oriented box
+local function clampToBox(pointCFrame, boxPart)
+	local rel = boxPart.CFrame:PointToObjectSpace(pointCFrame.Position)
+	local half = boxPart.Size * 0.5
+	rel = Vector3.new(
+		math.clamp(rel.X, -half.X, half.X),
+		math.clamp(rel.Y, -half.Y, half.Y),
+		math.clamp(rel.Z, -half.Z, half.Z)
+	)
+	return boxPart.CFrame:PointToWorldSpace(rel)
+end
+
+local Workspace    = workspace
+local RunService   = game:GetService("RunService")
+
+-- Pre-allocations
+local rayParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Exclude
+rayParams.FilterDescendantsInstances = {FF_Parent}
+-- we'll set rayParams.FilterDescendantsInstances per-FF in Update()
+
+local RunService = game:GetService("RunService")
+local Workspace  = workspace
+
+local running = false
+-- Settings
+local MAX_SPEED       = 10        -- studs/sec
+local NOISE_SCALE     = 2         -- noise strength
+local AVOID_DISTANCE  = 2         -- how far ahead to check
+local BOUNCE_DAMPING  = 0.5       -- how much velocity is retained after hitting
+local SMALL_EPS       = 0.1       -- prevent sinking into surfaces
+local TURN_SPEED = math.pi
+-- Pre‑allocate RaycastParams
+local rayParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Exclude
+rayParams.FilterDescendantsInstances = RPM.FilterDescendantsInstances
+
+--- Reflect `vel` off `normal` with damping
+local function reflectVelocity(vel, normal)
+	return (vel - 2 * vel:Dot(normal) * normal) * BOUNCE_DAMPING
+end
+local function alongVelocity(vel, normal)
+	return (vel - vel:Dot(normal) * normal) * BOUNCE_DAMPING
+end
+function CreateHitboxData(cframe1: CFrame, cframe2: CFrame, Size: number?)
+	-- Calculate the midpoint between the two CFrames
+	local midpoint = cframe2.Position + (cframe1.Position - cframe2.Position) / 2
+	-- Calculate the size of the hitbox
+	local distance = (cframe1.Position - cframe2.Position).Magnitude
+	local size = Vector3.new(Size, Size, distance + 1)
+	-- Create the hitbox part
+
+	return CFrame.new(midpoint, cframe2.Position), size
+end
+--- Clamp Y so firefly never falls below ground
+local function clampAboveGround(cf, size)
+	local down = workspace:Blockcast(cf + Vector3.new(0, 1, 0), size, Vector3.new(0, -2, 0), rayParams)
+	if down and down.Position.Y >= cf.Y then
+		local pos = cf.Position
+		local minY = down.Position.Y + size.Y/1.5
+		if pos.Y < minY then
+			cf = CFrame.new(pos.X, minY, pos.Z)
+		end
+	end
+	return cf.Position
+end
+local function clampBelowCeil(cf, size)
+	local up = workspace:Blockcast(cf + Vector3.new(0, -1, 0), size, Vector3.new(0, 2, 0), rayParams)
+	if up and up.Position.Y <= cf.Y then
+		local pos = cf.Position
+		local maxY = up.Position.Y - size.Y/1.5
+		if pos.Y > maxY then
+			cf = CFrame.new(pos.X, maxY, pos.Z)
+		end
+	end
+	return cf.Position
+end
+function CUP(Part: BasePart)
+	if Part:GetAttribute('GON') then return end
+	local FFDATA: FF = Fireflies[Part]
+	task.synchronize()
+	Part:SetAttribute('GON', true)
+	task.desynchronize()
+	if FFDATA then
+		Fireflies[Part].Follow = nil
+		Fireflies[Part].EnclosedIn = nil
+		if FFDATA.LockedInTool and Jars[FFDATA.LockedInTool] and Jars[FFDATA.LockedInTool].Fireflies and table.find(Jars[FFDATA.LockedInTool].Fireflies, Part) then
+			table.remove(Jars[Fireflies[Part].LockedInTool].Fireflies, table.find(Jars[Fireflies[Part].LockedInTool].Fireflies, Part))
+		end
+		Fireflies[Part].LockedInTool = nil
+	end
+	Ins_FF()
+	Fireflies[Part] = nil
+	DC_Init(Part)
+end
+function FreeFF(Part: BasePart)
+	if not Part or not Fireflies[Part] then return end
+	local Data: FF = Fireflies[Part]
+	local JarData: JarForFireflies = Data.LockedInTool and Jars[Data.LockedInTool]
+	if (not JarData or JarData.Opened or not JarData.Handle or not JarData.Handle.Parent) then
+		Data.EnclosedIn = nil
+		Data.State = Data.State == 'Captured' and 'Random' or Data.State
+		local Thign = table.find(JarData.Fireflies, Part)
+		if Thign then table.remove(JarData.Fireflies, Thign) end
+	end
+end
+function Scans(CF, Size, DIR, FR, ...)
+	local ScanNormal = Workspace:Blockcast(CF, Size, DIR, FR, ...)
+	if ScanNormal then return ScanNormal end
+	local ScanInv = Workspace:Blockcast(CF + DIR, Size, -DIR, FR)
+	if ScanInv then
+		return {Distance = DIR.Magnitude - ScanInv.Distance, Normal = -ScanInv.Normal, Instance = ScanInv.Instance, Position = ScanInv.Position }
+	end
+end
+local TempBias = {}
+function Update(FF: FF, dt, IND)
+	task.desynchronize()
+	if typeof(FF) ~= "table" or not FF.Part then Fireflies[IND] = nil return end
+	local part = FF.Part
+	if part and not part.Parent then CUP(part) Fireflies[part] = nil return end
+	local pos   = FF.CF.Position or part.CFrame.Position
+	local nextPos= pos
+	local vel   = FF.Velocity or Vector3.zero
+	-- 1) Perlin noise drift (seeded with small random t) 
+	local t = math.random()
+	local noiseDir = Vector3.new(
+		math.noise(t, vel.Y, vel.Z),
+		math.noise(vel.X, t, vel.Z),
+		math.noise(vel.X, vel.Y, t)
+	).Unit
+	vel = vel + noiseDir * NOISE_SCALE * dt
+
+	-- 2) (Follow/Orbit code goes here — omitted for brevity)
+
+	-- clamp speed
+	if vel.Magnitude > MAX_SPEED then
+		vel = vel.Unit * MAX_SPEED
+	end
+	local forwardCF = CFrame.new(pos, pos + vel.Unit)
+	nextPos = pos + vel * dt
+	if nextPos.Y < -1 then
+		nextPos = Vector3.new(nextPos.X, math.random(1000,5000)/100, nextPos.Z)
+	end
+	local PartInArea = workspace:GetPartBoundsInBox(forwardCF, Vector3.new(10,10,10), AOPM)
+	local result = Scans(forwardCF, part.Size, forwardCF.LookVector * 10 , rayParams)
+	if #PartInArea > 0 or result then
+		-- obstacle ahead: scan left/right
+		local scanR = Scans(
+			forwardCF * CFrame.Angles(0, math.rad(30), 0),
+			part.Size,
+			forwardCF.RightVector * 10,
+			RPM
+		)
+		local scanL = Scans(
+			forwardCF * CFrame.Angles(0, -math.rad(30), 0),
+			part.Size,
+			-forwardCF.RightVector * 10,
+			RPM
+		)
+
+		local distL = scanL and scanL.Distance or math.huge
+		local distR = scanR and scanR.Distance or math.huge
+
+		if distL > distR then
+			vel = CFrame.Angles(0, TURN_SPEED * ((20 - distR)/20) * dt, 0) * vel  -- turn left
+		elseif distR > distL then
+			vel = CFrame.Angles(0, -TURN_SPEED * ((20 - distL)/20) * dt, 0) * vel -- turn right
+		end
+
+		local scanU = Scans(
+			forwardCF * CFrame.Angles(math.rad(30), 0, 0),
+			part.Size,
+			forwardCF.UpVector * 10,
+			RPM
+		)
+		local scanD = Scans(
+			forwardCF * CFrame.Angles(-math.rad(30), 0, 0),
+			part.Size,
+			-forwardCF.UpVector * 10,
+			RPM
+		)
+		local distU = scanU and scanU.Distance or math.huge
+		local distD = scanD and scanD.Distance or math.huge
+
+		if distU > distD then
+			vel = CFrame.Angles(TURN_SPEED * ((20 - distD)/20)  * dt, 0, 0) * vel  -- turn up
+		elseif distU < distD then
+			vel = CFrame.Angles(-TURN_SPEED * ((20 - distU)/20)  * dt, 0, 0) * vel -- turn down
+		end
+		
+
+		-- 3) Predictive raycast from current to next position :contentReference[oaicite:1]{index=1}
+
+		if result and result.Distance < part.Size.Z then
+			local safePos = pos + ((result.Distance - SMALL_EPS) * -forwardCF.LookVector)
+			nextPos = safePos
+			vel = reflectVelocity(vel, result.Normal)
+		elseif result then
+			local close = alongVelocity(vel, result.Normal)
+			vel += close * dt * (10 - result.Distance) * vel.Magnitude
+		end
+	end
+	-- 4) Ground clamp so you never sink under static floor :contentReference[oaicite:4]{index=4}
+	local rotappl = FF.CF.Rotation + nextPos
+	local clamped = clampAboveGround(rotappl, part.Size)
+	if (clamped - nextPos).Magnitude > .1 then vel = Vector3.new(vel.X, math.max(0, vel.Y), vel.Z) end
+	nextPos = clamped
+	local clamped2 = clampBelowCeil(rotappl, part.Size)
+	if (clamped2 - nextPos).Magnitude > .1 then vel = Vector3.new(vel.X, math.min(0, vel.Y), vel.Z) end
+	nextPos = clamped2
+
+	-- 5) Jar enclosure (as before)
+	local isin = false
+	if FF.EnclosedIn and FF.EnclosedIn:IsA("BasePart") then isin = true
+		local CFOFENC = FF.EnclosedIn.CFrame
+		local rel = CFOFENC:PointToObjectSpace(nextPos)
+		local half = FF.EnclosedIn.Size * 0.5
+		rel = Vector3.new(
+			math.clamp(rel.X, -half.X, half.X),
+			math.clamp(rel.Y, -half.Y, half.Y),
+			math.clamp(rel.Z, -half.Z, half.Z)
+		)
+		local tsnextPos = CFOFENC:PointToWorldSpace(rel)
+		if FF.State ~= 'Captured' then
+			if (nextPos - tsnextPos).Magnitude > .5 then
+				FreeFF(FF.Part)
+				isin = false
+			end
+		else
+			nextPos = tsnextPos
+		end
+	else
+		if FF.LFC > 1 then
+			if math.random() < (FF.LFC - 1)/62 then
+			--switch State and follow
+			FF.State = FF.State == 'Random' and 'Follow' or FF.State == 'Follow' and 'Random' or FF.State or 'Random'
+			if FF.State == 'Follow' then
+				if math.random() > (1 - FF.LFC/49) then FF.Follow = nil else
+					local Parts = workspace:GetPartBoundsInRadius(nextPos, 25, AOPM)
+					local sel
+					local dis = 75	
+					for i, v in Parts do
+							if v.Position.Y < -1 or v.Position.Magnitude >  150 or v.Material == Enum.Material.ForceField then continue end
+							if not Bias[v] and not TempBias[v] then	TempBias[v] = TempBias[v] or DeterminePartBias(v) end
+							local wha = (v.Position - nextPos).Magnitude
+							wha *= (100 - (Bias[v] or TempBias[v]))/100
+							if wha < dis then
+								dis = wha sel = v
+							end
+					end
+					if not sel then
+						for i,v in CStables do
+								if not v:IsA('BasePart') then continue end	
+							local wha = (v.Position - nextPos).Magnitude
+							if Bias[v] then	wha *= Bias[v]/100 end
+							if wha < dis then
+								dis = wha sel = v
+							end
+						end
+					end
+					
+					if dis <= 50 and sel then
+						FF.Follow = sel
+					end 
+				end
+			end
+			FF.LFC = 0
+			end else FF.LFC = FF.LFC + dt end
+		if FF.State == 'Follow' and typeof(FF.Follow) == 'Instance' and FF.Follow.Parent then
+			if FF.Follow.Position.Magnitude >  150 then FF.State = 'Random' FF.Follow = nil FF.LFC = 0.5 end
+			local vec = (FF.Follow and FF.Follow.Position or Vector3.new() - nextPos)
+			vel += vec.Unit * ((vel.Magnitude^2)/5) * dt
+			
+		end
+	end
+	if nextPos.Magnitude > 2000 then FreeFF(FF.Part) task.synchronize() part:Destroy() return elseif nextPos.Magnitude > 150 then local dist = (Vector3.new() - nextPos) vel += dist.Unit * (dist.Magnitude - 500) * dt * 5 
+		local dot = vel:Dot(dist)	if dot < 0 then vel = reflectVelocity(vel, dist.Unit) end elseif nextPos.Magnitude > 500 then nextPos = nextPos.Unit * 500 end
+	-- commit
+	if nextPos.Y < 5 then
+		vel += Vector3.new(0, (5 - nextPos.Y) * 5 * dt, 0)
+		if nextPos.Y < 0 then
+			nextPos = Vector3.new(nextPos.X,0,nextPos.Z)
+			vel = Vector3.new(vel.X,math.max(vel.Y,0) + math.abs(vel.Y),vel.Z)
+		elseif nextPos.Y < 1 then
+			vel = vel + Vector3.new(0,dt,0)
+		end
+	elseif nextPos.Y > 150 then
+		vel -= Vector3.new(0, 5 * dt, 0)
+	end
+	local nextthing = CFrame.new(nextPos, nextPos + vel)
+	if not FF.EnclosedIn and #PartInArea > 0 and #workspace:GetPartBoundsInBox(nextthing, part.Size, AOPM) > 0 then
+		if not isin then
+		for i,v in PartInArea do
+			if ((v.AssemblyLinearVelocity - FF.Velocity).Magnitude/2) > MAX_SPEED then
+				task.synchronize()
+				local clone = part:Clone()
+				clone.Parent = workspace game:GetService('Debris'):AddItem(clone, 5)
+				clone.CanCollide = true clone.CFrame = part.CFrame clone.Anchored = false clone.AssemblyLinearVelocity = vel
+				game:GetService('TweenService'):Create(clone, TweenInfo.new(math.random(10,25)/10), {Transparency = 1,  Color = Color3.new(0,0,0)}):Play()
+				local sound = Instance.new('Sound', clone) sound.SoundId = 'rbxassetid://9113959343' sound.Volume = .05 sound.PlaybackSpeed = .9 + math.random()/5 sound:Play()
+				part:Destroy() -- crushed
+				part = nil
+				break
+			end
+		end
+		if not part then
+			return
+		end end
+		FF.Velocity = -FF.Velocity
+		return
+	end
+	FF.Velocity = vel
+	if (part.CFrame.LookVector:Dot(nextthing.LookVector) < .95) or ((part.CFrame.Position - nextthing.Position).Magnitude > .1 * dt) then FF.CF = nextthing	task.synchronize() part.CFrame = nextthing end
+end
+
+-- Hook into RenderStepped
+function RunFFSimu()
+	if running then return end
+	running = true
+	if tasked then coroutine.close(tasked) end
+	local tstasked tstasked = coroutine.create(function()
+		tasked = tstasked
+		while running and tstasked == tasked and FF_Parent and FF_Parent.Parent and next(Fireflies) and script do
+			local DT = task.wait(0.0166)
+			TempBias = {}
+			for a, ff in pairs(Fireflies) do
+				if not a.Parent then CUP(a) continue end
+				Update(ff, DT, a)
+			end
+		end
+		if tstasked == tasked then	tasked = nil	running = false end end)
+	coroutine.resume(tstasked)
+end
+
+local spl = workspace:FindFirstChildOfClass('SpawnLocation')
+function Ins_FF(Extra: FF)
+	task.desynchronize()
+	if not FF_Parent or not script.Parent then return end
+	if Extra and (type(Extra) ~= 'table' and typeof(Extra) ~= 'Instance') then return end
+	local Table: FF = (typeof(Extra) == 'table' and Extra) or {}
+	Table.Follow = Table.Follow or nil
+	Table.Velocity = Table.Velocity or Vector3.new(math.random(-100,100)/100,math.random(-100,100)/100,math.random(-100,100)/100)
+	Table.CF = Table.CF or CFrame.Angles(math.rad(math.random(-360, 360)), math.rad(math.random(-360, 360)), math.rad(math.random(-360, 360))) * (spl and spl.CFrame or CFrame.new()) + Vector3.new(0, math.random(10,500)/10,0) + Vector3.new(.5 - math.random(), 4, .5 - math.random()) * math.random(-50,50)
+	if (#workspace:GetPartBoundsInRadius(Table.CF.Position, .33)) then
+	pcall(function()		Table.CF = CFrame.Angles(math.rad(math.random(-360, 360)), math.rad(math.random(-360, 360)), math.rad(math.random(-360, 360))) * (map["Boat Spawner"].Parta.CFrame or workspace._SpawnLocation.CFrame) + Vector3.new(0, 3+ math.random(10,500)/10,0)
+	end) end
+	Table.State = Table.State or Table.Follow and 'Follow' or 'Random'
+	Table.Part = (typeof(Extra) == 'table' and Extra.Part or Extra) or nil
+	Table.LFC = 0
+	if not Table.Part then
+		task.synchronize()
+		local Part = Instance.new('Part', FF_Parent)
+		Part.Parent = workspace
+		Part.Anchored = true
+		Part.Name = '__FF'
+		local ran = math.random(150,235) or 150
+		Part.Color = math.random() > .33 and Color3.fromRGB(ran + math.random(-5,5),ran + math.random(-5,5),0) or math.random() > .22 and Color3.fromRGB(math.max(200,ran),100,100) or math.random() > .11 and Color3.fromRGB(0,ran,0) or Color3.new(1,1,1)
+		Part.Material = Enum.Material.Neon
+		Part.Size = Vector3.new(math.random(19,25)/100,math.random(19,25)/100,math.random(24,30)/100)
+		Part.CFrame = Table.CF
+		Part.Transparency = 1
+		--[[local Light = Instance.new('PointLight', Part)
+		Light.Range = Part.Size.Magnitude * 2
+		Light.Color = Part.Color
+		Light.Shadows = true
+		Light.Brightness = math.random(85,100)/100]]
+		TweenService:Create(Part, TweenInfo.new(math.random(100,500)/10), {Transparency = 0}):Play()
+		Part.CanCollide = false
+		Table.Part = Part
+	end
+	task.desynchronize()
+	if typeof(Table.Part) ~= 'Instance' or not Table.Part.Parent or not Table.Part:IsA('BasePart') or Fireflies[Table.Part] then return end -- filter
+	task.synchronize()
+	if Table.Part.Parent ~= FF_Parent then Table.Part.Parent = FF_Parent end
+	DC_Init(Table.Part,Table.Part.Destroying:Once(function()
+		CUP(Table.Part)
+	end))
+	Fireflies[Table.Part] = Table
+	RunFFSimu()
+end
+
+-- ===== Catcher Handlers =====
+local function onCatcherEquip(tool)
+	task.desynchronize()
+	local data = Catchers[tool] if not data then return end
+	data.Cooldown = true
+	if data.LastCharacter and tool.Parent ~= data.LastCharacter and CharANDJar[data.LastCharacter] then CharANDJar[data.LastCharacter].Catcher = nil if CharANDJar[data.LastCharacter].Jar and Jars[CharANDJar[data.LastCharacter].Jar] and Jars[CharANDJar[data.LastCharacter].Jar].LinkedCatcher == tool then Jars[CharANDJar[data.LastCharacter].Jar].LinkedCatcher = nil end end
+	data.LastCharacter = tool.Parent
+	if not CharANDJar[tool.Parent] then local NEWPAR = tool.Parent CharANDJar[NEWPAR] = {} task.synchronize() NEWPAR.Destroying:Once(function() CharANDJar[NEWPAR] = nil end) task.desynchronize() elseif CharANDJar[tool.Parent].Jar and Jars[CharANDJar[tool.Parent].Jar] then Jars[CharANDJar[tool.Parent].Jar].LinkedCatcher = tool end 
+	CharANDJar[tool.Parent].Catcher = tool
+	data.Task = task.spawn(function()
+		task.wait(.25)
+		if data.LastCharacter ~= tool.Parent then return end
+ 		data.State = "Idle"
+		data.Cooldown = false
+		task.synchronize()
+		table.insert(data.Connections.Temp, tool.Activated:Connect(function() onCatcherActivate(tool) end))
+	end)
+end
+
+function onCatcherUnequip(tool)
+	task.desynchronize()
+	local data = Catchers[tool] if not data then return end
+	data.State = "Unequipped"
+	if data.Task then
+		task.cancel(data.Task)
+		data.Task = nil
+	end
+	disconnectAll(data.Connections.Temp)
+	data.Cooldown = true
+end
+
+function onCatcherActivate(tool)
+	task.desynchronize()
+	local data = Catchers[tool]
+	if not data or data.Cooldown or data.State ~= 'Idle' then return end  -- throttle swings
+	if data.Task then task.cancel(data.Task) end
+	data.State = "Swing"
+	data.Cooldown = true
+
+	-- Simple cooldown timer
+
+	local ThisTask ThisTask = task.spawn(function()
+		data.Task = ThisTask
+		local CaughtParts = {}
+		local ElaspedTime = 0
+		local LastPos = data.Handle.CFrame + data.Handle.CFrame.UpVector * 5.25
+		while data.State == 'Swing' and ElaspedTime < .25 and #CaughtParts < 10 and data.Cooldown do
+			local waits = task.wait(.05) 
+			local CurrentPos = data.Handle.CFrame + data.Handle.CFrame.UpVector * 5.25
+			local HitboxDataA, HitboxDataB = CreateHitboxData(LastPos, CurrentPos, 2.75)
+			LastPos = CurrentPos
+			local Parts = workspace:GetPartBoundsInBox(HitboxDataA, HitboxDataB, OPM)
+			local PartAlt = workspace:GetPartBoundsInRadius(LastPos.Position, 3, OPM)
+			for _,v in Parts do
+				if not table.find(CaughtParts, v) then
+					table.insert(CaughtParts, v)
+				end
+			end
+			for _,v in PartAlt do
+				if not table.find(CaughtParts, v) then
+					table.insert(CaughtParts, v)
+				end
+			end
+			local Calc = CFrame.Angles(math.sin(ElaspedTime*math.pi/.25) * math.pi,0,0)
+			task.synchronize()
+			TweenService:Create(tool, TweenInfo.new(waits), {Grip = Calc}):Play()
+			task.desynchronize()
+			ElaspedTime += waits
+		end
+		task.synchronize()
+		TweenService:Create(tool, TweenInfo.new(.5), {Grip = CFrame.new()}):Play()
+		task.desynchronize()
+		local Jar = data.LinkedJarTool
+		if #CaughtParts >= 1 and ElaspedTime >= .25 and tool and data and Jar then 
+			--open the lid
+			local JarD: JarForFireflies = Jars[Jar]
+			if JarD then
+				if not Jars[data.LinkedJarTool].Opened then
+					OpenJar(Jar)
+				end
+				for i,v in CaughtParts do
+					local CFdata: FF = Fireflies[v]
+					if not CFdata or CFdata.State == 'Captured' or (CFdata.EnclosedIn and CFdata.EnclosedIn.Parent) or (CFdata.LockedInTool and CFdata.LockedInTool.Parent) then continue end
+					CFdata.State = 'Captured'
+					CFdata.EnclosedIn = data.Handle
+					CFdata.LockedInTool = Jar
+					CFdata.CF = CFdata.CF.Rotation + data.Handle.Position
+					table.insert(JarD.Fireflies, CFdata.Part)
+					--capture
+				end
+				CloseJar(Jar)
+			end
+		end
+		task.wait(.5)           -- 1 second between swings
+		if data.State == 'Swing' and ElaspedTime >= .25 then
+			data.Cooldown = false
+			data.State = "Idle" 
+		end
+	end)
+end
+
+-- ===== Jar Handlers =====
+function TrapAllFF(tool)
+	task.desynchronize()
+	if not tool or not Jars[tool] then return end
+	local Data: JarForFireflies = Jars[tool]
+	if not Data.Handle or not Data.Handle.Parent then FreeAllFF(tool) Jars[tool] = nil return end
+		local Scanned = workspace:GetPartsInPart(Data.Handle, OPM)
+		for _,v in Scanned do
+			if not Fireflies[v] or Fireflies[v].State == 'Captured' or table.find(Data.Fireflies, v) then continue end
+			table.insert(Data.Fireflies, v)
+		end
+end
+--cosmetic
+function CloseJar(tool)
+	task.desynchronize()
+	if not tool or not Jars[tool] then return end
+	local Data = Jars[tool]
+	if not Data.Handle or not Data.Handle.Parent then FreeAllFF(tool) Jars[tool] = nil end
+	for i,v in Data.Fireflies do
+		if not Fireflies[v] then table.remove(Data.Fireflies, i) continue end
+		Fireflies[v].State = 'Captured'
+		Fireflies[v].Velocity = Vector3.new(math.random(-100,100)/1000,math.random(-100,100)/1000,math.random(-100,100)/1000)
+		Fireflies[v].CF = Data.Handle.CFrame
+		Fireflies[v].LockedInTool = tool
+		Fireflies[v].EnclosedIn = Data.Handle
+	end
+	Jars[tool].Opened = false
+	task.synchronize()
+	tool.ToolTip = '[CLOSED]'
+	pcall(function() Data.Handle:FindFirstChildOfClass('BasePart').Transparency = 0 end)
+	task.desynchronize()
+end
+function OpenJar(tool)
+	if not tool or not Jars[tool] then return end
+	Jars[tool].Opened = true
+	task.synchronize()
+	tool.ToolTip = '[OPEN]'
+	pcall(function() Jars[tool].Handle:FindFirstChildOfClass('BasePart').Transparency = 1 end)
+	task.desynchronize()
+end
+function onJarEquip(tool)
+	task.desynchronize()
+	local data = Jars[tool] if not data then return end
+	if not data then return end
+	local timer timer = task.spawn(function()
+		local coded = (data.CODE or -2000) +  math.random()
+		if coded > 1000 then coded -= 2000 end
+		data.CODE = coded
+		data.Cooldown = true
+		data.Task = timer
+		if data.LastCharacter and tool.Parent ~= data.LastCharacter and CharANDJar[data.LastCharacter] then CharANDJar[data.LastCharacter].Jar = nil if CharANDJar[data.LastCharacter].Catcher and Catchers[CharANDJar[data.LastCharacter].Catcher] and Catchers[CharANDJar[data.LastCharacter].Catcher].LinkedJarTool == tool then Catchers[CharANDJar[data.LastCharacter].Catcher].LinkedJarTool = nil end end
+		data.LastCharacter = tool.Parent
+		if not CharANDJar[tool.Parent] then local NEWPAR = tool.Parent CharANDJar[NEWPAR] = {} task.synchronize() NEWPAR.Destroying:Once(function() CharANDJar[NEWPAR] = nil end) task.desynchronize() elseif CharANDJar[tool.Parent].Catcher and Catchers[CharANDJar[tool.Parent].Catcher] then Catchers[CharANDJar[tool.Parent].Catcher].LinkedJarTool = tool end 
+		CharANDJar[tool.Parent].Jar = tool
+		if data.Handle and data.Handle ~= tool:FindFirstChild('Handle') then task.synchronize() data.Handle:Destroy() task.desynchronize() end
+		data.Handle = tool:FindFirstChild('Handle') or tool:FindFirstChildOfClass('BasePart')
+		pcall(function() if data.FakeHandle then task.synchronize() data.FakeHandle:Destroy() task.desynchronize() data.FakeHandle = nil end end)-- incase detection fails
+		for _,v in data.Fireflies do
+			local data: FF = Fireflies[v]
+			if not data then continue end
+			data.EnclosedIn = data.Handle or tool:FindFirstChild('Handle') or tool:FindFirstChildOfClass('BasePart')
+		end
+		task.wait(.5)
+		if data.CODE ~= coded or data.LastCharacter ~= tool.Parent then return end
+			data.Cooldown = false
+			task.synchronize()
+		table.insert(data.Connections.Temp, tool.Activated:Connect(function() onJarActivate(tool) end))  table.insert(data.Connections.Temp, tool.Deactivated:Connect(function() onJarD_Activate(tool) end)) 
+end)
+end
+
+function onJarUnequip(tool)
+	task.desynchronize()
+	local data = Jars[tool] if not data then return end
+	data.Opened = false
+	if data.Task then
+		task.cancel(data.Task)
+		data.Task = nil
+	end
+	data.Cooldown = true
+	CloseJar(tool)
+	disconnectAll(data.Connections.Temp)
+	data.Connections.Temp = {}
+	if data.FakeHandle then task.synchronize() data.FakeHandle:Destroy() task.desynchronize() data.FakeHandle = nil end
+	if typeof(data.LastCharacter) == 'Instance' and data.LastCharacter:FindFirstChildOfClass('Humanoid') and data.LastCharacter:FindFirstChildOfClass('Humanoid').RootPart then 
+		task.synchronize()
+		local FakeHandle = data.Handle:Clone()
+		FakeHandle.Parent = data.LastCharacter
+		FakeHandle.Name = 'FAKE_HOLSTER'
+		local Attachment = Instance.new('Weld', FakeHandle)
+		local TargetCharacterRoot = data.LastCharacter:FindFirstChildOfClass('Humanoid').RootPart
+		Attachment.Part1 = FakeHandle Attachment.Part0 = TargetCharacterRoot Attachment.C0 = CFrame.new(TargetCharacterRoot.Size.X/2 + FakeHandle.Size.X/2, -TargetCharacterRoot.Size.Y/2, 0)
+		data.Handle = FakeHandle
+		data.FakeHandle = FakeHandle
+		for _,v in data.Fireflies do
+			local data: FF = Fireflies[v]
+			if not data then continue end
+			data.EnclosedIn = FakeHandle
+		end
+	else
+		task.synchronize()
+		tool:Destroy()
+	end
+end
+function FreeAllFF(tool: tool)
+	task.desynchronize()
+	local data = Jars[tool]
+	if not data then return end
+	for i, ff in ipairs(data.Fireflies) do
+		local dat: FF = ff and ff.Parent and Fireflies[ff]
+		if not dat then table.remove(data.Fireflies, i) Fireflies[ff] = nil continue end	dat.State = "Random"
+	end
+end
+function onJarActivate(tool)
+	task.desynchronize()
+	local data = Jars[tool]
+	if not data or data.Cooldown then return end
+	local timer timer = task.spawn(function()
+		data.Task = timer
+		local coded = (data.CODE or -2000) + math.random()
+		if coded > 1000 then coded -= 2000 end
+		data.CODE = coded
+		-- play open/close animation here
+		task.wait(.25)
+		if data.CODE ~= coded then return end
+			data.Opened = not data.Opened
+			if data.Opened then
+				-- Release all captured flies
+				OpenJar(tool)
+				FreeAllFF(tool)
+				data.Fireflies = {}
+			else
+				TrapAllFF(tool)
+				CloseJar(tool)
+		end 
+	end)
+end
+function onJarD_Activate(tool)
+	task.desynchronize()
+	local data = Jars[tool]
+	if not data  then return end
+	if data.Task then	task.cancel(data.Task) end
+	data.Task = nil
+	local coded = (data.CODE or -2000) + math.random()
+	if coded > 1000 then coded -= 2000 end
+	data.CODE = coded
+end
+-- ===== Tool Registration =====
+-- Assume script.Event.Event fires as: (toolInstance, classString)
+script.Event.Event:Connect(function(tool: Tool, class: ToolClasses)
+	task.desynchronize()
+	if typeof(class) ~= 'string' or typeof(tool) ~= 'Instance' or not tool:IsA('Tool') or Catchers[tool] or Jars[tool] or not tool.Parent then return end
+	class = string.gsub(class:upper(), ' ', '')
+	if class == 'CATCHER' then
+		-- Prevent double-register
+		if Catchers[tool] then
+			warn("Catcher already registered:", tool.Name)
+			return
+		end
+
+		-- Initialize catcher data
+		if not tool:FindFirstChild('Handle') then return end
+		Catchers[tool] = {
+			State = "Unequipped",
+			Connections = {Temp = {}, Perma = {}},
+			LinkedJarTool = nil,
+			Cooldown = false,
+			Handle = tool:FindFirstChild('Handle'),
+			Hitbox = tool:FindFirstChild('Handle'):FindFirstChild('HB')
+		}
+
+		task.synchronize()
+		local conns = Catchers[tool].Connections.Perma
+		table.insert(conns, tool.Equipped:Connect(function() onCatcherEquip(tool) end))
+		table.insert(conns, tool.Unequipped:Connect(function() onCatcherUnequip(tool) end))
+		DC_Init(tool, tool.Destroying:Once(function()
+			disconnectAll(conns)
+			Catchers[tool] = nil
+			DC_Init(tool)
+		end))
+	elseif class == 'JAR' then
+		if Jars[tool] then
+			warn("Jar already registered:", tool.Name)
+			return
+		end
+
+		-- Initialize jar data
+		Jars[tool] = {
+			Fireflies = {},
+			Handle = tool:FindFirstChild("Handle") or warn("Jar missing Handle"),
+			Opened = false,
+			HolsterHandle = tool:FindFirstChild("Holster") or nil,
+			LinkedCatcher = nil,
+			Connections = {Temp = {}, Perma = {}},
+			Cooldown = false
+		}
+
+		task.synchronize()
+		local conns = Jars[tool].Connections.Perma
+		table.insert(conns, tool.Equipped:Connect(function() onJarEquip(tool) end))
+		table.insert(conns, tool.Unequipped:Connect(function() onJarUnequip(tool) end))
+		DC_Init(tool, tool.Destroying:Once(function()
+			disconnectAll(conns)
+			Jars[tool] = nil
+			DC_Init(tool)
+		end))
+	else
+		warn("Unknown tool class:", class)
+	end
+end)
+
+-- Optional cleanup if script is disabled
+FF_Parent.AncestryChanged:Once(function()
+	task.synchronize()
+	for tool, data in pairs(Catchers) do
+		disconnectAll(data.Connections.Temp) disconnectAll(data.Connections.Perma)
+		Catchers[tool] = nil
+		DC_Init(tool)
+	end
+	for tool, data in pairs(Jars) do
+		disconnectAll(data.Connections.Temp) disconnectAll(data.Connections.Perma)
+		Jars[tool] = nil
+		DC_Init(tool)
+	end
+	for FF, data in pairs(Fireflies) do
+		if FF.Part then  FF.Part:Destroy() end
+	end
+	Fireflies = nil
+	Jars = {}
+	Catchers = {}
+	FF_Parent = nil
+	coroutine.close(tasked)
+	script:Destroy()
+end)
+
+for i =1 ,math.random(100,200) do
+	Ins_FF()
+end
+
+coroutine.resume(coroutine.create(function()
+	while task.wait(300) do --//stray cases, events not picked up
+		task.desynchronize()
+		for i,v in pairs(Jars) do
+			if not i or not i.Parent then pcall(function() disconnectAll(Jars[i].Connections.Perma) end) FreeAllFF(i) Jars[i] = nil end
+		end
+		for i,v in pairs(Catchers) do
+			if not i or not i.Parent then pcall(function() disconnectAll(Catchers[i].Connections.Perma) end) Catchers[i] = nil end
+		end
+		for i,v in pairs(CharANDJar) do
+			if not i or not i.Parent then CharANDJar[i] = nil end
+		end
+	end
+end))
+
+task.synchronize()
+for _,v in script:GetChildren() do
+	if v:IsA('Tool') then
+		v.Parent = game:GetService('StarterPack')
+	end
+end]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{B12673C3-BE3B-4FE6-A24A-9E07435150F9}</string>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">FIREFLY</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="BindableEvent" referent="RBX3018F4F6FA974CA48B56BA83C65D9EB2">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Event</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="ModuleScript" referent="RBX8CEB4522306A45099B767BEDE8B5C0E1">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local RoamingLogic = {}
+
+local CollectionService = game:GetService("CollectionService")
+
+-- behavioral stuff, made it like this cuz gemini say I should do it like this, whats even the reason, idk if it was high on MetaTables type sh
+local SCORE_CONFIG = {
+    BASE_SCORE = 50,
+    MATERIAL_ADJUSTMENTS = {
+        [Enum.Material.Neon] = 30,
+        [Enum.Material.Grass] = 20,
+        [Enum.Material.LeafyGrass] = 25,
+        [Enum.Material.Wood] = 10,
+        [Enum.Material.WoodPlanks] = 10,
+        [Enum.Material.ForceField] = -40,
+    },
+    LIGHT_BONUS = 25,
+    TRANSPARENCY_PENALTIES = {
+        HIGH = -15, -- Transparency > 0.75
+        MEDIUM = -5, -- Transparency > 0.5
+    },
+    UNANCHORED_PENALTY = -10,
+}
+
+function RoamingLogic.GetRoamingPercentage(part: BasePart)
+    if not part or not part:IsA("BasePart") then return 0 end
+
+    local score = SCORE_CONFIG.BASE_SCORE
+
+    -- Material checks
+    local materialAdjustment = SCORE_CONFIG.MATERIAL_ADJUSTMENTS[part.Material]
+    if materialAdjustment then
+        score = score + materialAdjustment
+    end
+
+    -- Light check
+    for _, child in part:GetChildren() do
+        if child:IsA("Light") then -- Catches PointLight, SpotLight, SurfaceLight
+            score = score + SCORE_CONFIG.LIGHT_BONUS
+            break -- One light source is enough for the bonus
+        end
+    end
+
+    -- Transparency check
+    if part.Transparency > 0.75 then
+        score = score + SCORE_CONFIG.TRANSPARENCY_PENALTIES.HIGH
+    elseif part.Transparency > 0.5 then
+        score = score + SCORE_CONFIG.TRANSPARENCY_PENALTIES.MEDIUM
+    end
+
+    -- Anchored check
+    if not part.Anchored then
+        score = score + SCORE_CONFIG.UNANCHORED_PENALTY
+    end
+    
+    -- Ensure score is in 0-100 range
+    score = math.clamp(score, 0, 100)
+
+    return score or 0
+end
+
+return RoamingLogic or {}
+
+]]></ProtectedString>
+				<string name="ScriptGuid">{254F6A3B-C9FA-4252-B75F-B74B58FBD044}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">FireflyRoamingLogic</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Tool" referent="RBXD1051B6FFD6F40FEB671D30156692852">
+			<Properties>
+				<bool name="CanBeDropped">false</bool>
+				<bool name="Enabled">true</bool>
+				<CoordinateFrame name="Grip">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<bool name="ManualActivationOnly">false</bool>
+				<bool name="RequiresHandle">true</bool>
+				<string name="ToolTip">[Stores Your Fireflies, To Capture Some, Pair With A Catcher]</string>
+				<Content name="TextureId"><null></null></Content>
+				<token name="LevelOfDetail">0</token>
+				<CoordinateFrame name="ModelMeshCFrame">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<SharedString name="ModelMeshData">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+				<Vector3 name="ModelMeshSize">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="ModelStreamingMode">0</token>
+				<bool name="NeedsPivotMigration">false</bool>
+				<Ref name="PrimaryPart">null</Ref>
+				<float name="ScaleFactor">1</float>
+				<SharedString name="SlimHash">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+				<OptionalCoordinateFrame name="WorldPivotData"></OptionalCoordinateFrame>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Jar(WIP)</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="Script" referent="RBX0E12F537816644A3A50A1247228B120A">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[task.wait()
+if script:FindFirstAncestorWhichIsA('ServerScriptService') or script:FindFirstAncestorWhichIsA('StarterPack') then return end
+(game:FindFirstChildOfClass('ServerScriptService') or game:FindFirstChild('ServerScriptService') or game:WaitForChild("ServerScriptService",10) or game:GetService("ServerScriptService") or game['ServerScriptService']):FindFirstChild('MISCALLENIOUS EFFECTS').FIREFLY.Event:Fire(script.Parent, 'jar')]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{C877E1AA-E6BD-4198-B1EC-E8679E79B3B2}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Script</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="Part" referent="RBX536AA8479DA243338086241F44605259">
+				<Properties>
+					<token name="shape">1</token>
+					<token name="formFactorRaw">3</token>
+					<bool name="Anchored">false</bool>
+					<bool name="AudioCanCollide">true</bool>
+					<float name="BackParamA">-0.5</float>
+					<float name="BackParamB">0.5</float>
+					<token name="BackSurface">0</token>
+					<token name="BackSurfaceInput">0</token>
+					<float name="BottomParamA">-0.5</float>
+					<float name="BottomParamB">0.5</float>
+					<token name="BottomSurface">0</token>
+					<token name="BottomSurfaceInput">0</token>
+					<CoordinateFrame name="CFrame">
+						<X>45.7917252</X>
+						<Y>4.76544571</Y>
+						<Z>-91.8509674</Z>
+						<R00>0.258818865</R00>
+						<R01>-1.58763882e-08</R01>
+						<R02>0.965925217</R02>
+						<R10>1.20593199e-07</R10>
+						<R11>0.99999994</R11>
+						<R12>-1.58764024e-08</R12>
+						<R20>-0.965925217</R20>
+						<R21>1.20593185e-07</R21>
+						<R22>0.258818865</R22>
+					</CoordinateFrame>
+					<bool name="CanCollide">false</bool>
+					<bool name="CanQuery">false</bool>
+					<bool name="CanTouch">false</bool>
+					<bool name="CastShadow">true</bool>
+					<string name="CollisionGroup">Default</string>
+					<int name="CollisionGroupId">0</int>
+					<Color3uint8 name="Color3uint8">4289715711</Color3uint8>
+					<PhysicalProperties name="CustomPhysicalProperties">
+						<CustomPhysics>false</CustomPhysics>
+					</PhysicalProperties>
+					<bool name="EnableFluidForces">true</bool>
+					<float name="FrontParamA">-0.5</float>
+					<float name="FrontParamB">0.5</float>
+					<token name="FrontSurface">0</token>
+					<token name="FrontSurfaceInput">0</token>
+					<float name="LeftParamA">-0.5</float>
+					<float name="LeftParamB">0.5</float>
+					<token name="LeftSurface">0</token>
+					<token name="LeftSurfaceInput">0</token>
+					<bool name="Locked">false</bool>
+					<bool name="Massless">false</bool>
+					<token name="Material">256</token>
+					<string name="MaterialVariantSerialized"></string>
+					<CoordinateFrame name="PivotOffset">
+						<X>0</X>
+						<Y>0</Y>
+						<Z>0</Z>
+						<R00>1</R00>
+						<R01>0</R01>
+						<R02>0</R02>
+						<R10>0</R10>
+						<R11>1</R11>
+						<R12>0</R12>
+						<R20>0</R20>
+						<R21>0</R21>
+						<R22>1</R22>
+					</CoordinateFrame>
+					<float name="Reflectance">0</float>
+					<float name="RightParamA">-0.5</float>
+					<float name="RightParamB">0.5</float>
+					<token name="RightSurface">0</token>
+					<token name="RightSurfaceInput">0</token>
+					<int name="RootPriority">0</int>
+					<Vector3 name="RotVelocity">
+						<X>0</X>
+						<Y>0</Y>
+						<Z>0</Z>
+					</Vector3>
+					<float name="TopParamA">-0.5</float>
+					<float name="TopParamB">0.5</float>
+					<token name="TopSurface">0</token>
+					<token name="TopSurfaceInput">0</token>
+					<float name="Transparency">0.300000012</float>
+					<Vector3 name="Velocity">
+						<X>0</X>
+						<Y>0</Y>
+						<Z>0</Z>
+					</Vector3>
+					<Vector3 name="size">
+						<X>0.800000012</X>
+						<Y>1.70000017</Y>
+						<Z>0.600000024</Z>
+					</Vector3>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Handle</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="SpecialMesh" referent="RBX5EA123C0933C4E53A4F158933B02DAA2">
+					<Properties>
+						<token name="MeshType">5</token>
+						<Content name="MeshId"><url>http://www.roblox.com/asset/?id=115289510</url></Content>
+						<Content name="TextureId"><url>http://www.roblox.com/asset?id=115340918</url></Content>
+						<Vector3 name="Offset">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+						</Vector3>
+						<Vector3 name="Scale">
+							<X>1</X>
+							<Y>1</Y>
+							<Z>1</Z>
+						</Vector3>
+						<Vector3 name="VertexColor">
+							<X>1</X>
+							<Y>1</Y>
+							<Z>1</Z>
+						</Vector3>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Mesh</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="Part" referent="RBX3E58D209FFB9498590AAFBB7AA816BD6">
+					<Properties>
+						<token name="shape">1</token>
+						<token name="formFactorRaw">3</token>
+						<bool name="Anchored">false</bool>
+						<bool name="AudioCanCollide">true</bool>
+						<float name="BackParamA">-0.5</float>
+						<float name="BackParamB">0.5</float>
+						<token name="BackSurface">0</token>
+						<token name="BackSurfaceInput">0</token>
+						<float name="BottomParamA">-0.5</float>
+						<float name="BottomParamB">0.5</float>
+						<token name="BottomSurface">0</token>
+						<token name="BottomSurfaceInput">0</token>
+						<CoordinateFrame name="CFrame">
+							<X>18.2871246</X>
+							<Y>-2.05099487</Y>
+							<Z>-54.8037415</Z>
+							<R00>0.258818865</R00>
+							<R01>-1.58763882e-08</R01>
+							<R02>0.965925217</R02>
+							<R10>1.20593199e-07</R10>
+							<R11>0.99999994</R11>
+							<R12>-1.58764024e-08</R12>
+							<R20>-0.965925217</R20>
+							<R21>1.20593185e-07</R21>
+							<R22>0.258818865</R22>
+						</CoordinateFrame>
+						<bool name="CanCollide">false</bool>
+						<bool name="CanQuery">false</bool>
+						<bool name="CanTouch">false</bool>
+						<bool name="CastShadow">true</bool>
+						<string name="CollisionGroup">Default</string>
+						<int name="CollisionGroupId">0</int>
+						<Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+						<PhysicalProperties name="CustomPhysicalProperties">
+							<CustomPhysics>false</CustomPhysics>
+						</PhysicalProperties>
+						<bool name="EnableFluidForces">true</bool>
+						<float name="FrontParamA">-0.5</float>
+						<float name="FrontParamB">0.5</float>
+						<token name="FrontSurface">0</token>
+						<token name="FrontSurfaceInput">0</token>
+						<float name="LeftParamA">-0.5</float>
+						<float name="LeftParamB">0.5</float>
+						<token name="LeftSurface">0</token>
+						<token name="LeftSurfaceInput">0</token>
+						<bool name="Locked">false</bool>
+						<bool name="Massless">false</bool>
+						<token name="Material">1072</token>
+						<string name="MaterialVariantSerialized"></string>
+						<CoordinateFrame name="PivotOffset">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+							<R00>1</R00>
+							<R01>0</R01>
+							<R02>0</R02>
+							<R10>0</R10>
+							<R11>1</R11>
+							<R12>0</R12>
+							<R20>0</R20>
+							<R21>0</R21>
+							<R22>1</R22>
+						</CoordinateFrame>
+						<float name="Reflectance">0</float>
+						<float name="RightParamA">-0.5</float>
+						<float name="RightParamB">0.5</float>
+						<token name="RightSurface">0</token>
+						<token name="RightSurfaceInput">0</token>
+						<int name="RootPriority">0</int>
+						<Vector3 name="RotVelocity">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+						</Vector3>
+						<float name="TopParamA">-0.5</float>
+						<float name="TopParamB">0.5</float>
+						<token name="TopSurface">0</token>
+						<token name="TopSurfaceInput">0</token>
+						<float name="Transparency">0</float>
+						<Vector3 name="Velocity">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+						</Vector3>
+						<Vector3 name="size">
+							<X>0.800000012</X>
+							<Y>0.200000003</Y>
+							<Z>0.600000024</Z>
+						</Vector3>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Handle2</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="SpecialMesh" referent="RBXF48D7A1DDAEA455F9F4920E4D0004E09">
+						<Properties>
+							<token name="MeshType">5</token>
+							<Content name="MeshId"><url>http://www.roblox.com/asset/?id=115296503</url></Content>
+							<Content name="TextureId"><url>http://www.roblox.com/asset?id=115340918</url></Content>
+							<Vector3 name="Offset">
+								<X>0</X>
+								<Y>0</Y>
+								<Z>0</Z>
+							</Vector3>
+							<Vector3 name="Scale">
+								<X>1</X>
+								<Y>1</Y>
+								<Z>1</Z>
+							</Vector3>
+							<Vector3 name="VertexColor">
+								<X>1</X>
+								<Y>1</Y>
+								<Z>1</Z>
+							</Vector3>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">Mesh</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+					<Item class="Weld" referent="RBX673E1E8E1E4B485FB0F57EA0151F5C69">
+						<Properties>
+							<CoordinateFrame name="C0">
+								<X>0</X>
+								<Y>0.600000024</Y>
+								<Z>0</Z>
+								<R00>1</R00>
+								<R01>0</R01>
+								<R02>0</R02>
+								<R10>0</R10>
+								<R11>1</R11>
+								<R12>0</R12>
+								<R20>0</R20>
+								<R21>0</R21>
+								<R22>1</R22>
+							</CoordinateFrame>
+							<CoordinateFrame name="C1">
+								<X>0</X>
+								<Y>0</Y>
+								<Z>0</Z>
+								<R00>1</R00>
+								<R01>0</R01>
+								<R02>0</R02>
+								<R10>0</R10>
+								<R11>1</R11>
+								<R12>0</R12>
+								<R20>0</R20>
+								<R21>0</R21>
+								<R22>1</R22>
+							</CoordinateFrame>
+							<bool name="Enabled">true</bool>
+							<Ref name="Part0">RBX536AA8479DA243338086241F44605259</Ref>
+							<Ref name="Part1">RBX3E58D209FFB9498590AAFBB7AA816BD6</Ref>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">Weld</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+				</Item>
+			</Item>
+		</Item>
+		<Item class="Tool" referent="RBX3847E58F0A1146D9B5018F5B1AF27475">
+			<Properties>
+				<bool name="CanBeDropped">false</bool>
+				<bool name="Enabled">true</bool>
+				<CoordinateFrame name="Grip">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<bool name="ManualActivationOnly">false</bool>
+				<bool name="RequiresHandle">true</bool>
+				<string name="ToolTip">Switch Between Jar To Pair Them Together</string>
+				<Content name="TextureId"><null></null></Content>
+				<token name="LevelOfDetail">0</token>
+				<CoordinateFrame name="ModelMeshCFrame">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<SharedString name="ModelMeshData">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+				<Vector3 name="ModelMeshSize">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="ModelStreamingMode">0</token>
+				<bool name="NeedsPivotMigration">false</bool>
+				<Ref name="PrimaryPart">null</Ref>
+				<float name="ScaleFactor">1</float>
+				<SharedString name="SlimHash">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+				<OptionalCoordinateFrame name="WorldPivotData"></OptionalCoordinateFrame>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Catcher(WIP)</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="Script" referent="RBX8CB0D0244BE647E6924EF209438A6967">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[task.wait()
+if script:FindFirstAncestorWhichIsA('ServerScriptService') or script:FindFirstAncestorWhichIsA('StarterPack') then return end
+(game:FindFirstChildOfClass('ServerScriptService') or game:FindFirstChild('ServerScriptService') or game:WaitForChild("ServerScriptService",10) or game:GetService("ServerScriptService") or game['ServerScriptService']):FindFirstChild('MISCALLENIOUS EFFECTS').FIREFLY.Event:Fire(script.Parent, 'catcher')]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{3816DE8D-4725-4207-AF9D-6D3351D97F90}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Script</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="Part" referent="RBX055D2E15FA4A42F1AB52F8B05BE7C23E">
+				<Properties>
+					<token name="shape">1</token>
+					<token name="formFactorRaw">3</token>
+					<bool name="Anchored">false</bool>
+					<bool name="AudioCanCollide">true</bool>
+					<float name="BackParamA">-0.5</float>
+					<float name="BackParamB">0.5</float>
+					<token name="BackSurface">0</token>
+					<token name="BackSurfaceInput">0</token>
+					<float name="BottomParamA">-0.5</float>
+					<float name="BottomParamB">0.5</float>
+					<token name="BottomSurface">0</token>
+					<token name="BottomSurfaceInput">0</token>
+					<CoordinateFrame name="CFrame">
+						<X>-52.2043381</X>
+						<Y>2952.55249</Y>
+						<Z>-35.9130478</Z>
+						<R00>-0.25881654</R00>
+						<R01>0</R01>
+						<R02>0.965926468</R02>
+						<R10>0</R10>
+						<R11>-1</R11>
+						<R12>0</R12>
+						<R20>0.965926528</R20>
+						<R21>0</R21>
+						<R22>0.25881651</R22>
+					</CoordinateFrame>
+					<bool name="CanCollide">true</bool>
+					<bool name="CanQuery">true</bool>
+					<bool name="CanTouch">true</bool>
+					<bool name="CastShadow">true</bool>
+					<string name="CollisionGroup">Default</string>
+					<int name="CollisionGroupId">0</int>
+					<Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+					<PhysicalProperties name="CustomPhysicalProperties">
+						<CustomPhysics>false</CustomPhysics>
+					</PhysicalProperties>
+					<bool name="EnableFluidForces">true</bool>
+					<float name="FrontParamA">-0.5</float>
+					<float name="FrontParamB">0.5</float>
+					<token name="FrontSurface">0</token>
+					<token name="FrontSurfaceInput">0</token>
+					<float name="LeftParamA">-0.5</float>
+					<float name="LeftParamB">0.5</float>
+					<token name="LeftSurface">0</token>
+					<token name="LeftSurfaceInput">0</token>
+					<bool name="Locked">false</bool>
+					<bool name="Massless">false</bool>
+					<token name="Material">1056</token>
+					<string name="MaterialVariantSerialized"></string>
+					<CoordinateFrame name="PivotOffset">
+						<X>0</X>
+						<Y>0</Y>
+						<Z>0</Z>
+						<R00>1</R00>
+						<R01>0</R01>
+						<R02>0</R02>
+						<R10>0</R10>
+						<R11>1</R11>
+						<R12>0</R12>
+						<R20>0</R20>
+						<R21>0</R21>
+						<R22>1</R22>
+					</CoordinateFrame>
+					<float name="Reflectance">0.00999999978</float>
+					<float name="RightParamA">-0.5</float>
+					<float name="RightParamB">0.5</float>
+					<token name="RightSurface">0</token>
+					<token name="RightSurfaceInput">0</token>
+					<int name="RootPriority">0</int>
+					<Vector3 name="RotVelocity">
+						<X>1</X>
+						<Y>1</Y>
+						<Z>1</Z>
+					</Vector3>
+					<float name="TopParamA">-0.5</float>
+					<float name="TopParamB">0.5</float>
+					<token name="TopSurface">0</token>
+					<token name="TopSurfaceInput">0</token>
+					<float name="Transparency">1</float>
+					<Vector3 name="Velocity">
+						<X>0</X>
+						<Y>0</Y>
+						<Z>0</Z>
+					</Vector3>
+					<Vector3 name="size">
+						<X>0.265380919</X>
+						<Y>3.08726478</Y>
+						<Z>1.03498566</Z>
+					</Vector3>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Handle</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="Attachment" referent="RBXD92923A673494B28951D230A56FBEDF7">
+					<Properties>
+						<CoordinateFrame name="CFrame">
+							<X>0</X>
+							<Y>1</Y>
+							<Z>0.111000001</Z>
+							<R00>1</R00>
+							<R01>0</R01>
+							<R02>0</R02>
+							<R10>0</R10>
+							<R11>1</R11>
+							<R12>0</R12>
+							<R20>0</R20>
+							<R21>0</R21>
+							<R22>1</R22>
+						</CoordinateFrame>
+						<bool name="Visible">false</bool>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Attachment2</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="Attachment" referent="RBX83FFBA48E3EE4F13B9CCD05C9A98EC2A">
+					<Properties>
+						<CoordinateFrame name="CFrame">
+							<X>0</X>
+							<Y>-0.162487581</Y>
+							<Z>0.110891327</Z>
+							<R00>1</R00>
+							<R01>0</R01>
+							<R02>0</R02>
+							<R10>0</R10>
+							<R11>1</R11>
+							<R12>0</R12>
+							<R20>0</R20>
+							<R21>0</R21>
+							<R22>1</R22>
+						</CoordinateFrame>
+						<bool name="Visible">false</bool>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Attachment</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="Trail" referent="RBX7E5C3157632C441BB9DE035CE93353FE">
+					<Properties>
+						<Ref name="Attachment0">RBX83FFBA48E3EE4F13B9CCD05C9A98EC2A</Ref>
+						<Ref name="Attachment1">RBXD92923A673494B28951D230A56FBEDF7</Ref>
+						<float name="Brightness">1</float>
+						<ColorSequence name="Color">0 1 1 1 0 1 1 1 1 0 </ColorSequence>
+						<bool name="Enabled">false</bool>
+						<bool name="FaceCamera">false</bool>
+						<float name="Lifetime">0.150000006</float>
+						<float name="LightEmission">0</float>
+						<float name="LightInfluence">1</float>
+						<float name="MaxLength">0</float>
+						<float name="MinLength">0.0884603187</float>
+						<Content name="Texture"><null></null></Content>
+						<float name="TextureLength">0.884603143</float>
+						<token name="TextureMode">0</token>
+						<NumberSequence name="Transparency">0 0.8125 0 1 1 0 </NumberSequence>
+						<NumberSequence name="WidthScale">0 0.884603 0 1 0.884603 0 </NumberSequence>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Trail</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="SpecialMesh" referent="RBX404B15AA57FF4E0799CC44A9C4F9CA94">
+					<Properties>
+						<token name="MeshType">5</token>
+						<Content name="MeshId"><url>http://www.roblox.com/asset/?id=121944778</url></Content>
+						<Content name="TextureId"><url>http://www.roblox.com/asset/?id=172752354</url></Content>
+						<Vector3 name="Offset">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+						</Vector3>
+						<Vector3 name="Scale">
+							<X>0.884603143</X>
+							<Y>0.900077224</Y>
+							<Z>0.884603143</Z>
+						</Vector3>
+						<Vector3 name="VertexColor">
+							<X>1</X>
+							<Y>1</Y>
+							<Z>1</Z>
+						</Vector3>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Mesh</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="Weld" referent="RBX4E37A6C3799E4DC49656E8D31E5416CC">
+					<Properties>
+						<CoordinateFrame name="C0">
+							<X>0</X>
+							<Y>3</Y>
+							<Z>0</Z>
+							<R00>-4.37113883e-08</R00>
+							<R01>0</R01>
+							<R02>-1</R02>
+							<R10>0</R10>
+							<R11>1</R11>
+							<R12>0</R12>
+							<R20>1</R20>
+							<R21>0</R21>
+							<R22>-4.37113883e-08</R22>
+						</CoordinateFrame>
+						<CoordinateFrame name="C1">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+							<R00>1</R00>
+							<R01>0</R01>
+							<R02>0</R02>
+							<R10>0</R10>
+							<R11>1</R11>
+							<R12>0</R12>
+							<R20>0</R20>
+							<R21>0</R21>
+							<R22>1</R22>
+						</CoordinateFrame>
+						<bool name="Enabled">true</bool>
+						<Ref name="Part0">RBX055D2E15FA4A42F1AB52F8B05BE7C23E</Ref>
+						<Ref name="Part1">RBX3DB4A372D6E54AAA8C8C73B160825D0D</Ref>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Weld</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="UnionOperation" referent="RBX3DB4A372D6E54AAA8C8C73B160825D0D">
+					<Properties>
+						<Content name="AssetId"><url>https://www.roblox.com//asset/?id=100589664794125</url></Content>
+						<BinaryString name="ChildData"></BinaryString>
+						<SharedString name="ChildData2">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+						<int name="ComponentIndex">-1</int>
+						<token name="FormFactor">3</token>
+						<Vector3 name="InitialSize">
+							<X>0.375015259</X>
+							<Y>7.42499638</Y>
+							<Z>2.95000076</Z>
+						</Vector3>
+						<BinaryString name="MeshData"></BinaryString>
+						<SharedString name="MeshData2">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+						<bool name="OffCentered">false</bool>
+						<BinaryString name="PhysicsData"></BinaryString>
+						<token name="RenderFidelity">0</token>
+						<float name="SmoothingAngle">0</float>
+						<NetAssetRef name="SolidMeshHolder">yuZpQdnvvUBOTYh1jqZ2cA==</NetAssetRef>
+						<bool name="UsePartColor">false</bool>
+						<SharedString name="AeroMeshData">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+						<token name="FluidFidelityInternal">0</token>
+						<bool name="InertiaMigrated">false</bool>
+						<SharedString name="PhysicalConfigData">k0EtPbNrzSKzH4idGRf7KQ==</SharedString>
+						<Vector3 name="UnscaledCofm">
+							<X>-1.94028758e-06</X>
+							<Y>0.954495847</Y>
+							<Z>1.94498698e-05</Z>
+						</Vector3>
+						<Vector3 name="UnscaledVolInertiaDiags">
+							<X>3.12984991</X>
+							<Y>0.41187799</Y>
+							<Z>2.72927451</Z>
+						</Vector3>
+						<Vector3 name="UnscaledVolInertiaOffDiags">
+							<X>-4.62985417e-06</X>
+							<Y>5.94063252e-08</Y>
+							<Z>-1.56565711e-05</Z>
+						</Vector3>
+						<float name="UnscaledVolume">0.628052115</float>
+						<bool name="Anchored">false</bool>
+						<bool name="AudioCanCollide">true</bool>
+						<float name="BackParamA">-0.5</float>
+						<float name="BackParamB">0.5</float>
+						<token name="BackSurface">0</token>
+						<token name="BackSurfaceInput">0</token>
+						<float name="BottomParamA">-0.5</float>
+						<float name="BottomParamB">0.5</float>
+						<token name="BottomSurface">0</token>
+						<token name="BottomSurfaceInput">0</token>
+						<CoordinateFrame name="CFrame">
+							<X>33.2644501</X>
+							<Y>0.212498188</Y>
+							<Z>-78.5168533</Z>
+							<R00>0</R00>
+							<R01>0</R01>
+							<R02>1</R02>
+							<R10>0</R10>
+							<R11>1</R11>
+							<R12>-0</R12>
+							<R20>-1</R20>
+							<R21>0</R21>
+							<R22>0</R22>
+						</CoordinateFrame>
+						<bool name="CanCollide">false</bool>
+						<bool name="CanQuery">false</bool>
+						<bool name="CanTouch">false</bool>
+						<bool name="CastShadow">true</bool>
+						<string name="CollisionGroup">Default</string>
+						<int name="CollisionGroupId">0</int>
+						<Color3uint8 name="Color3uint8">4285151497</Color3uint8>
+						<PhysicalProperties name="CustomPhysicalProperties">
+							<CustomPhysics>false</CustomPhysics>
+						</PhysicalProperties>
+						<bool name="EnableFluidForces">true</bool>
+						<float name="FrontParamA">-0.5</float>
+						<float name="FrontParamB">0.5</float>
+						<token name="FrontSurface">0</token>
+						<token name="FrontSurfaceInput">0</token>
+						<float name="LeftParamA">-0.5</float>
+						<float name="LeftParamB">0.5</float>
+						<token name="LeftSurface">0</token>
+						<token name="LeftSurfaceInput">0</token>
+						<bool name="Locked">false</bool>
+						<bool name="Massless">false</bool>
+						<token name="Material">512</token>
+						<string name="MaterialVariantSerialized"></string>
+						<CoordinateFrame name="PivotOffset">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+							<R00>1</R00>
+							<R01>0</R01>
+							<R02>0</R02>
+							<R10>0</R10>
+							<R11>1</R11>
+							<R12>0</R12>
+							<R20>0</R20>
+							<R21>0</R21>
+							<R22>1</R22>
+						</CoordinateFrame>
+						<float name="Reflectance">0</float>
+						<float name="RightParamA">-0.5</float>
+						<float name="RightParamB">0.5</float>
+						<token name="RightSurface">0</token>
+						<token name="RightSurfaceInput">0</token>
+						<int name="RootPriority">0</int>
+						<Vector3 name="RotVelocity">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+						</Vector3>
+						<float name="TopParamA">-0.5</float>
+						<float name="TopParamB">0.5</float>
+						<token name="TopSurface">0</token>
+						<token name="TopSurfaceInput">0</token>
+						<float name="Transparency">0</float>
+						<Vector3 name="Velocity">
+							<X>0</X>
+							<Y>0</Y>
+							<Z>0</Z>
+						</Vector3>
+						<Vector3 name="size">
+							<X>0.375015259</X>
+							<Y>7.42499638</Y>
+							<Z>2.95000076</Z>
+						</Vector3>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+						<bool name="DefinesCapabilities">false</bool>
+						<string name="Name">Union</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="UnionOperation" referent="RBX9890188020154B1E8A62B7D4229D031B">
+						<Properties>
+							<Content name="AssetId"><url>https://www.roblox.com//asset/?id=128530413855888</url></Content>
+							<BinaryString name="ChildData"></BinaryString>
+							<SharedString name="ChildData2">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+							<int name="ComponentIndex">-1</int>
+							<token name="FormFactor">3</token>
+							<Vector3 name="InitialSize">
+								<X>1.02570343</X>
+								<Y>2.65000057</Y>
+								<Z>2.65000153</Z>
+							</Vector3>
+							<BinaryString name="MeshData"></BinaryString>
+							<SharedString name="MeshData2">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+							<bool name="OffCentered">false</bool>
+							<BinaryString name="PhysicsData"></BinaryString>
+							<token name="RenderFidelity">0</token>
+							<float name="SmoothingAngle">0</float>
+							<NetAssetRef name="SolidMeshHolder">yuZpQdnvvUBOTYh1jqZ2cA==</NetAssetRef>
+							<bool name="UsePartColor">true</bool>
+							<SharedString name="AeroMeshData">yuZpQdnvvUBOTYh1jqZ2cA==</SharedString>
+							<token name="FluidFidelityInternal">0</token>
+							<bool name="InertiaMigrated">false</bool>
+							<SharedString name="PhysicalConfigData">zslC6wOCuvZxfIBfU8ij9A==</SharedString>
+							<Vector3 name="UnscaledCofm">
+								<X>-0.0654320717</X>
+								<Y>2.07442099e-06</Y>
+								<Z>-1.70959829e-05</Z>
+							</Vector3>
+							<Vector3 name="UnscaledVolInertiaDiags">
+								<X>0.590005398</X>
+								<Y>0.334594488</Y>
+								<Z>0.334588647</Z>
+							</Vector3>
+							<Vector3 name="UnscaledVolInertiaOffDiags">
+								<X>-2.06183881e-06</X>
+								<Y>-8.10290146e-07</Y>
+								<Z>-3.25041515e-06</Z>
+							</Vector3>
+							<float name="UnscaledVolume">0.680699706</float>
+							<bool name="Anchored">false</bool>
+							<bool name="AudioCanCollide">true</bool>
+							<float name="BackParamA">-0.5</float>
+							<float name="BackParamB">0.5</float>
+							<token name="BackSurface">0</token>
+							<token name="BackSurfaceInput">0</token>
+							<float name="BottomParamA">-0.5</float>
+							<float name="BottomParamB">0.5</float>
+							<token name="BottomSurface">0</token>
+							<token name="BottomSurfaceInput">0</token>
+							<CoordinateFrame name="CFrame">
+								<X>33.2644501</X>
+								<Y>2.55002403</Y>
+								<Z>-79.3779373</Z>
+								<R00>-4.37113883e-08</R00>
+								<R01>0</R01>
+								<R02>1</R02>
+								<R10>0</R10>
+								<R11>-1</R11>
+								<R12>0</R12>
+								<R20>1</R20>
+								<R21>0</R21>
+								<R22>4.37113883e-08</R22>
+							</CoordinateFrame>
+							<bool name="CanCollide">false</bool>
+							<bool name="CanQuery">false</bool>
+							<bool name="CanTouch">false</bool>
+							<bool name="CastShadow">true</bool>
+							<string name="CollisionGroup">Default</string>
+							<int name="CollisionGroupId">0</int>
+							<Color3uint8 name="Color3uint8">4294506744</Color3uint8>
+							<PhysicalProperties name="CustomPhysicalProperties">
+								<CustomPhysics>false</CustomPhysics>
+							</PhysicalProperties>
+							<bool name="EnableFluidForces">true</bool>
+							<float name="FrontParamA">-0.5</float>
+							<float name="FrontParamB">0.5</float>
+							<token name="FrontSurface">0</token>
+							<token name="FrontSurfaceInput">0</token>
+							<float name="LeftParamA">-0.5</float>
+							<float name="LeftParamB">0.5</float>
+							<token name="LeftSurface">0</token>
+							<token name="LeftSurfaceInput">0</token>
+							<bool name="Locked">false</bool>
+							<bool name="Massless">false</bool>
+							<token name="Material">1056</token>
+							<string name="MaterialVariantSerialized"></string>
+							<CoordinateFrame name="PivotOffset">
+								<X>0</X>
+								<Y>0</Y>
+								<Z>0</Z>
+								<R00>1</R00>
+								<R01>0</R01>
+								<R02>0</R02>
+								<R10>0</R10>
+								<R11>1</R11>
+								<R12>0</R12>
+								<R20>0</R20>
+								<R21>0</R21>
+								<R22>1</R22>
+							</CoordinateFrame>
+							<float name="Reflectance">0</float>
+							<float name="RightParamA">-0.5</float>
+							<float name="RightParamB">0.5</float>
+							<token name="RightSurface">0</token>
+							<token name="RightSurfaceInput">0</token>
+							<int name="RootPriority">0</int>
+							<Vector3 name="RotVelocity">
+								<X>0</X>
+								<Y>0</Y>
+								<Z>0</Z>
+							</Vector3>
+							<float name="TopParamA">-0.5</float>
+							<float name="TopParamB">0.5</float>
+							<token name="TopSurface">0</token>
+							<token name="TopSurfaceInput">0</token>
+							<float name="Transparency">0.600000024</float>
+							<Vector3 name="Velocity">
+								<X>0</X>
+								<Y>0</Y>
+								<Z>0</Z>
+							</Vector3>
+							<Vector3 name="size">
+								<X>1.77499998</X>
+								<Y>2.6500001</Y>
+								<Z>2.6500001</Z>
+							</Vector3>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+							<bool name="DefinesCapabilities">false</bool>
+							<string name="Name">Union</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+						<Item class="Weld" referent="RBX081E3ADB5F7642839519BDFFFB17793E">
+							<Properties>
+								<CoordinateFrame name="C0">
+									<X>0.861083984</X>
+									<Y>2.33752584</Y>
+									<Z>0</Z>
+									<R00>-1</R00>
+									<R01>-0</R01>
+									<R02>-4.37113883e-08</R02>
+									<R10>0</R10>
+									<R11>-1</R11>
+									<R12>0</R12>
+									<R20>-4.37113883e-08</R20>
+									<R21>0</R21>
+									<R22>1</R22>
+								</CoordinateFrame>
+								<CoordinateFrame name="C1">
+									<X>0</X>
+									<Y>0</Y>
+									<Z>0</Z>
+									<R00>1</R00>
+									<R01>0</R01>
+									<R02>0</R02>
+									<R10>0</R10>
+									<R11>1</R11>
+									<R12>0</R12>
+									<R20>0</R20>
+									<R21>0</R21>
+									<R22>1</R22>
+								</CoordinateFrame>
+								<bool name="Enabled">true</bool>
+								<Ref name="Part0">RBX3DB4A372D6E54AAA8C8C73B160825D0D</Ref>
+								<Ref name="Part1">RBX9890188020154B1E8A62B7D4229D031B</Ref>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+								<bool name="DefinesCapabilities">false</bool>
+								<string name="Name">Union</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+				</Item>
+			</Item>
+		</Item>
+	</Item>
+	<SharedStrings>
+		<SharedString md5="k0EtPbNrzSKzH4idGRf7KQ==">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
+vLhyBA==</SharedString>
+		<SharedString md5="yuZpQdnvvUBOTYh1jqZ2cA=="></SharedString>
+		<SharedString md5="zslC6wOCuvZxfIBfU8ij9A==">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</SharedString>
+	</SharedStrings>
+</roblox>
