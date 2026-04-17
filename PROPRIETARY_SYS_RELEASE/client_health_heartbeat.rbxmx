@@ -1,0 +1,141 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="LocalScript" referent="RBX2D8FEA8720AB4DAF97B85187C817C5AE">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[--By Solivion
+task.desynchronize()
+task.wait(math.pi)
+if workspace.Name ~= 'VIPSERVER' then task.synchronize() script:Destroy() return end
+local Rate = 1/60
+local nummer = 0
+local lastresult = 70
+local Velocity = 0
+local ValMul = 0
+local LastSINVAL = 0
+local plSIN = false
+local char = script.Parent.Parent if not char or not char:IsA('Model') then script:Destroy() return end
+while char and not char:GetAttribute('SHOCKED') and workspace.CurrentCamera and workspace.Name == 'VIPSERVER' and char.Parent and char:IsDescendantOf(workspace) do
+	task.desynchronize()
+	local dt =  task.wait(Rate)
+	nummer += dt
+	local beatMultiplier = 1 - (char:GetAttribute('PERCENTHEALTH') or 1)
+	if nummer >= math.pi * 2/(1+ValMul) then
+		nummer -= math.pi * 2/(1+ValMul)
+	end 
+	Velocity += dt * -(ValMul - beatMultiplier)
+	Velocity *= (1 - dt)
+	ValMul += Velocity
+	local SINVAL = math.max(0,math.sin(nummer * (10 + 10 * ValMul)))
+	local COSVAL = math.max(0,math.cos(math.pi/4 + nummer * (10 + 10 * ValMul)))
+	if beatMultiplier > 0 then
+		--[[if COSVAL > LastCOSVAL then
+			plsCOS = false
+		elseif COSVAL < LastCOSVAL and not plsCOS then
+			plsCOS = true
+			task.synchronize()
+			script.heartbeatSM:Play()
+			task.desynchronize()
+		end]]
+		if SINVAL > LastSINVAL then
+			plSIN = false
+		elseif SINVAL <= LastSINVAL and not plSIN then
+			plSIN = true
+			task.synchronize()
+			script.heartbeatBG:Play()
+			task.desynchronize()
+		end
+		--LastCOSVAL = COSVAL
+		LastSINVAL = SINVAL
+	end
+	local result = (workspace.CurrentCamera:GetAttribute('ADJ') or 0) + 70 + (SINVAL * 2 + COSVAL) * 1.5 * ValMul
+	if math.abs(result - lastresult) > 0.025 then
+		lastresult = result
+		if math.abs(result - workspace.CurrentCamera.FieldOfView) > 0.025 then
+			task.synchronize()
+			script.heartbeatBG.Volume = ValMul * 0.0425
+			workspace.CurrentCamera.FieldOfView = result
+		end
+	end
+end]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{2DD5ED32-A2C8-49DE-B9E1-75C3657D5BAB}</string>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">Heartbeat</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="Sound" referent="RBXF00A80367E1B4C05AC5395A5D8B7D964">
+			<Properties>
+				<bool name="AcousticSimulationEnabled">true</bool>
+				<bool name="IsMutedForCapture">false</bool>
+				<NumberRange name="LoopRegion">0 60000 </NumberRange>
+				<bool name="Looped">false</bool>
+				<bool name="PlayOnRemove">false</bool>
+				<NumberRange name="PlaybackRegion">0 60000 </NumberRange>
+				<bool name="PlaybackRegionsEnabled">false</bool>
+				<float name="PlaybackSpeed">1</float>
+				<bool name="Playing">false</bool>
+				<float name="RollOffMaxDistance">10000</float>
+				<float name="RollOffMinDistance">10</float>
+				<token name="RollOffMode">0</token>
+				<Ref name="SoundGroup">null</Ref>
+				<Content name="SoundId"><url>rbxassetid://7188240609</url></Content>
+				<double name="TimePosition">0</double>
+				<float name="Volume">0.0500000007</float>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">heartbeatSM</string>
+				<int64 name="SourceAssetId">7188240609</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX629127C38657415CB132EA58ABF3456D">
+			<Properties>
+				<bool name="AcousticSimulationEnabled">true</bool>
+				<bool name="IsMutedForCapture">false</bool>
+				<NumberRange name="LoopRegion">0 60000 </NumberRange>
+				<bool name="Looped">false</bool>
+				<bool name="PlayOnRemove">false</bool>
+				<NumberRange name="PlaybackRegion">0 60000 </NumberRange>
+				<bool name="PlaybackRegionsEnabled">false</bool>
+				<float name="PlaybackSpeed">1</float>
+				<bool name="Playing">false</bool>
+				<float name="RollOffMaxDistance">10000</float>
+				<float name="RollOffMinDistance">10</float>
+				<token name="RollOffMode">0</token>
+				<Ref name="SoundGroup">null</Ref>
+				<Content name="SoundId"><url>rbxassetid://7188240609</url></Content>
+				<double name="TimePosition">0</double>
+				<float name="Volume">0.0500000007</float>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">heartbeatBG</string>
+				<int64 name="SourceAssetId">7188240609</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="EqualizerSoundEffect" referent="RBXE90F2D4FD8F848F7B54C7B7B73CF661D">
+				<Properties>
+					<float name="HighGain">3.33299994</float>
+					<float name="LowGain">3.33299994</float>
+					<float name="MidGain">3.33299994</float>
+					<bool name="Enabled">true</bool>
+					<int name="Priority">0</int>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">EqualizerSoundEffect</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+	</Item>
+</roblox>

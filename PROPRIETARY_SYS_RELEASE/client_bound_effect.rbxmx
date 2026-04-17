@@ -1,0 +1,737 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="LocalScript" referent="RBX367441FCEB4240D98E8A4013BD787DB8">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[local player = game:FindFirstChildOfClass('Players').LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local SoundService = game:GetService('SoundService')
+task.wait(.1)
+
+if not character then return end
+CHAR = character or script:FindFirstAncestorWhichIsA('Model') or script.Parent.Parent
+if CHAR:IsA('Actor') then
+	CHAR = CHAR.Parent
+end
+if not CHAR or not CHAR:IsA('Model') or CHAR.ClassName ~= 'Model' or not character:FindFirstChild('Head') then 
+	return
+end
+local Fun = workspace:WaitForChild('Fun', 10)
+if Fun and Fun.ClassName ~= 'NumberValue' then Fun = nil end
+local Raina = workspace:WaitForChild('IsItRaining', 10)
+if Raina and Raina.ClassName ~= 'NumberValue' then Raina = nil end
+
+local MAINPART = CHAR:FindFirstChild('Head') and CHAR:FindFirstChild('Head'):IsA('BasePart') and CHAR:FindFirstChild('Head') or CHAR:FindFirstChildOfClass('Humanoid') and CHAR:FindFirstChildOfClass('Humanoid').RootPart or CHAR.PrimaryPart or CHAR:FindFirstChildOfClass('BasePart')
+if not MAINPART then return end
+local BLRSIZE= 0
+local glitchChance = 0.005 -- Adjust this to control how often glitches occur (lower values mean less frequent)
+local glitchDuration = 0.2 -- How long the glitch effect lasts (in seconds)
+local howglitchy2 = 1
+local AudioAddingConnection: RBXScriptConnection
+local Audios: {Sound} = {}
+local DurationUnderwater = 0
+local ThemTweens = {}
+local CCESaturation = 0
+function GAC()
+	if AudioAddingConnection then task.synchronize() AudioAddingConnection:Disconnect() AudioAddingConnection = nil end
+end
+function AddToAudioTable(v)
+	if v:IsA('Sound') and not table.find(Audios, v) then
+		table.insert(Audios, v)
+	end
+end
+function GatherAudio()
+	task.desynchronize()
+	Audios = {}
+	for i,v in workspace:GetDescendants() do
+		AddToAudioTable(v)
+	end
+	GAC()
+	task.synchronize()
+	AudioAddingConnection = workspace.DescendantAdded:Connect(function(Des)
+		AddToAudioTable(Des)
+	end)
+end
+local Save = {
+	
+}
+-- Function to apply a glitch effect to a Motor6D or Weld
+local function applyGlitchEffect(object, howglitchy)
+	if  object:IsA("Weld") or object.ClassName:lower():match('motor6d') then
+		--[[local originalProperties = {
+			Part0 = object.Part0,
+			Part1 = object.Part1,
+			C0 = object.C0,
+			C1 = object.C1,
+			Name = object.Name,
+			Parent = object.Parent,
+			Enabled = object.Enabled,
+		}
+]]		if object.Part1 and not object.Part1:FindFirstChildOfClass('Highlight') and howglitchy > .75 then
+			local hi = Instance.new('Highlight', object.Part1)
+			hi.FillTransparency = math.random(-howglitchy * 1000,howglitchy/10 * 100)/1000
+			hi.OutlineTransparency = 1 or math.random(-howglitchy * 1000,howglitchy * 1000)/1000
+			hi.FillColor = BrickColor.random().Color
+			game:FindFirstChildOfClass('Debris'):AddItem(hi, math.random())
+		end
+		-- Alter the properties to create a glitchy effect
+		--object.Part0 = nil
+		--object.Part1 = nil
+		local ori = object.C0
+		object.C0 = object.C0*CFrame.new(math.random(-howglitchy * 100,howglitchy* 100)/2000, math.random(-howglitchy* 100,howglitchy* 100)/2000, math.random(-howglitchy* 100,howglitchy* 100)/2000) * CFrame.fromEulerAngles(math.random(-howglitchy,howglitchy)/15, math.random(-howglitchy,howglitchy)/15, math.random(-howglitchy,howglitchy)/15)
+		task.wait()
+		--object.Name = "Glitched" .. object.Name
+		--object.Parent = nil
+		--object.Enabled = false
+		object.C0 =ori
+		-- Revert to the original properties after a delay
+		--wait(glitchDuration)
+		--for property, value in pairs(originalProperties) do
+		--	object[property] = value
+		--end
+	end
+end
+
+-- Function to randomly apply glitch effects to the character
+local function glitchCharacter(howglitchy)
+	for _, object in pairs(character:GetDescendants()) do
+		--if math.random(1,100) == 5 then
+		applyGlitchEffect(object,howglitchy)
+		--end
+		--if  player.Character.Name ~= player.Name or player.Name ~= player.Character.Name or workspace:FindFirstChildOfClass('Camera').CameraSubject.Parent.Name ~= player.Name then
+			--howglitchy = (character:FindFirstChildOfClass("Humanoid").MaxHealth -character:FindFirstChildOfClass("Humanoid").Health )/100 
+			
+	--if character:FindFirstChild("Head"):FindFirstChild("Neck") then
+	--	applyGlitchEffect(character:FindFirstChild("Head"):FindFirstChild("Neck"))
+	--elseif character:FindFirstChild("Torso"):FindFirstChild("Neck") then
+	--	applyGlitchEffect(character:FindFirstChild("Torso"):FindFirstChild("Neck"))
+	--end
+			
+		--end
+	end
+end
+
+local timer = 1/60
+-- Continuously apply random glitch effects to the character
+local targetweld
+if character and character:FindFirstChild('HumanoidRootPart') and character:FindFirstChild('HumanoidRootPart'):FindFirstChild('RootJoint')  then
+	targetweld = character:FindFirstChild('HumanoidRootPart'):FindFirstChild('RootJoint')
+end
+
+local SpringRotation = {}
+SpringRotation.__index = SpringRotation
+function SpringRotation.new()
+	return setmetatable({
+		current = Vector3.new(), -- The current rotation value
+		velocity = Vector3.new(), -- The velocity of the rotation change
+		target = Vector3.new(),   -- The target rotation
+		damping = 0.9,                   -- How much velocity is dampened each frame
+		stiffness = 0.9                  -- How fast it interpolates towards the target
+	}, SpringRotation)
+end
+
+-- Update function for interpolating the rotation
+function SpringRotation:update(deltaTime)
+	local springForce = (self.target - self.current) * self.stiffness
+	self.velocity = (self.velocity + springForce) * self.damping
+	self.current = self.current + self.velocity * deltaTime
+end
+
+local Dread = (Fun and Fun.Value == 875) or false
+
+-- Create a spring specifically for the rotation
+local newLookVectorSpring = SpringRotation.new()
+local vel
+local humanoid = character:FindFirstChildOfClass('Humanoid')
+local root = humanoid and humanoid.RootPart
+local origin = script:GetAttribute('O')
+if root and not root:FindFirstChild('RootJoint') then
+	if character:FindFirstChild('LowerTorso') and character:FindFirstChild('LowerTorso'):FindFirstChild('Root') then
+		targetweld = character:FindFirstChild('LowerTorso'):FindFirstChild('Root')
+	end
+end
+task.wait(1)
+if not character then script:Destroy() return end
+if character.Parent == workspace.Character then
+	for i,v in ipairs(character:GetDescendants()) do
+		if v:IsA('Sound') then v:Destroy() end
+	end
+end
+character.ChildAdded:Connect(function(child)
+	if child:IsA('Tool') then
+		for i,v in child:GetChildren() do
+			if v:IsA('BasePart') and v.Name:upper():match('HANDLE') then
+				v.LocalTransparencyModifier = 0
+				break
+			end
+		end
+	end
+end)
+
+local tween = game:GetService('TweenService')
+local function createStatBarBillboardGui()
+	local StatBarBillboardGui = Instance.new("BillboardGui")
+	StatBarBillboardGui.Name = "StatBarBillboardGui"
+	StatBarBillboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	StatBarBillboardGui.Active = true
+	StatBarBillboardGui.LightInfluence = 0.75
+	StatBarBillboardGui.AlwaysOnTop = true
+	StatBarBillboardGui.Size = UDim2.new(.5, 0, 2, 0)
+	StatBarBillboardGui.ClipsDescendants = true
+	StatBarBillboardGui.MaxDistance = 50
+	StatBarBillboardGui.StudsOffsetWorldSpace = Vector3.new(2, 0, 0)
+	pcall(function()
+		if Dread or (workspace:FindFirstChild('Fun') and workspace:FindFirstChild('Fun').Value == 875) then
+			StatBarBillboardGui.Enabled = false
+		end
+	end)
+
+	local MainFrame = Instance.new("Frame")
+	MainFrame.Name = "MainFrame"
+	MainFrame.Size = UDim2.new(1, 0, 1, 0)
+	MainFrame.BorderSizePixel = 0
+	MainFrame.BackgroundTransparency = 1
+	MainFrame.Parent = StatBarBillboardGui
+
+	local UIListLayout = Instance.new("UIListLayout")
+	UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+	UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	UIListLayout.Padding = UDim.new(0.05, 0) -- Adjusted padding
+	UIListLayout.Parent = MainFrame
+
+	return StatBarBillboardGui, MainFrame
+end
+local veltable = {['h'] = 0,}
+local statsTable = {
+	["Health"] = script:GetAttribute('LASTO_H') or 0.9,["Oxygen"] = script:GetAttribute('LASTO_O') or 0.8,
+}
+local lastval = {
+	["Health"] =  0.99, ["Oxygen"] = 0.99
+}
+local destroytask = {}
+local tweentask: {Instance: Tween} = {}
+local ColdDay = (Raina and Raina.Value == 1) or false
+
+local function updateBars(mainFrame, statsTable)
+	task.desynchronize()
+	if Dread then return end
+	-- Determine how many bars will be created so they can evenly fill the frame
+	local numStats = 0
+	for _,v in pairs(statsTable) do
+		numStats = numStats + 1
+	end
+
+	local Frames = {}
+	local Children = mainFrame:GetChildren()
+	if #Children > 1 then
+		for _,v in ipairs(Children) do
+			if not v:IsA('Frame') then continue end
+			table.insert(Frames, v)
+		end
+	end
+
+	local size = UDim2.new((1 - (mainFrame:FindFirstChildOfClass('UIListLayout').Padding.Scale * math.max(numStats - 1,0)))/numStats, 0, 1, 0)  -- Evenly sized based on stat count
+	-- For each stat, create a container bar and its fill indicator.
+	for statName, value in pairs(statsTable) do
+		task.desynchronize()
+		-- Container frame acts as the background for an "empty" bar.
+		if lastval[statName] == statsTable[statName] then continue end
+		value = math.clamp(value,0,1)
+		local name = (statName .. "_Container")
+		local container = mainFrame:FindFirstChild('REMOVING_'..name) or mainFrame:FindFirstChild(name) or Instance.new('Frame')
+		if container.Name == 'REMOVING_'..name then if destroytask[container] then coroutine.close(destroytask[container]) destroytask[container] = nil end end
+		if container.Name ~= name then
+			task.synchronize()
+			if container.Name == 'Frame' then
+				container.Size = UDim2.new(0,0,1.25,0) container.Transparency = 1 container.BackgroundColor3 = Color3.new(0,1,1) end
+			container.Name = name
+		end
+		task.synchronize()
+		if tweentask[container] then tweentask[container]:Cancel() tweentask[container] = nil end
+		tweentask[container] = tween:Create(container, TweenInfo.new(math.abs(container.Size.X.Scale - size.X.Scale)), {Size = size,BorderSizePixel = 10,BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+		tweentask[container]:Play()
+		task.desynchronize()
+		if table.find(Frames, container) then
+			table.remove(Frames, table.find(Frames, container))
+		end
+		local ttt = tostring(math.round(value * 100))..'%'
+		local cc = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, statName == 'Oxygen' and Color3.fromRGB(100, 100, 255) or Color3.fromRGB(0, 100, 0)),
+			ColorSequenceKeypoint.new(math.clamp(value - .01,0.001,.97), statName == 'Oxygen' and Color3.fromRGB(0, 255, 255) or Color3.fromRGB(0, 255, 0)),
+			ColorSequenceKeypoint.new(math.clamp(value,0.01,.98), statName == 'Oxygen' and Color3.fromRGB(0, 100, 100) or Color3.fromRGB(0, 0, 0)),
+			ColorSequenceKeypoint.new(math.clamp(value + .01,0.01,.99), statName == 'Oxygen' and Color3.fromRGB(0, 100, 100) or Color3.fromRGB(0, 0, 0)),
+			ColorSequenceKeypoint.new(math.clamp(value + .02,0.01,1), statName == 'Oxygen' and Color3.fromRGB(0, 0, 100) or ColdDay and Color3.fromRGB(7, 251, 255) or Color3.fromRGB(255, 0, 0)),
+			ColorSequenceKeypoint.new(1, statName == 'Oxygen' and Color3.fromRGB(0, 0, 0) or ColdDay and Color3.fromRGB(0, 0, 127) or Color3.fromRGB(100,0, 0))
+		})
+		local tt = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(math.clamp(value - .01,0.001,.989), 0),
+			NumberSequenceKeypoint.new(math.clamp(value,0.01,.999), .5),
+			NumberSequenceKeypoint.new(1, .75),
+		})
+		
+		task.synchronize()
+		local text = container:FindFirstChildOfClass('TextLabel') or Instance.new('TextLabel', container)
+		if text.Name == 'TextLabel' then
+			text.Name = 'NUMBER_INDICATOR'
+			text.Size = UDim2.fromScale(1,1)
+			text.BackgroundTransparency = 1
+			text.TextScaled = true
+			text.Rotation = -90
+			if statName == 'Oxygen' then
+				text.TextColor3 = Color3.new(1,1,1)
+				text.TextStrokeColor3 = Color3.new(0,0,0)
+			else
+				text.TextStrokeColor3 = Color3.new(1,1,1)
+			end
+			text.TextStrokeTransparency = 0
+		end
+		text.Text = ttt
+
+		-- The fill frame shows the progress using a UIGradient.
+		if not container:FindFirstChildOfClass('UICorner') then Instance.new("UICorner", container) end
+		local gradient =  container:FindFirstChildOfClass('UIGradient') or Instance.new("UIGradient")
+		-- Configure the gradient to be your indicator (for example, green to red)
+		gradient.Color = cc
+		gradient.Transparency = tt
+		gradient.Parent = container
+		gradient.Rotation = -90
+		container.Parent = mainFrame
+	end
+	for i,v in Frames do
+		task.desynchronize()
+		if v.Name:match('REMOVING_') or statsTable[string.gsub(v.Name, '_Container', '')] then continue end
+		task.synchronize()
+		v.Name = 'REMOVING_'..v.Name
+		if tweentask[v] then tweentask[v]:Cancel() end
+		if destroytask[v] then coroutine.close(destroytask[v]) end
+		destroytask[v] = coroutine.create(function()
+			tweentask[v] = tween:Create(v, TweenInfo.new(1), {Size = UDim2.fromScale(0,1),BackgroundTransparency = 1, BorderSizePixel = 0, BackgroundColor3 = Color3.fromRGB(0, 0, 0)}) 
+			tweentask[v]:Play()
+			task.wait(1)
+			v:Destroy()
+			tweentask[v] = nil
+			destroytask[v] = nil
+		end)
+		coroutine.resume(destroytask[v])
+	end
+end
+
+local billboardGui, mainFrame = MAINPART:FindFirstChild("StatBarBillboardGui"), MAINPART:FindFirstChild("StatBarBillboardGui") and MAINPART:FindFirstChild("StatBarBillboardGui"):FindFirstChildOfClass('Frame')
+local lastestchange = 0
+local lastestoxychange = 0
+-- Later on, update stats dynamically.
+local CCETintColor = Color3.new(1,1,1)
+local first = true
+local shocked = false
+
+function sanitizeNumber(n, limit)
+	limit = limit or 4028
+	if n ~= n then
+		return 0 
+	end return math.clamp(n, -limit, limit)
+end
+
+local function fixCFrame(cf, limit)
+	local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
+
+	-- Sanitize the position
+	local safeX = sanitizeNumber(x, limit)
+	local safeY = sanitizeNumber(y, limit)
+	local safeZ = sanitizeNumber(z, limit)
+
+	-- Check if the rotation matrix is corrupted
+	local rotIsValid = true
+	local rotValues = {r00, r01, r02, r10, r11, r12, r20, r21, r22}
+
+	for _, r in ipairs(rotValues) do
+		-- If any rotation number is NaN or Infinity, it's broken
+		if r ~= r or math.abs(r) == math.huge then
+			rotIsValid = false
+			break
+		end
+	end
+
+	-- Return the corrected CFrame
+	if rotIsValid then
+		-- Keep the original rotation, but use the clamped position
+		return CFrame.new(safeX, safeY, safeZ, r00, r01, r02, r10, r11, r12, r20, r21, r22)
+	else
+		-- Reset rotation to default, use the clamped position
+		return CFrame.new(safeX, safeY, safeZ)
+	end
+end
+while character and script:IsDescendantOf(character) and character.Parent do
+	task.desynchronize()
+	if not humanoid then humanoid = character:FindFirstChildOfClass('Humanoid') root = humanoid and humanoid.RootPart end 
+	local piv = character:GetPivot()
+	local fp = fixCFrame(piv) if fp ~= piv then task.synchronize() character:PivotTo(fp) task.desynchronize() end
+	local dt = task.wait(timer)
+	if character and fp.Position.Magnitude > 200 then
+		task.synchronize()
+		glitchCharacter((fp.Position.Magnitude - 200)/100)
+		if character and fp.Position.Magnitude > 500 then
+			character:PivotTo(workspace:FindFirstChildOfClass('SpawnLocation') and workspace:FindFirstChildOfClass('SpawnLocation').CFrame + Vector3.new(0,2,0) or CFrame.new())
+		end
+	else
+		if character and humanoid and humanoid:GetState() == Enum.HumanoidStateType.Swimming and root.Position.Y > .8 then
+			task.synchronize()
+			humanoid:ChangeState(Enum.HumanoidStateType.Running)
+		end
+		if character and humanoid and humanoid.SeatPart and ((humanoid:GetState() ~= Enum.HumanoidStateType.Seated and humanoid.Sit == false) or humanoid.Jump == true) then
+			if humanoid.SeatPart:FindFirstChild('SeatWeld') then
+				task.synchronize()
+				game:FindFirstChildOfClass('Debris'):AddItem(humanoid.SeatPart:FindFirstChild('SeatWeld'),.1)
+			end
+		end
+	end
+	task.desynchronize()
+	local lastttype = Enum.CameraType.Custom
+	local lastslept = false
+	local downed = false
+	if humanoid then
+		if (character:GetAttribute('IsRagdoll') or character:GetAttribute('PermRag')) then
+			--lastslept = true
+			downed = true
+			task.synchronize()
+			humanoid.EvaluateStateMachine = false
+			--[[if workspace:FindFirstChildOfClass('Camera') then
+				workspace:FindFirstChildOfClass('Camera'):SetAttribute('RAGCAM', true)
+			end]]
+		else
+			task.synchronize()
+			humanoid.EvaluateStateMachine = true
+			--[[if lastslept then
+				lastslept = false
+				if workspace:FindFirstChildOfClass('Camera') then
+					workspace:FindFirstChildOfClass('Camera'):SetAttribute('RAGCAM', nil)
+					workspace:FindFirstChildOfClass('Camera').CameraType = lastttype
+				end
+			else
+				if workspace:FindFirstChildOfClass('Camera') then
+					lastttype = workspace:FindFirstChildOfClass('Camera').CameraType
+				end
+			end]]
+		end
+		if humanoid:GetState() == Enum.HumanoidStateType.Dead then
+			Dead = true
+		end
+	end
+	task.desynchronize()
+	if targetweld and workspace.Name:upper() == 'VIPSERVER' then
+		if not origin then origin = script:GetAttribute('O') or targetweld.C1 task.synchronize() script:SetAttribute('O', origin) end
+		task.desynchronize()
+		local vel = root.CFrame:VectorToObjectSpace(root.AssemblyLinearVelocity)
+		newLookVectorSpring.target = vel
+		newLookVectorSpring:update(dt)
+		local movement = newLookVectorSpring.current
+		local angle = CFrame.Angles((targetweld.Name == 'RootJoint' and -1 or 1) * -movement.Z/50, 0, movement.X/50)
+		if targetweld and targetweld.Parent then pcall(function() targetweld.C1 = targetweld.C1:Lerp(origin * angle, 1 - (10 ^ -6) ^ dt) end) end
+		local PERCENTHEALTH = CHAR:GetAttribute('PERCENTHEALTH') or 1
+		local time = dt * 5
+		if not Dread then
+		if (not billboardGui or not mainFrame) then
+			task.synchronize()
+			billboardGui, mainFrame = createStatBarBillboardGui()
+			billboardGui.Parent = MAINPART
+			task.desynchronize()	
+		end
+		if not statsTable['Health'] and math.round((lastval['Health'] - (PERCENTHEALTH)) * 100) ~= 0 then
+			statsTable['Health'] = PERCENTHEALTH
+			veltable['h'] = 0
+		end
+		task.desynchronize()
+		if statsTable['Health'] then
+			veltable['h'] = veltable['h'] - (.1 * time * (statsTable['Health'] - PERCENTHEALTH))
+			veltable['h'] = veltable['h'] - (time * .25 * veltable['h'])
+			if math.abs(veltable['h']) <= 0.00001 then veltable['h'] = 0 end
+			statsTable['Health'] = statsTable['Health'] + (time * veltable['h'])
+			if math.round((lastval['Health']  - statsTable['Health']) * 100) ~= 0 then
+				updateBars(mainFrame, statsTable)
+				lastval['Health'] = statsTable['Health']
+				lastestchange = 0
+			else
+				lastestchange += dt
+				if lastestchange > 2.5 then task.synchronize()
+					script:SetAttribute('LASTO_H', statsTable['Health'])
+					task.desynchronize()
+					statsTable['Health'] = nil
+					updateBars(mainFrame, statsTable)
+					lastestchange = 0
+				end
+			end
+		end
+		task.desynchronize()
+		local attri = CHAR:GetAttribute('OXYGEN') or 1
+		if(not statsTable['Oxygen'] and lastval['Oxygen'] and math.round((lastval['Oxygen'] - (attri)) * 100) ~= 0) or (statsTable['Oxygen'] and math.round((statsTable['Oxygen'] - (attri)) * 100) ~= 0) then
+			statsTable['Oxygen'] = attri
+			lastestoxychange = 0
+		end
+		if statsTable['Oxygen'] and lastval['Oxygen'] ~= statsTable['Oxygen'] then
+			updateBars(mainFrame, statsTable)
+			lastval['Oxygen'] = statsTable['Oxygen']
+			lastestoxychange = 0
+		elseif statsTable['Oxygen'] then
+			lastestoxychange += dt
+			if lastestoxychange > 2.5 then task.synchronize()
+				script:SetAttribute('LASTO_O', statsTable['Oxygen'])
+				task.desynchronize()
+				statsTable['Oxygen'] = nil
+				updateBars(mainFrame, statsTable)
+				lastestoxychange = 0
+			end
+		end end
+		task.desynchronize()
+		local CCE: ColorCorrectionEffect = workspace.CurrentCamera:FindFirstChild('__CamALT') or Instance.new('ColorCorrectionEffect')
+		local BLR: BlurEffect = workspace.CurrentCamera:FindFirstChild('__CamBLR') or Instance.new('BlurEffect')
+		if CCE.Name ~= '__CamALT' then
+			task.synchronize()
+			CCE.Name = '__CamALT'
+			CCE.Parent = workspace.CurrentCamera
+			if not CCE:GetAttribute('DC') then CCE:SetAttribute('DC', CCE.Contrast) end if not CCE:GetAttribute('DB') then CCE:SetAttribute('DB', CCE.Brightness) end
+			if not CCE:GetAttribute('DS') then CCE:SetAttribute('DS', CCE.Saturation) end
+			task.delay(1, function()
+				task.synchronize()
+				CCE:SetAttribute('registeredtimeout', nil)
+			end)
+		elseif first then
+				task.synchronize()
+				local tween1 = pcall(function() game:GetService('TweenService'):Create(CCE, TweenInfo.new(5), {Saturation=CCE:GetAttribute('DS') or 0, Contrast=CCE:GetAttribute('DC') or 0, Brightness=CCE:GetAttribute('DB') or 0  , TintColor = Color3.new(1,1,1)}):Play() end) 	
+				local set = pcall(function() if not tween1 then CCE.Saturation=CCE:GetAttribute('DS') or 0
+				 	CCE.Contrast=CCE:GetAttribute('DC') or 0 
+						CCE.Brightness=CCE:GetAttribute('DB') or 0 CCE.TintColor = Color3.new(1,1,1) end end)
+				if not set then
+					local a= pcall(function() CCE.Saturation=CCE:GetAttribute('DS') or 0 end)
+					local b= pcall(function() CCE.Contrast=CCE:GetAttribute('DC') or 0 end)
+					local c= pcall(function() CCE.Brightness=CCE:GetAttribute('DB') or 0 end)
+					local d= pcall(function() CCE.TintColor=Color3.new(1,1,1) end)
+					if not (a or b or c or d) then
+						pcall(function() CCE:Destroy() end)
+						CCE = Instance.new('ColorCorrectionEffect')
+						CCE.Name = '__CamALT'
+						CCE.Parent = workspace.CurrentCamera
+						if not CCE:GetAttribute('DC') then CCE:SetAttribute('DC', CCE.Contrast) end if not CCE:GetAttribute('DB') then CCE:SetAttribute('DB', CCE.Brightness) end
+						if not CCE:GetAttribute('DS') then CCE:SetAttribute('DS', CCE.Saturation) end
+					end
+			end
+			task.delay(1, function()
+				task.synchronize()
+				CCE:SetAttribute('registeredtimeout', nil)
+			end)
+			task.desynchronize()
+			CCETintColor = CCE.TintColor 
+			CCESaturation = CCE.Saturation
+		end
+		if BLR.Name ~= '__CamBLR' then
+			task.synchronize()
+			BLR.Name = '__CamBLR'
+			BLR.Parent = workspace.CurrentCamera
+			task.delay(1, function()
+				task.synchronize()
+				BLR:SetAttribute('registeredtimeout', nil)
+			end)
+		elseif first then
+			BLRSIZE = BLR.Size
+			task.synchronize()
+			local tween1 = pcall(function() game:GetService('TweenService'):Create(BLR, TweenInfo.new(BLRSIZE), {Size=0}):Play() end)
+			local man = pcall(function() if not tween1 then
+				BLR.Size = 0
+			end BLRSIZE = BLR.Size end)
+			if not man then pcall(function() BLR:Destroy() end) BLR = Instance.new("BlurEffect")	BLR.Name = '__CamBLR'
+				BLR.Parent = workspace.CurrentCamera end
+			task.delay(1, function()
+				task.synchronize()
+				BLR:SetAttribute('registeredtimeout', nil)
+			end)
+			task.desynchronize()
+		end
+		local ReverbMode = Enum.ReverbType.Plain
+		task.desynchronize()
+		local REDDISH = ((1 - lastval['Health']) * 100)
+		local RFS = (Dead and SoundService.RolloffScale + time) or 1
+		local DIS = (Dead and math.max(0.1,SoundService.DistanceFactor - time)) or 3.33
+		local DS = (Dead and math.max(0.1,SoundService.DopplerScale + time)) or 1
+		local CamUnder = workspace.CurrentCamera.CFrame.Y < -.1
+		if downed then REDDISH += 55 end
+		local Speed = 1 - ((10 ^ -6) ^ dt)
+		CCESaturation = (CCESaturation + (-math.clamp(((1 - lastval['Oxygen']) * .33) + ((1 - lastval['Health']) * .67), -1, 1) - CCESaturation) * Speed)
+		if Dead or lastval['Health'] <= 0 then
+			CCETintColor = CCETintColor:Lerp(Color3.new(0,0,0), Speed/4)
+			ReverbMode = Enum.ReverbType.Auditorium
+			if DurationUnderwater < 1 then	DurationUnderwater += dt end
+		else
+			if shocked then
+				CCETintColor = CCETintColor:Lerp(Color3.new(0, 0, 0.498039), Speed/2)
+				ReverbMode = Enum.ReverbType.PaddedCell
+			else
+				if CamUnder then
+				CCETintColor = CCETintColor:Lerp(Color3.fromRGB(100,100 - REDDISH,255 - REDDISH), Speed/1.25)
+				ReverbMode = Enum.ReverbType.UnderWater
+				if DurationUnderwater < 1 then	DurationUnderwater += dt end
+			else
+				ReverbMode = Enum.ReverbType.Plain
+				CCETintColor = CCETintColor:Lerp(Color3.fromRGB(255,255 - REDDISH,255 - REDDISH), Speed) 
+				if DurationUnderwater > 0 then	DurationUnderwater -= dt if DurationUnderwater < 0 then DurationUnderwater = 0 end end
+			end
+			
+				
+			end
+		end
+		if shocked or character:GetAttribute('SHOCKED') then
+			if not character:GetAttribute('SHOCKED_REG') and not shocked then
+				task.synchronize()
+				shocked = true
+				character:GetAttribute('SHOCKED_REG', true)
+				CCE.Brightness = 10
+				CCE.Contrast=10
+				CCE.Saturation=2
+				DurationUnderwater = 0
+				pcall(function()
+					script.shocked:Play()
+				end)
+				pcall(function()
+					script.shocked2:Play()
+				end)
+			end
+			local spd = 12* -dt * (0.5-DurationUnderwater)
+			task.synchronize()
+			CCE.Saturation=math.clamp(CCE.Saturation+spd,-2,2)
+			CCESaturation=CCE.Saturation
+			CCE.Contrast=math.clamp(CCE.Contrast+spd,-2,2)
+			CCE.Brightness=math.clamp(CCE.Brightness + math.min(0,spd/4),-2,2)
+			task.desynchronize()
+		end
+		BLRSIZE += (((DurationUnderwater*12.5) - BLRSIZE) * dt)
+		if not CamUnder and AudioAddingConnection then
+			GAC()
+			for i,v in Audios do
+				local FX = v:FindFirstChild('__UDEF')
+				if FX then
+					task.synchronize()
+					if ThemTweens[FX] then	ThemTweens[FX]:Cancel() ThemTweens[FX] = nil end
+					local thetween = tween:Create(FX, TweenInfo.new(math.abs(FX.LowGain)/(5 + (1 - DurationUnderwater) * 95)), {LowGain = 0,MidGain = 0, HighGain = 0})
+					thetween:Play()
+					ThemTweens[FX] = thetween
+					task.desynchronize()
+				end
+			end
+			Audios = {}
+		elseif CamUnder and not AudioAddingConnection then
+			GatherAudio()
+			task.synchronize()
+			for i,v in pairs(ThemTweens) do
+				v:Cancel()
+				ThemTweens[i] = nil
+			end
+		end
+		task.desynchronize()
+		if #Audios > 0 and CamUnder then
+			for i,v in Audios do
+				local FX = v:FindFirstChild('__UDEF')
+				if not FX then
+					FX = Instance.new('EqualizerSoundEffect')
+					task.synchronize()
+					FX.Name = '__UDEF'
+					FX.MidGain = 0
+					FX.Parent = v
+				end
+				if not ThemTweens[FX] then
+					task.synchronize()
+					local thetween = tween:Create(FX, TweenInfo.new(math.abs(-20 - FX.LowGain)/(5 + (DurationUnderwater) * 95)), {LowGain = -20,MidGain = 10, HighGain = -20})
+					thetween:Play()
+					ThemTweens[FX] = thetween
+				end
+				task.desynchronize()
+			end
+		end
+		if Dead or first then
+			task.synchronize()
+			SoundService.AmbientReverb = ReverbMode
+			SoundService.RolloffScale = RFS
+			SoundService.DopplerScale = DS
+			SoundService.DistanceFactor = DIS
+			first = false
+		end
+		if math.abs(BLRSIZE-BLR.Size) > .001 then
+			task.synchronize()
+			BLR.Size = BLRSIZE
+		end
+		task.synchronize()
+		CCE.TintColor = CCETintColor
+		CCE.Saturation = CCESaturation
+	elseif not targetweld then
+		task.desynchronize()
+		if root then	targetweld = root:FindFirstChild('RootJoint') or root:FindFirstChild('Root') else root = humanoid and humanoid.RootPart end
+		if character:FindFirstChild('LowerTorso') and character:FindFirstChild('LowerTorso'):FindFirstChild('Root') then
+			targetweld = character:FindFirstChild('LowerTorso'):FindFirstChild('Root')
+		end
+	end
+end
+]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{BF2DAC50-92F2-4F4B-ACAC-79A5E842EA1F}</string>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">FLOATING POINT</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="Sound" referent="RBX5B65D854F55F4D3DA6EBB5007E09AFBD">
+			<Properties>
+				<bool name="AcousticSimulationEnabled">true</bool>
+				<bool name="IsMutedForCapture">false</bool>
+				<NumberRange name="LoopRegion">0 60000 </NumberRange>
+				<bool name="Looped">true</bool>
+				<bool name="PlayOnRemove">false</bool>
+				<NumberRange name="PlaybackRegion">0 60000 </NumberRange>
+				<bool name="PlaybackRegionsEnabled">false</bool>
+				<float name="PlaybackSpeed">1</float>
+				<bool name="Playing">false</bool>
+				<float name="RollOffMaxDistance">10000</float>
+				<float name="RollOffMinDistance">10</float>
+				<token name="RollOffMode">3</token>
+				<Ref name="SoundGroup">null</Ref>
+				<Content name="SoundId"><url>rbxassetid://5509750509</url></Content>
+				<double name="TimePosition">0</double>
+				<float name="Volume">0.0250000004</float>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">shocked</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX52E165BB67FA4B62B0F745964CC3A3AC">
+			<Properties>
+				<bool name="AcousticSimulationEnabled">true</bool>
+				<bool name="IsMutedForCapture">false</bool>
+				<NumberRange name="LoopRegion">0 60000 </NumberRange>
+				<bool name="Looped">false</bool>
+				<bool name="PlayOnRemove">false</bool>
+				<NumberRange name="PlaybackRegion">0 60000 </NumberRange>
+				<bool name="PlaybackRegionsEnabled">false</bool>
+				<float name="PlaybackSpeed">1</float>
+				<bool name="Playing">false</bool>
+				<float name="RollOffMaxDistance">10000</float>
+				<float name="RollOffMinDistance">10</float>
+				<token name="RollOffMode">3</token>
+				<Ref name="SoundGroup">null</Ref>
+				<Content name="SoundId"><url>rbxassetid://8060079174</url></Content>
+				<double name="TimePosition">0</double>
+				<float name="Volume">0.0329999998</float>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">shocked2</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+	</Item>
+</roblox>

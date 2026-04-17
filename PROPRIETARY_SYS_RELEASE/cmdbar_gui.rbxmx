@@ -1,0 +1,1251 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ScreenGui" referent="RBX0367E96C2FD64DF0A8C8E7AF4A2DFE15">
+		<Properties>
+			<bool name="ClipToDeviceSafeArea">true</bool>
+			<int name="DisplayOrder">-1</int>
+			<token name="SafeAreaCompatibility">1</token>
+			<token name="ScreenInsets">2</token>
+			<bool name="Enabled">false</bool>
+			<bool name="ResetOnSpawn">false</bool>
+			<token name="ZIndexBehavior">1</token>
+			<bool name="AutoLocalize">true</bool>
+			<Ref name="RootLocalizationTable">null</Ref>
+			<token name="SelectionBehaviorDown">0</token>
+			<token name="SelectionBehaviorLeft">0</token>
+			<token name="SelectionBehaviorRight">0</token>
+			<token name="SelectionBehaviorUp">0</token>
+			<bool name="SelectionGroup">false</bool>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">CMDBAR</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="TextBox" referent="RBX1EBA9201154D4716BF70B270F42F280B">
+			<Properties>
+				<bool name="ClearTextOnFocus">false</bool>
+				<Font name="FontFace">
+					<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+					<Weight>400</Weight>
+					<Style>Normal</Style>
+					<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+				</Font>
+				<float name="LineHeight">1</float>
+				<string name="LocalizationMatchIdentifier"></string>
+				<string name="LocalizationMatchedSourceText"></string>
+				<int name="MaxVisibleGraphemes">-1</int>
+				<bool name="MultiLine">true</bool>
+				<string name="OpenTypeFeatures"></string>
+				<Color3 name="PlaceholderColor3">
+					<R>0.699999988</R>
+					<G>0.699999988</G>
+					<B>0.699999988</B>
+				</Color3>
+				<string name="PlaceholderText">TYPE COMMANDS HERE, TRY &quot;!help&quot; AND PRESS THE BUTTON</string>
+				<bool name="RichText">false</bool>
+				<bool name="ShowNativeInput">true</bool>
+				<string name="Text"></string>
+				<Color3 name="TextColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<token name="TextDirection">0</token>
+				<bool name="TextEditable">true</bool>
+				<bool name="TextScaled">true</bool>
+				<float name="TextSize">14</float>
+				<Color3 name="TextStrokeColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<float name="TextStrokeTransparency">0.800000012</float>
+				<float name="TextTransparency">0</float>
+				<token name="TextTruncate">0</token>
+				<bool name="TextWrapped">true</bool>
+				<token name="TextXAlignment">2</token>
+				<token name="TextYAlignment">1</token>
+				<bool name="Active">true</bool>
+				<Vector2 name="AnchorPoint">
+					<X>0</X>
+					<Y>0</Y>
+				</Vector2>
+				<token name="AutomaticSize">0</token>
+				<Color3 name="BackgroundColor3">
+					<R>1</R>
+					<G>1</G>
+					<B>1</B>
+				</Color3>
+				<float name="BackgroundTransparency">0.5</float>
+				<Color3 name="BorderColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<token name="BorderMode">0</token>
+				<int name="BorderSizePixel">0</int>
+				<bool name="ClipsDescendants">false</bool>
+				<bool name="Draggable">false</bool>
+				<token name="InputSink">0</token>
+				<bool name="Interactable">true</bool>
+				<int name="LayoutOrder">0</int>
+				<Ref name="NextSelectionDown">null</Ref>
+				<Ref name="NextSelectionLeft">null</Ref>
+				<Ref name="NextSelectionRight">null</Ref>
+				<Ref name="NextSelectionUp">null</Ref>
+				<UDim2 name="Position">
+					<XS>0.670000017</XS>
+					<XO>0</XO>
+					<YS>0</YS>
+					<YO>0</YO>
+				</UDim2>
+				<float name="Rotation">0</float>
+				<bool name="Selectable">true</bool>
+				<Ref name="SelectionImageObject">null</Ref>
+				<int name="SelectionOrder">0</int>
+				<UDim2 name="Size">
+					<XS>0.330000013</XS>
+					<XO>0</XO>
+					<YS>0</YS>
+					<YO>25</YO>
+				</UDim2>
+				<token name="SizeConstraint">0</token>
+				<bool name="Visible">true</bool>
+				<int name="ZIndex">1</int>
+				<bool name="AutoLocalize">true</bool>
+				<Ref name="RootLocalizationTable">null</Ref>
+				<token name="SelectionBehaviorDown">0</token>
+				<token name="SelectionBehaviorLeft">0</token>
+				<token name="SelectionBehaviorRight">0</token>
+				<token name="SelectionBehaviorUp">0</token>
+				<bool name="SelectionGroup">false</bool>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">TextBox</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="UICorner" referent="RBXA43A9B56D4FF4DC0B6760FCD2226BB1B">
+				<Properties>
+					<UDim name="CornerRadius">
+						<S>0.200000003</S>
+						<O>0</O>
+					</UDim>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">UICorner</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="LocalScript" referent="RBX93BBB2D55B654B08B029B06639253CEB">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[type structa = {cmd: string, des: string}
+local gui = script:FindFirstAncestorWhichIsA('ScreenGui')
+local TextBox = script:FindFirstAncestorWhichIsA('TextBox')
+local commands: {structa} =  { 
+	{cmd ="!random_accessory", des = "give ur character randomized accessories"},
+	{cmd ="!alt_control", des = "{{Use another controller UI}}"},
+	{cmd ="!local_rm_acc", des = "remove client-sided accessories"},	
+	{cmd ="!local_rd_acc", des = "client-sided randomized accessories (NOT VISIBLE TO OTHER PLAYERS)"},
+	{cmd ="!local_acc", des = "wear client-sided accessories"},
+	{cmd ="!local_character", des = "client-sided character, Only allowed when no character exist"},
+	{cmd ="!local_clear_anim", des = "clears anim"},{cmd ="!local_no_anim", des = "same as no_anim but client"},
+	{cmd ="!local_help", des = "client Help"},
+	{cmd ="!accessory", des = "give ur character accessories"},
+	{cmd ="!remove_accessory", des = "remove accessories"},
+	{cmd ="!list_accessory", des = "give u list of accessories"},
+	{cmd ="!local_gi", des = "client toggle Global Illumination"},
+	{cmd ="!local_godray", des = "client toggle God's Ray"},
+	{cmd ="!metacmd", des = "client check meta commands"},
+	{cmd ="!client_list_cmd", des = "client read Command List from the client-sided command list. (saved on clientside, for full pls use !cmd)"},
+	{cmd ="!local_cmd", des = "client CMDs"},
+	{cmd = "!alt_ui", des = "{{Use another Stance controller UI}}"},
+	{cmd ="!local_note", des = "client NOTE, type {EON} in the command bar to exit the mode, it will noted inside the Console"},
+	{cmd ="!removecharacter", des = "remove your character"},
+	{cmd ="!adapter6", des = "runs threads of commands for R15 turning into R6, mostly Useful in VIP server"},
+	{cmd ="!map", des = "<<WIP!!, load Part-based map ontop of the map, applies only to client side. Strictly must only be '!map'>>"},
+	{cmd = "!bodycolor", des = "{{Change Character's BodyColor Instance To Generate Clothings out of it, Maybe like Classic avatars and such}}"},
+	{cmd = "!clear_anim", des = "{{Clear the Motor6Ds' transform CFrame. Will Make Character Reset To Default Pose}}"},
+	{cmd ="!safechat", des = "{{put a single word behind the command(word whitelist belike), a simple or mostly used ones might be allowed}}"},
+	{cmd = "!safechatwordlist", des = "{{get list of available vocab for safechat}}"},
+	{cmd = "!offset_relative", des = "Argument >> [Dimension(X,Y,Z), Section(HEAD, ARM, LEG)] : {{takes effect after !offset_{'SECTIONNAME'} [CFrame]}}"},
+	{cmd = "!no_anim", des = "{{Retro Roblox Animate Will Replace Animation Based Animate.}}"},
+	{cmd = "!morse", des = "{{get morsecode translation of any following string.}}"},
+	{cmd = "!subtosafechat", des = "{{get safechat messages delivered to your log in real time.}}"},
+	{cmd = "!safechatlog", des = "{{view up 100 safechat messages into the past}}"},
+	{cmd = "!serverinfo", des = "{{view server's current status}}"},
+	{cmd = "!seathelper", des = "{{Get An Item That Helps You Back In A Seat, Incase you fell off a boat}}"},
+	{cmd ="!reset", des = "<<Reset yourself>>"},
+	{cmd ="!experimental", des = "{{teleport to the old version of the game(modified to be atleast playable due to massive lag spike)}}"},
+	{cmd ='!sign', des = "Special Command For Setting Sign Text"},	
+	{cmd ='!bbchat', des = "Bubble Chat(Filtered text)"},
+	{cmd ="!sitanchor", des = "<<!SitAnchor: Sit on the nearby ground>>"},
+	{cmd ="!r6", des = "<<become R6 character>>"},
+	{cmd ="!r15", des = "<<become R15 character>>"},
+	{cmd ="!offset_arm", des = "CFrame; only number(under 0.5 in all axis)"},
+	{cmd ="!offset_leg", des = "CFrame; only number(under 0.5 in all axis)"},
+	{cmd ="!unstuck", des = "<<unstuck and teleport above the ground>>"},
+	{cmd ="!leave", des = "<<Kick yourself from the game>>"},
+	{cmd ="!rejoin", des = "<<Rejoin the game>>"},
+	{cmd ="!reserve", des = "(Both can be 'SAME' or Number); [[FUN]] [[ISITRAINING]]"},
+	{cmd ="!changechar", des = "[[OUTFIT ID]]"},
+	{cmd ="!trip", des = "<<Trip Yourself>>"},
+	{cmd ="!tospawn", des = "<<TP to spawn, with small cooldown>>"},
+	{cmd ='!help', des = "Introduction to '!' Commands"},
+	{cmd ='!faker6', des = "<<Become Fake R6 Character with R15 rigs>>"},
+	{cmd ='!offset_relative_y', des = 'Set IF Offset Will Relate to Y as an inverse or no'},
+	{cmd ='!ratelimitanim', des = '1-60'},
+	{cmd ='!joinrandom', des = 'Self-Explanatory'},
+	{cmd ='!lockjoint', des = 'Lock R15 Limbs, Best used with Oldschool Animation Pack'},
+	{cmd ='!mute', des = "Mute Notifications (you don't receive them)"},
+	{cmd ='!mutenotif', des = "Toggle whether console open upon notification. (just doesn't pop the console on notification)"},
+	{cmd ='!nodisturb', des = 'Mute Notifications'},
+	{cmd ="!sit", des = "<<!Sit: Sit unanchored>>"},
+	{cmd ="!cmd", des = "<<Raw List of all the commands>>"},
+	{cmd ="!cmdlist", des = "<<Raw List of all the commands>>"},
+	{cmd ='!storage', des = "Toggle Storage GUI With All the saved tool slots"},
+	{cmd ='!saveto', des = "!saveto [Slot number: {Whole Number Up To 10}] [Tool Name / Leave Nil For Equipped Tool]"},
+	{cmd ='!takeout', des = "!takeout [Slot number: {Whole Number Up To 10}]"},
+	{cmd ='!displayname', des = "!displayname [[string]], the name will be filtered by TextService"},
+}
+local CommandsTable = {
+	"!adapter6", 'local_rd_acc', '!replacehead_alt',
+	"!map", '!alt_control',
+	'!gift', '!sign', '!bbchat', '!wireframe', '!logconsole', '!resumelogconsole', '!pauselogconsole', '!time', '!consolehelp', '!clear', '!console',
+	"!badgameplay",
+	'!serverinfo',
+	'!seathelper',
+	"!experimental",
+	"!cmdlist",
+	"!listcmd", '!safechat',
+	"!cmd", "!storage", "!saveto", "!takeout",
+	"!pausehandler",
+	"!stophandler",
+	"!setscale",
+	"!scale",
+	"!destroycharacter",
+	"!help",
+	"!mute",
+	"!nodisturb",
+	"!offset_relative_y",
+	"!ratelimitanim",
+	"!lockjoint",
+	"!offset_arm",
+	"!offset_leg",
+	"!sitanchor",
+	"!rejoin",
+	"!joinrandom",
+	"!bgr6",
+	"!mutenotif",
+	"!reserve",
+	"!unstuck",
+	"!leave",
+	"!faker6",
+	"!R6",
+	"!R15",
+	"!reset",
+	"!tospawn", 'clear_anim', 'no_anim', '!bodycolor',
+	"!spawn",
+	"!char",
+	"!changechar",
+	"!trip",
+	'!offset_lowertorso',
+	'!displayname'
+}
+function getadvice(text: string)
+	if typeof(text) ~= 'string' then return end
+	text = text:match("^%s*(.-)%s*$")
+	local split = string.split(text, " ")
+	if #split <= 0 or split[1] == '' then return end
+	if string.sub(text, 1, 4):match('/e ') then
+		table.remove(split, 1)
+	end
+	text = split[1] -- get the FIRST command
+	if text:sub(1,2):match('!_') and split[2] ~= nil then
+		local indice = tonumber(text:sub(3))
+		if CommandsTable[indice] then
+			local lookfor = CommandsTable[indice]
+			for i,v in commands do
+				if typeof(v) ~= 'table' or not v.cmd or not v.des then continue end -- invalid!
+				if string.lower(lookfor) == string.lower(v.cmd) then
+					return v.des
+				end
+			end
+		end
+	end
+	for i,v: structa in commands do
+		if typeof(v) ~= 'table' or not v.cmd or not v.des then continue end -- invalid!
+		if string.lower(text) == string.lower(v.cmd) then
+			return v.des
+		end
+	end
+	return nil
+end
+function getsuggest(str: string)
+	if typeof(str) ~= 'string' then return {} end
+	str = str:match("^%s*(.-)%s*$")
+	local split = string.split(str, " ")
+	if #split <= 0 or split[1] == '' then return {} end
+	if string.sub(str, 1, 4):match('/e ') then
+		table.remove(split, 1)
+	end
+	str = split[1] -- get the FIRST command
+	if str:sub(1,2):match('!_') then
+		local indice = tostring(tonumber(str:sub(3)))
+		local suggest = {}
+		for i,v in ipairs(CommandsTable) do
+			if typeof(v) ~= 'string' then continue end 
+			local query = v.." ("..tostring(i)..")"
+			if tostring(i):find(indice) and not  table.find(suggest ,query)then table.insert(suggest, query) end
+		end
+		return suggest or {}
+	end
+	local suggest = {}
+	for i,v: structa in commands do
+		if typeof(v) ~= 'table' or not v.cmd or not v.des then continue end -- invalid!
+		if string.find(string.lower(v.cmd), str:lower()) or string.find(str:lower(), string.lower(v.cmd)) or string.match(string.lower(v.cmd), str:lower()) or string.match(str:lower(), string.lower(v.cmd)) then
+			if not table.find(suggest ,v.cmd) then
+			table.insert(suggest ,v.cmd) end 
+		end
+	end
+	return suggest or {}
+end
+function suggest(str: string)
+	if typeof(str) ~= 'string' then return end
+	local advice = getadvice(str) -- means that they had aleady finished the first command
+	local text = advice or getsuggest(str) or {}
+	--gen a gui 
+	if advice then
+		pcall(function()
+		if gui:FindFirstChild('autofinish') then gui:FindFirstChild('autofinish').Visible = false end
+		end) local aw = gui:FindFirstChild('advisory') if not aw then
+			aw	= Instance.new('TextLabel', gui)
+			aw.Name = 'advisory'
+			aw.Size = UDim2.new(0.33,0,0,25)
+			aw.Position = UDim2.new(0.67, 0, 0, 25)
+			aw.BackgroundTransparency = 0.5
+			aw.TextTransparency = 0.5
+			aw.Text = text
+			aw.TextColor3 = Color3.new(1, 1, 1)
+			aw.BackgroundColor3 = Color3.new(0, 0, 0)
+			aw.TextColor3 = Color3.new(1, 1, 1)
+			aw.TextXAlignment = Enum.TextXAlignment.Center
+			aw.TextYAlignment = Enum.TextYAlignment.Center
+			aw.TextScaled = true
+		end 
+		aw.Text = text
+		aw.Visible = true else 
+		pcall(function()
+			if gui:FindFirstChild('advisory') then gui:FindFirstChild('advisory').Visible = false end
+		end) if not text or #text <= 0 then pcall(function()
+				if gui:FindFirstChild('autofinish') then gui:FindFirstChild('autofinish').Visible = false end
+			end) end
+		local aw = gui:FindFirstChild('autofinish')
+		if not aw then
+		aw	= Instance.new('TextLabel', gui)
+		aw.Name = 'autofinish'
+		aw.Size = UDim2.new(0.33,0,0,25)
+		aw.Position = UDim2.new(0.67, 0, 0, 0)
+			aw.BackgroundTransparency = 1
+			aw.TextTransparency = 0.5
+			aw.Text = table.concat(text, ", ")
+		aw.TextColor3 = Color3.new(0.372549, 0.372549, 0.372549)
+		aw.TextXAlignment = Enum.TextXAlignment.Center
+		aw.TextYAlignment = Enum.TextYAlignment.Center
+		aw.TextScaled = true
+		end 
+		aw.Text = table.concat(text, ", ")
+		aw.Visible = true
+end
+end
+pcall(function()
+suggest(TextBox.Text) end)
+TextBox:GetPropertyChangedSignal('Text'):Connect(function()
+	pcall(function()
+	suggest(TextBox.Text) end)
+end)]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{01FAD935-7C24-4264-B8CB-AAB6D5A1EA89}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">LocalScript</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="TextButton" referent="RBX9275F775517D4F7D90A65FDC4AAB7337">
+			<Properties>
+				<Font name="FontFace">
+					<Family><url>rbxasset://fonts/families/SourceSansPro.json</url></Family>
+					<Weight>400</Weight>
+					<Style>Normal</Style>
+					<CachedFaceId><url>rbxasset://fonts/SourceSansPro-Regular.ttf</url></CachedFaceId>
+				</Font>
+				<float name="LineHeight">1</float>
+				<string name="LocalizationMatchIdentifier"></string>
+				<string name="LocalizationMatchedSourceText"></string>
+				<int name="MaxVisibleGraphemes">-1</int>
+				<string name="OpenTypeFeatures"></string>
+				<bool name="RichText">false</bool>
+				<string name="Text">&#226;&#156;&#147;</string>
+				<Color3 name="TextColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<token name="TextDirection">0</token>
+				<bool name="TextScaled">false</bool>
+				<float name="TextSize">14</float>
+				<Color3 name="TextStrokeColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<float name="TextStrokeTransparency">1</float>
+				<float name="TextTransparency">0</float>
+				<token name="TextTruncate">0</token>
+				<bool name="TextWrapped">false</bool>
+				<token name="TextXAlignment">2</token>
+				<token name="TextYAlignment">1</token>
+				<bool name="AutoButtonColor">true</bool>
+				<Ref name="HoverHapticEffect">null</Ref>
+				<bool name="Modal">false</bool>
+				<Ref name="PressHapticEffect">RBXD9BB2F2F558648A1B52CC490C0A32A32</Ref>
+				<bool name="Selected">false</bool>
+				<token name="Style">0</token>
+				<bool name="Active">true</bool>
+				<Vector2 name="AnchorPoint">
+					<X>0</X>
+					<Y>0</Y>
+				</Vector2>
+				<token name="AutomaticSize">0</token>
+				<Color3 name="BackgroundColor3">
+					<R>1</R>
+					<G>1</G>
+					<B>1</B>
+				</Color3>
+				<float name="BackgroundTransparency">0</float>
+				<Color3 name="BorderColor3">
+					<R>0</R>
+					<G>0</G>
+					<B>0</B>
+				</Color3>
+				<token name="BorderMode">0</token>
+				<int name="BorderSizePixel">0</int>
+				<bool name="ClipsDescendants">false</bool>
+				<bool name="Draggable">false</bool>
+				<token name="InputSink">0</token>
+				<bool name="Interactable">true</bool>
+				<int name="LayoutOrder">0</int>
+				<Ref name="NextSelectionDown">null</Ref>
+				<Ref name="NextSelectionLeft">null</Ref>
+				<Ref name="NextSelectionRight">null</Ref>
+				<Ref name="NextSelectionUp">null</Ref>
+				<UDim2 name="Position">
+					<XS>0.670000017</XS>
+					<XO>-25</XO>
+					<YS>0</YS>
+					<YO>0</YO>
+				</UDim2>
+				<float name="Rotation">0</float>
+				<bool name="Selectable">true</bool>
+				<Ref name="SelectionImageObject">null</Ref>
+				<int name="SelectionOrder">0</int>
+				<UDim2 name="Size">
+					<XS>0</XS>
+					<XO>25</XO>
+					<YS>0</YS>
+					<YO>25</YO>
+				</UDim2>
+				<token name="SizeConstraint">0</token>
+				<bool name="Visible">true</bool>
+				<int name="ZIndex">1</int>
+				<bool name="AutoLocalize">true</bool>
+				<Ref name="RootLocalizationTable">null</Ref>
+				<token name="SelectionBehaviorDown">0</token>
+				<token name="SelectionBehaviorLeft">0</token>
+				<token name="SelectionBehaviorRight">0</token>
+				<token name="SelectionBehaviorUp">0</token>
+				<bool name="SelectionGroup">false</bool>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">TextButton</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="UICorner" referent="RBX732924C95EC84DA69AFF613C80AF3BD9">
+				<Properties>
+					<UDim name="CornerRadius">
+						<S>0.200000003</S>
+						<O>0</O>
+					</UDim>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">UICorner</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="LocalScript" referent="RBX43E84B6EBE184360B6586C6AEAF65326">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[local deb = false
+local debugmode = false
+local notemode = false
+local shakeloop
+local yes = 1
+local commands: {structa} =  { 
+	{cmd ="!alt_control", des = "{{Use another controller UI}}"},
+	{cmd ="!local_rd_acc", des = "client-sided randomized accessory (NOT VISIBLE TO OTHER PLAYERS)"},
+	{cmd ="!local_character", des = "client-sided character, Only allowed when no character exist"},
+	{cmd ="!local_clear_anim", des = "clears anim"},{cmd ="!local_no_anim", des = "same as no_anim but client"},
+	{cmd ="!local_help", des = "client Help"},
+	{cmd ="!local_gi", des = "client toggle Global Illumination"},
+	{cmd ="!local_godray", des = "client toggle God's Ray"},
+	{cmd ="!metacmd", des = "client check meta commands"},
+	{cmd = "!alt_ui", des = "{{Use another Stance controller UI}}"},
+	{cmd ="!client_list_cmd", des = "client read Command List from the client-sided command list."},
+	{cmd ="!local_cmd", des = "client CMDs"},
+	{cmd ="!local_note", des = "client NOTE, type {EON} in the command bar to exit the mode, it will noted inside the Console"},
+	{cmd ="!removecharacter", des = "remove your character"},
+	{cmd ="!adapter6", des = "runs threads of commands for R15 turning into R6, mostly Useful in VIP server"},
+	{cmd ="!map", des = "<<WIP!!, load Part-based map ontop of the map, applies only to client side. Strictly must only be '!map'>>"},
+	{cmd = "!bodycolor", des = "{{Change Character's BodyColor Instance To Generate Clothings out of it, Maybe like Classic avatars and such}}"},
+	{cmd = "!clear_anim", des = "{{Clear the Motor6Ds' transform CFrame. Will Make Character Reset To Default Pose}}"},
+	{cmd ="!safechat", des = "{{put a single word behind the command(word whitelist belike), a simple or mostly used ones might be allowed}}"},
+	{cmd = "!safechatwordlist", des = "{{get list of available vocab for safechat}}"},
+	{cmd = "!offset_relative", des = "Argument >> [Dimension(X,Y,Z), Section(HEAD, ARM, LEG)] : {{takes effect after !offset_{'SECTIONNAME'} [CFrame]}}"},
+	{cmd = "!no_anim", des = "{{Retro Roblox Animate Will Replace Animation Based Animate.}}"},
+	{cmd = "!morse", des = "{{get morsecode translation of any following string.}}"},
+	{cmd = "!subtosafechat", des = "{{get safechat messages delivered to your log in real time.}}"},
+	{cmd = "!safechatlog", des = "{{view up 100 safechat messages into the past}}"},
+	{cmd = "!serverinfo", des = "{{view server's current status}}"},
+	{cmd = "!seathelper", des = "{{Get An Item That Helps You Back In A Seat, Incase you fell off a boat}}"},
+	{cmd ="!reset", des = "<<Reset yourself>>"},
+	{cmd ="!experimental", des = "{{teleport to the old version of the game(modified to be atleast playable due to massive lag spike)}}"},
+	{cmd ='!sign', des = "Special Command For Setting Sign Text"},	
+	{cmd ='!bbchat', des = "Bubble Chat(Filtered text)"},
+	{cmd ="!sitanchor", des = "<<!SitAnchor: Sit on the nearby ground>>"},
+	{cmd ="!r6", des = "<<become R6 character>>"},
+	{cmd ="!r15", des = "<<become R15 character>>"},
+	{cmd ="!offset_arm", des = "CFrame; only number(under 0.5 in all axis)"},
+	{cmd ="!offset_leg", des = "CFrame; only number(under 0.5 in all axis)"},
+	{cmd ="!unstuck", des = "<<unstuck and teleport above the ground>>"},
+	{cmd ="!leave", des = "<<Kick yourself from the game>>"},
+	{cmd ="!rejoin", des = "<<Rejoin the game>>"},
+	{cmd ="!reserve", des = "(Both can be 'SAME' or Number); [[FUN]] [[ISITRAINING]]"},
+	{cmd ="!changechar", des = "[[OUTFIT ID]]"},
+	{cmd ="!trip", des = "<<Trip Yourself>>"},
+	{cmd ="!tospawn", des = "<<TP to spawn, with small cooldown>>"},
+	{cmd ='!help', des = "Introduction to '!' Commands"},
+	{cmd ='!faker6', des = "<<Become Fake R6 Character with R15 rigs>>"},
+	{cmd ='!offset_relative_y', des = 'Set IF Offset Will Relate to Y as an inverse or no'},
+	{cmd ='!ratelimitanim', des = '1-60'},
+	{cmd ='!joinrandom', des = 'Self-Explanatory'},
+	{cmd ='!lockjoint', des = 'Lock R15 Limbs, Best used with Oldschool Animation Pack'},
+	{cmd ='!mute', des = 'Mute Notifications'},
+	{cmd ='!nodisturb', des = 'Mute Notifications'},
+	{cmd ="!sit", des = "<<!Sit: Sit unanchored>>"},
+	{cmd ="!cmdlist", des = "<<Raw List of all the commands>>"},
+	{cmd ='!storage', des = "Toggle Storage GUI With All the saved tool slots"},
+	{cmd ='!saveto', des = "!saveto [Slot number: {Whole Number Up To 10}] [Tool Name / Leave Nil For Equipped Tool]"},
+	{cmd ='!takeout', des = "!takeout [Slot number: {Whole Number Up To 10}]"},
+	{cmd ='!displayname', des = "!displayname [[string]], the name will be filtered by TextService"},
+}
+local argcCMD = {'!local_acc', '!local_rm_acc', '!toconsole'}
+local cCMD = {'!CONSOLE', '!NOLIGHT','!CLEAR', '!CLEARCONSOLE', '!ALT_CAM', '!ALT_CAMERA', '!TIME', '!RESUMELOGCONSOLE', '!PAUSELOGCONSOLE', '!2D', '!-2D', '!CONSOLEHELP', '!STARTUPMESSAGE', '!HELPCONSOLE', '!LOGCONSOLE', '!RELEASELOG', '!LIST_ACCESSORY','/CONSOLE' , '!HIDENOTIF', '/MUTE' , '!MUTE' , '!MUTENOTIF' ,'/HIDENOTIF' ,'!MAP', '!ALT_CONTROL', '!LOCAL_RD_ACC','!LOCAL','!LOCAL_PARKOUR', '!LOCAL_NOTE','!LOCAL_PING', '!LOCAL_CLEAR_ANIM', '!LOCAL_NO_ANIM', '!METACMD', '!LOCAL_CHARACTER', '!LOCAL_HELP', '!LOCAL_CMD', '!LOCAL_CMDBAR_DEBUGMODE', '!LOCAL_LIST_CMD', '!LOCAL_GI', '!LOCAL_GODRAY', '!LOCAL_LEMON_GRAPHICS', '!LOCAL_RM_PROPS'}
+local metacmd: {string: string} = {["!adapter6"] = '!no_anim ; !clear_anim ; !lockjoint', ["!rm_chr"] = ' !remove_character ', ['!getsafechat'] = '!safechatwordlist ; !safechatlog', ['!unsubchat'] = '!subtosafechat false'}
+function thecheck(str)
+	return not (str or str:match("^%s*$") ~= nil)
+end
+function trim(str)
+	if not str then return "" end
+	return str:match("^%s*(.-)%s*$")
+end
+function shake()
+	local lap = 0
+	if shakeloop and coroutine.status(shakeloop) ~= "dead" then
+		coroutine.close(shakeloop)
+	end
+	yes =-yes
+	local h=yes
+	shakeloop = coroutine.create(function()
+		while script.Parent and lap < 0.4 do
+			local dt = task.wait()
+			lap += dt
+			script.Parent.Rotation = math.sin(lap * math.pi * 10) * (4/(.4+lap)) * h
+		end 
+		script.Parent.Rotation=0
+		shakeloop = nil
+	end)
+	coroutine.resume(shakeloop)
+end
+local log = ''
+local logon = workspace:GetAttribute('Logging') == true
+local logconnection: RBXScriptConnection
+function message(...)
+	pcall(function(...) print(...) end, ...)
+	if logon and workspace:GetAttribute('Logging') then
+		log = log .. tostring(...) ..' -> '.. DateTime.now():FormatLocalTime("L HH:mm:ss", "en-us").. ' (CMDBAR) \n'
+	end
+	pcall(function() pcall(function()
+			game:FindFirstChildOfClass('StarterGui'):SetCore('DevConsoleVisible', true)
+		end) end)
+end
+local amaptoggle = false
+local txtbx = script.Parent.Parent:FindFirstChildOfClass('TextBox')
+
+if txtbx then txtbx.Active = true txtbx.TextEditable = true if not script:GetAttribute('DONE') then task.spawn(function() repeat task.wait(1) until not script:FindFirstAncestorWhichIsA('PlayerGui') or not script:FindFirstAncestorWhichIsA('PlayerGui'):FindFirstChild('Menu')
+	pcall(function()	task.wait(2)message("Hi, I'm Solivion and I'd like to introduce you to the command bar, since it is essential for majority of configs and customization features.")
+		task.wait(1)message("try looking for a textBox with Checkmark button and a textBox you can type in after you Pressed Start from the Main Menu")
+		task.wait(1)message("Let's quickly guide you through CMDBAR! It's a Command Bar, Obviously, you can fire commands from there.")
+		task.wait(1)message("If a command doesn't work properly, Please Redirect it to 'Chat' Channel using /A, Commands will be parsed through '!'s Command System' snapshot(may be outdated) and Services other than Commands!")
+			task.wait(1) message("Here are some Commands that would need '/A': Storage System (!takeout, !confirm, !saveto, !cancelsave, !reloadsave, !manualsave, !storage), TIMECAPSULE, and Easter Commands (!inventory, !TEGGOUT).")
+				task.wait(1)message("To clear the CMDBAR after running the line, Add /C somewhere in the command, it will be marked out if it is properly isolated.")
+				task.wait(1)message("Semicolons >> ; << are STRICTLY command separator(for bulking them at once, akin to '&&' in some cli), THIS CMDBAR USES STRING.SPLIT AND NOT TOKENIZER")
+				task.wait(1)message("There are also local commands, Check them out using '!local_cmd', For normal commands '!cmd', the textbox predictor might not be maintained.")
+			task.wait(1)message("That's all about it. Also, Console might help you a lot (!console to open this window again), click At The 'X' in the corner of this window to close it. This message pops up everytime CMDBAR was booted up.") end) pcall(function() script:SetAttribute('DONE', true) end) end) end end
+local func = function(reset: boolean?)
+	if not script.Parent or not script.Parent.Parent or not script.Parent.Parent:FindFirstChildOfClass('TextBox') then return end
+	local txtbx = script.Parent.Parent:FindFirstChildOfClass('TextBox')
+	local strg = txtbx.Text 
+	if typeof(strg) ~= 'string' or strg == '' then return end
+	if thecheck(strg) then return end
+	strg = trim(strg)
+	strg = strg:gsub("%s+", " ")
+	if logon and workspace:GetAttribute('Logging') then
+		log = log .. strg ..' -> '.. DateTime.now():FormatLocalTime("L HH:mm:ss", "en-us").. " (PLAYER's INPUT) \n"
+	end
+	if notemode then
+		if strg:upper() == '{EON}' then
+			notemode = false
+			message('>>END OF NOTE')
+			return
+		end
+		message('> ',strg,' <')
+		return
+	end
+	if deb then shake() return end
+	strg = strg:gsub("/c%f[%A]", " ")  -- %f[%A] = frontier before non-alphabetic
+	strg = strg:gsub("/C%f[%A]", " ")
+	strg = strg:gsub("/a%f[%A]", " ")  -- alt!
+	strg = strg:gsub("/A%f[%A]", " ")
+	strg = strg:gsub("/b%f[%A]", " ")  -- theme!
+	strg = strg:gsub("/B%f[%A]", " ")
+	strg = strg:gsub("/d%f[%A]", " ")  -- discard!
+	strg = strg:gsub("/D%f[%A]", " ")
+	strg = strg:gsub("/e%f[%A]", " ")  -- no disable!
+	strg = strg:gsub("/E%f[%A]", " ")
+	strg = strg:gsub("%s+", " ")
+	strg = trim(strg)
+	local AltDes = true -- to the mirror
+	if txtbx.Text:upper():match("/A%f[%A]") then
+		AltDes = false
+		--print('Redirecting Command To "Chat" Channel..')
+	end
+	if txtbx.Text:upper():match("/B%f[%A]") then
+		pcall(function()
+			txtbx.BackgroundColor3 = Color3.new(1 - txtbx.BackgroundColor3.R,1 - txtbx.BackgroundColor3.G,1 - txtbx.BackgroundColor3.B)
+			txtbx.TextColor3 = Color3.new(1 - txtbx.TextColor3.R,1 - txtbx.TextColor3.G,1 - txtbx.TextColor3.B)
+		end)
+		pcall(function()
+			local button = script:FindFirstAncestorWhichIsA('TextButton')
+			button.BackgroundColor3 = Color3.new(1 - button.BackgroundColor3.R,1 - button.BackgroundColor3.G,1 - button.BackgroundColor3.B)
+			button.TextColor3 = Color3.new(1 - button.TextColor3.R,1 - button.TextColor3.G,1 - button.TextColor3.B)
+		end
+		)
+	end
+	local discard = false
+	if txtbx.Text:upper():match("/D%f[%A]") then
+		discard = true
+	end
+	local nodisable = txtbx.Text:upper():match("/E%f[%A]")
+	if txtbx.Text:upper():match("/C%f[%A]") then
+		txtbx.Text = ''
+	end
+	if discard then
+		return
+	end
+	if not (strg:match("!") or strg:match("?")) then message('Invalid CMDBAR Input!!! Needed "!" or "?"') shake() return end
+	deb = true
+	local success, cran=pcall(function()
+		if table.find(cCMD, (strg:split(' ')[1] or ""):upper()) or table.find(argcCMD, (strg:split(' ')[1] or ""):lower()) then
+			local plr = script:FindFirstAncestorWhichIsA('Player') or game:GetService('Players').LocalPlayer
+			if typeof(plr) ~= 'Instance' or typeof(plr.Parent) ~= 'Instance' then return true end
+			local chr = plr and plr.Character
+			if typeof(chr) ~= 'Instance' or typeof(chr.Parent) ~= 'Instance' then for i,v in workspace:GetChildren() do if v:GetAttribute('__REGPLRID') == plr.UserId then chr = v break end end  end
+			if table.find(argcCMD, (strg:split(' ')[1] or ""):lower()) then
+				local the = (strg:split(' ')[1] or ""):lower()
+				if the == '!local_acc' then
+					local all = strg:split(' ')
+					table.remove(all, 1) 
+					if #all >= 1 then
+						pcall(function()
+							local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Accessory_Service') and game:GetService('ReplicatedStorage'):FindFirstChild('Accessory_Service'):FindFirstChildOfClass('BindableEvent')
+							if a then a:Fire(chr, unpack(all)) end
+						end)
+					end
+				elseif the == '!local_rm_acc' then
+					local all = strg:split(' ')
+					table.remove(all, 1) 
+					if #all >= 1 then
+						pcall(function()
+							for i, v in all do
+								for i2, v2 in chr:GetChildren() do
+									if v2:GetAttribute('_ACCESSORY') and (v2.Name:match(v) or v:match(v2.Name)) then
+										v2:Destroy()
+										break
+									end
+								end
+							end
+						end)
+					end
+				elseif the == '!toconsole' then
+					local all = strg:split(' ')
+					pcall(function()
+					table.remove(all, 1) 
+					if #all >= 1 then
+						local str = (function()
+							return "TOCONSOLE -> ".. table.concat(all, ' ')
+							end)()
+							print(str)
+							if logon and workspace:GetAttribute('Logging') then
+								log = log .. str ..' -> '.. DateTime.now():FormatLocalTime("L HH:mm:ss", "en-us").. " (PLAYER's TOCONSOLE) \n"
+							end
+					end end)
+				end
+				return true
+			end
+			if strg:upper() == '!MAP' then
+			for i,v in workspace:GetChildren() do
+				if v.Name == 'amap' and v:GetAttribute('__altmap') then
+					v:Destroy()
+				end
+			end
+			amaptoggle = not amaptoggle
+				if amaptoggle then
+					local amp = game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('amap'):Clone()
+					amp.Parent = workspace
+					pcall(function()
+						if not workspace:FindFirstChild('Shop_1') then
+							amp:FindFirstChild('shopfloor'):Destroy()
+						end
+					end)
+					pcall(function()
+						if not workspace:GetAttribute('__with_towerfloor') then
+							amp:FindFirstChild('secondfloor'):Destroy()
+						end
+					end)	
+				end
+			elseif strg:upper() == '!METACMD' then
+				local longstr = ''
+				if not pcall(function()
+						for i,v in metacmd do
+							longstr = longstr..'['..i..']: '..v..' \n'
+						end message(longstr)
+					end) then message('Fail to concatenate METACMD strings...') end
+			elseif strg:upper() == '!NOLIGHT' then
+				pcall(function()
+					for i,v in plr:GetDescendants() do
+						if (v.Name == 'FLOATING POINT' or v.Name == 'Lol2') and v:IsA('LocalScript') then
+							v:Destroy()
+						end
+					end
+				end)
+				pcall(function()
+					for i,v in plr.Character:GetDescendants() do
+						if (v.Name == 'FLOATING POINT' or v.Name == 'Lol2') and v:IsA('LocalScript') then
+							v:Destroy()
+						end
+					end
+				end)
+				pcall(function()
+					local parent =  plr:FindFirstChildOfClass("PlayerScripts") or plr:FindFirstChildOfClass("PlayerGui") or plr:FindFirstChildOfClass("Backpack")
+					if not parent or parent:FindFirstChild("Delight") then return end
+					local Delight = game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('Delight'):Clone()
+					Delight.Enabled = true
+					Delight.Parent = parent
+				end)
+			elseif strg:upper() == '!LOCAL_GODRAY' then
+				pcall(function()
+					workspace:SetAttribute('gr_on', not (workspace:GetAttribute('gr_on') or false))
+				end)
+			elseif strg:upper() == '!LOCAL_GI' then
+				pcall(function()
+					workspace:SetAttribute('gi_on', not (workspace:GetAttribute('gi_on') or false))
+				end)
+			elseif strg:upper() == '!CLEARCONSOLE' or strg:upper() == '!CLEAR' then
+				pcall(function()
+					game:FindFirstChildOfClass('LogService'):ClearOutput()
+				end)
+			elseif strg:upper() == '!STARTUPMESSAGE' or strg:upper() == '!CONSOLEHELP' or strg:upper() == '!HELPCONSOLE' then
+				pcall(function()
+					game:FindFirstChildOfClass('StarterGui'):SetCore('DevConsoleVisible', true)
+					print([[Welcome To The Hangout!!!
+			>>use command '?cmd' for commands if you are in a private server!
+			>>use command "!cmd" for a list of other commands (also try "!help")
+			The command bar should be somewhere on the screen after you press Play on the menu.
+			To close this console window, look for an "X" in the corner of this window.]])
+					print("LAST UPDATED: 3/17/2026; Humanoidless Character and Accessories Update; with more fixes")
+					print("Server Version: "..game.PlaceVersion)
+					print("Server JOBID: "..(game.JobId))
+					print('Server Location: '..(game:GetService('RunService'):IsStudio() and '{$STUDIO!}' or workspace:GetAttribute('SERVERLOCATION') or 'undefined'))
+					print('<<LOGSERVICE WILL BE USED FOR ANNOUCEMENTS, Type !console in chat to view>>')
+					print("LOG: BridgeNet Broke Down! I patched the sprinting system for the moment.")
+				end)
+			elseif strg:upper() == '!LOCAL_RD_ACC' then
+				pcall(function()
+					
+					
+					if chr then
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Accessory_Service') and game:GetService('ReplicatedStorage'):FindFirstChild('Accessory_Service'):FindFirstChildOfClass('BindableEvent')
+						if a then a:Fire(chr) end
+					end
+				end)
+			elseif strg:upper() == '!LIST_ACCESSORY' then
+				pcall(function()
+					local Strings = ""
+					for i,v in game:GetService('ReplicatedStorage'):FindFirstChild("ACCESSORIES"):GetChildren() do
+						Strings = Strings.."\n".. i.. " } ["..v.Name.. ']: '
+						for i2, v2 in v:GetChildren() do
+							Strings = Strings.."\n".. i2.. ") "..v2.Name
+						end
+					end
+					message(Strings)
+				end)
+			elseif strg:upper() == '!CONSOLE' or strg:upper() == '/CONSOLE' then
+				pcall(function()
+					game:FindFirstChildOfClass('StarterGui'):SetCore('DevConsoleVisible', true)
+				end)
+			elseif strg:upper() == '!HIDENOTIF' or strg:upper() == '/MUTE' or strg:upper() == '!MUTE' or strg:upper() == '!MUTENOTIF' or strg:upper() == '/HIDENOTIF' then
+				pcall(function()
+					if typeof(workspace:GetAttribute('NotificationHidden')) ~= 'boolean' then workspace:SetAttribute('NotificationHidden', false) end
+					workspace:SetAttribute('NotificationHidden', not workspace:GetAttribute('NotificationHidden'))
+				end)
+			elseif strg:upper() == '!LOCAL_NO_ANIM' then
+				pcall(function()
+				
+					
+					if chr then
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('Animate')
+						if not a then return end
+						if chr:FindFirstChild('Animate') then
+							chr:FindFirstChild('Animate'):Destroy()
+						end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr:FindFirstChildOfClass('Actor') or Instance.new('Actor', chr) or chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!ALT_CONTROL' then
+				pcall(function()
+					
+					
+					if not chr or not chr:FindFirstChildOfClass("Humanoid") then
+						chr = plr:FindFirstChildOfClass("PlayerScripts") or plr:FindFirstChildOfClass("PlayerGui") or plr:FindFirstChildOfClass("Backpack")
+					end
+					if chr then
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('ControllerALT')
+						if not a then return end
+						if chr:FindFirstChild('ControllerALT') then
+							chr:FindFirstChild('ControllerALT'):Destroy()
+						end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!2D' then
+				pcall(function()
+
+
+					chr = plr:FindFirstChildOfClass("PlayerGui")
+					if chr then
+						local peak =  chr:FindFirstChild('TheCoolThingIGuess') 
+						if peak and peak:IsA('ScreenGui') then peak:Destroy() return end
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('TheCoolThingIGuess')
+						if not a then return end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!-2D' then
+				pcall(function()
+
+
+					chr = plr:FindFirstChildOfClass("PlayerGui")
+					if chr then
+						local peak =  chr:FindFirstChild('TheInvertedThingIGuess') 
+						if peak and peak:IsA('ScreenGui') then peak:Destroy() return end
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('TheInvertedThingIGuess')
+						if not a then return end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!ALT_CAMERA' then
+				pcall(function()
+
+
+					if not chr or not chr:FindFirstChildOfClass("Humanoid") then
+						chr = plr:FindFirstChildOfClass("PlayerScripts") or plr:FindFirstChildOfClass("PlayerGui") or plr:FindFirstChildOfClass("Backpack")
+					end
+					if chr then
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('CamAltEarlyBeta_LimitlessRotaPatch')
+						if not a then return end
+						if chr:FindFirstChild('CamAltEarlyBeta_LimitlessRotaPatch') then
+							chr:FindFirstChild('CamAltEarlyBeta_LimitlessRotaPatch'):Destroy()
+						end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!ALT_CAM' then
+				pcall(function()
+
+
+					if not chr or not chr:FindFirstChildOfClass("Humanoid") then
+						chr = plr:FindFirstChildOfClass("PlayerScripts") or plr:FindFirstChildOfClass("PlayerGui") or plr:FindFirstChildOfClass("Backpack")
+					end
+					if chr then
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('CamAltPlaceholder')
+						if not a then return end
+						if chr:FindFirstChild('CamAltPlaceholder') then
+							chr:FindFirstChild('CamAltPlaceholder'):Destroy()
+						end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!LOCAL_PARKOUR' then
+				pcall(function()
+					
+					
+					if chr then
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('ParkourWIP')
+						if not a then return end
+						if chr:FindFirstChild('ParkourWIP') then
+							chr:FindFirstChild('ParkourWIP'):Destroy()
+						end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr:FindFirstChildOfClass('Actor') or Instance.new('Actor', chr) or chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!LOCAL_CLEAR_ANIM' then
+				pcall(function()
+					
+					
+					if chr then
+						local a = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('__Clear')
+						if not a then return end
+						if chr:FindFirstChild('__Clear') then
+							chr:FindFirstChild('__Clear'):Destroy()
+						end
+						local aa = a:Clone()
+						if not aa then return end
+						aa.Parent = chr:FindFirstChildOfClass('Actor') or Instance.new('Actor', chr) or chr
+						aa.Enabled = true
+					end
+				end)
+			elseif strg:upper() == '!LOCAL_RM_PROPS' then
+				for i,v in workspace:GetDescendants() do
+					pcall(function()
+						if v.Name:lower():match('plant') or v.Name:lower():match('undergrowth') or v.Name:lower():match('leaf') or v.Name:lower():match('leaves') or v.Name:lower():match('fern') or v.Name:lower():match('rock') or v.Name:lower():match('bush') or v.Name:lower():match('tree') or v.Name:lower():match('flower') then
+						v:Destroy()
+					end end)
+				end
+			elseif strg:upper() == '!LOCAL_RM_SERVER_MAP' then
+				pcall(function()
+					if not workspace:FindFirstChild('Map') or workspace:FindFirstChild('Map').Name ~= 'Map' or not workspace:FindFirstChild('Map'):IsA('Model') or  workspace:FindFirstChild('Map'):FindFirstChildOfClass('Humanoid') then return end
+					workspace:FindFirstChild('Map'):Destroy()
+				end
+				)
+			elseif strg:upper() == '!LOCAL_LEMON_GRAPHICS' then
+				for i,v in workspace:GetDescendants() do
+					pcall(function()
+						if v:IsA('Texture') or v:IsA('Decal') then
+							 v:Destroy()
+						elseif v:IsA('BasePart') then
+							v.Material = Enum.Material.SmoothPlastic
+						end
+					end)
+				end
+			elseif strg:upper() == '!LOCAL_CHARACTER' then
+				pcall(function()
+					
+					 if not chr.Parent then chr = nil end
+					if chr then	if not chr:FindFirstChildOfClass('Humanoid') then chr = nil elseif not chr:FindFirstChildOfClass('Humanoid').RootPart then chr = nil  elseif not (chr:FindFirstChild('Torso') or chr:FindFirstChild('HumanoidRootPart') or chr:FindFirstChild('LowerTorso')) then chr = nil end end
+					if plr and not chr or not chr.Parent then
+						local noob = game:GetService('ReplicatedStorage') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media') and game:GetService('ReplicatedStorage'):FindFirstChild('Offline Media'):FindFirstChild('Noob')
+						if typeof(noob) ~= 'Instance' or  noob.ClassName ~= 'Model' or not noob:FindFirstChildOfClass('Humanoid') then
+							return
+						end
+						local LocalCharacter = noob:Clone()
+						LocalCharacter.Parent = workspace
+						LocalCharacter.Name = plr.Name
+						plr.Character = LocalCharacter
+						plr:GetPropertyChangedSignal('Character'):Once(function()
+							LocalCharacter:Destroy()
+						end)
+						workspace.CurrentCamera.CameraSubject = LocalCharacter
+						for i,v: BasePart? in LocalCharacter:GetDescendants() do
+							if v:IsA('BasePart') and not v.Name:upper():match('ROOT') then
+								v.Transparency = 0.5
+								local check, yes = pcall(function()
+									return (v.Shape.Name ~= 'Block')
+								end)
+								if check and yes then
+									v.Transparency = 0.625
+								end
+							end
+						end
+						for i,v in game:GetService('StarterPlayer'):FindFirstChildOfClass('StarterCharacterScripts'):GetChildren() do
+							v:Clone().Parent = LocalCharacter
+						end
+						LocalCharacter:FindFirstChild('Animate').Enabled = true
+						LocalCharacter:PivotTo(workspace._SpawnLocation.CFrame)
+					end
+				end)
+			elseif strg:upper() == '!TIME' then
+				pcall(function() 
+					message(DateTime.now():FormatLocal("yyyy-MM-dd HH:mm:ss"))
+				end)
+			elseif strg:upper() == '!LOGCONSOLE' then
+				message('Log Toggling...')
+				pcall(function() 
+					if typeof(logconnection) == 'RBXScriptConnection' then logon = true end
+					logon = not logon 
+					if logon == true then
+						message('Logging Starting...')
+					end
+					if typeof(logconnection) == 'RBXScriptConnection' then
+						logconnection:Disconnect()
+						logconnection = nil end
+					workspace:SetAttribute('Logging', logon)
+					if logon == false then
+						message('Logging Stopped...')
+						if typeof(log) ~= 'string' or log == '' then log = 'NO LOGS' end
+						message('Relaying Log: \n'..log)
+						log = ''
+					elseif logon == true then
+						local a = game:GetService('ReplicatedStorage'):FindFirstChild('LogMessageEvent')
+						if typeof(a) ~= 'Instance' or a.ClassName ~= 'RemoteEvent' then message('CANNOT LOG (SERVER?), BUT CMDBAR LOG STARTED!') return end
+						logconnection = game:GetService('ReplicatedStorage'):FindFirstChild('LogMessageEvent').OnClientEvent:Connect(function(...)
+							log = log..table.concat({...}, ' ')
+							log = log..' -> ' .. DateTime.now():FormatLocalTime("L HH:mm:ss", "en-us") ..' (SERVER?) \n'
+						end)
+						log = ''
+						message('Logging Started...')
+					else plr:Destroy() end
+				end)
+			elseif strg:upper() == '!PAUSELOGCONSOLE' then
+				if not logon or workspace:GetAttribute('Logging') ~= true then message('LOG IS NOT RUNNING!') else
+				message('Pausing...')
+				pcall(function()
+					logon = false 
+					end) end
+			elseif strg:upper() == '!RESUMELOGCONSOLE' then
+				if logon and workspace:GetAttribute('Logging') == true then message('LOG IS ALREADY RUNNING!') return end
+				if typeof(logconnection) ~= 'RBXScriptConnection' then
+					message('LOG IS NOT RUNNING!')
+				else
+					message('Resuming...')
+					pcall(function()
+						logon = true 
+						message('Logging Resumed...')
+					end)
+				end
+			elseif strg:upper() == '!LOCAL_CMD' then	
+				message(table.concat(cCMD or {}, ', ') or '')
+			elseif strg:upper() == '!LOCAL_NOTE' then	
+				message('<NOTING MODE: TYPE {EON} IN CMD BAR TO EXIT, TYPE ANYTHING INTO THE CMDBAR AND SUBMIT, NOTE WILL BE BETWEEN ANGLED BRACKETS>')
+				notemode = true
+			elseif strg:upper() == '!LOCAL_CMDBAR_DEBUGMODE' then
+				debugmode = not debugmode or false
+			elseif strg:upper() == '!LOCAL_PING' then	
+				message('self message ping success!')
+			elseif strg:upper() == '!LOCAL_LIST_CMD' then	
+				local longstr = ''
+				if not pcall(function()
+					for i,v in commands do
+							longstr = longstr..'['..i..']: '..v..' \n'
+					end	message(longstr)
+				end) then message('Fail to concatenate CMD strings...') end
+			elseif strg:upper() == '!LOCAL_HELP' or strg:upper() == '!LOCAL' then
+				message([[Local Commands only RUNS in the client and does not get sent to the server. Try !LOCAL_CMD to get local commands!
+				These commands will only run ONE at a time. IT does not support the ; Seperator, it's rather a intercepted function that will detect local commands via table.find()
+				and disable sending the text too the server when the command is detected EXACTLY as typed.
+				]])
+			end 
+			return true
+		end
+	end)
+	if cran == true or (not success and table.find(cCMD, strg:upper())) then
+		deb = false
+		return
+	end
+	pcall(function() if nodisable then return end txtbx.Active = false end) pcall(function() if nodisable then return end txtbx.TextEditable = false end)
+	pcall(function() script.Parent.UIGradient.Offset = Vector2.new(0,1) end)
+	for i,v in pairs(metacmd) do
+		strg = string.gsub(strg ,i, v)
+	end
+	local split = strg:split(';') 
+	for i,v in split do
+		if typeof(v) ~= 'string' then continue end
+		v = trim(v)
+		if v == '' then continue end
+		if debugmode then
+			message('Sent >>', v)
+		end
+		if thecheck(v) or not (strg:match("!") or strg:match("?")) then continue end
+		pcall(function() if AltDes and string.sub(v,1,1) == "!" then script.Parent:FindFirstChildOfClass('RemoteEvent'):FireServer(v) else	game:GetService('ReplicatedStorage'):WaitForChild('Chatter', 60):FireServer(v) end end)
+		if reset then	txtbx.Text = table.concat(split, ';', i+1, #split) end
+		task.wait(strg:match("?") and 1.01 or 2.01)
+	end
+	pcall(function() game:GetService('TweenService'):Create(script.Parent.UIGradient, TweenInfo.new(1), {Offset = Vector2.new(0,-1)}):Play() end)
+	task.wait(1)
+	pcall(function() txtbx.Active = true end) pcall(function() txtbx.TextEditable = true end)
+	deb = false
+end
+if game:GetService('UserInputService').MouseEnabled then
+	script.Parent.MouseButton1Click:Connect(function() func(script.Parent.Text:upper():match('/C')) end) script.Parent.MouseButton2Click:Connect(function() func(true) end) else script.Parent.TouchTap:Connect(function() func(script.Parent.Text:upper():match('/C')) end) end ]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{81F8B4D5-DE14-4D4E-BB42-555649DDA799}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">LocalScript</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="HapticEffect" referent="RBXD9BB2F2F558648A1B52CC490C0A32A32">
+				<Properties>
+					<bool name="Looped">false</bool>
+					<Vector3 name="Position">
+						<X>0</X>
+						<Y>0</Y>
+						<Z>0</Z>
+					</Vector3>
+					<float name="Radius">3</float>
+					<token name="Type">2</token>
+					<Ref name="Waveform">null</Ref>
+					<BinaryString name="WaveformData"></BinaryString>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">HapticEffect</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="UIGradient" referent="RBX4ECCF71D15AE4AD0968F959B019564CD">
+				<Properties>
+					<ColorSequence name="Color">0 0.164706 0.164706 0.164706 0 0.830743 0.415686 0.415686 0.415686 0 1 1 1 1 0 </ColorSequence>
+					<bool name="Enabled">true</bool>
+					<Vector2 name="Offset">
+						<X>0</X>
+						<Y>-1</Y>
+					</Vector2>
+					<float name="Rotation">90</float>
+					<NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">UIGradient</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="Script" referent="RBX8AA894803CA744079C42A32EA3C0A7A5">
+				<Properties>
+					<ProtectedString name="Source"><![CDATA[
+function thecheck(str)
+	return not (str or str:match("^%s*$") ~= nil)
+end
+function trim(str)
+	if not str then return "" end
+	return str:match("^%s*(.-)%s*$")
+end
+local deb = false
+script.Parent:WaitForChild('Rem').OnServerEvent:Connect(function(plr, strg)
+	if plr ~= script:FindFirstAncestorWhichIsA('Player') then return end
+	if typeof(strg) ~= 'string' or strg == '' then return end
+	if thecheck(strg) then return end
+	strg = trim(strg)
+	strg = strg:gsub("%s+", " ")
+	if deb then return end
+	strg = strg:gsub("/c%f[%A]", " ")  -- %f[%A] = frontier before non-alphabetic
+	strg = strg:gsub("/C%f[%A]", " ")
+	strg = strg:gsub("/a%f[%A]", " ")  -- alt!
+	strg = strg:gsub("/A%f[%A]", " ")
+	strg = strg:gsub("/b%f[%A]", " ")  -- theme!
+	strg = strg:gsub("/B%f[%A]", " ")
+	strg = strg:gsub("/d%f[%A]", " ")  -- discard!
+	strg = strg:gsub("/D%f[%A]", " ")
+	strg = strg:gsub("/e%f[%A]", " ")  -- no disable!
+	strg = strg:gsub("/E%f[%A]", " ")
+	strg = strg:gsub("%s+", " ")
+	strg = trim(strg)
+	if not (strg:match("!") or strg:match("?")) then return end
+	deb = true
+	local split = strg:split(';') 
+	for i,v in split do
+		v = trim(v)
+		if thecheck(v) or not (strg:match("!") or strg:match("?")) then continue end
+		task.spawn(function()	pcall(function() game:GetService('ReplicatedStorage'):WaitForChild('COMMANDS_NORMAL_ACCESS', 60):Fire(plr, v or '') end) end)
+		task.wait(strg:match("?") and 0.8 or 1.8)
+	end
+	deb = false
+end)]]></ProtectedString>
+					<bool name="Disabled">false</bool>
+					<Content name="LinkedSource"><null></null></Content>
+					<token name="RunContext">0</token>
+					<string name="ScriptGuid">{18983CC5-3796-4671-8522-661216C55065}</string>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Script</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="RemoteEvent" referent="RBX17935FEE1FE24637B44CB4F7DF8376FA">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+					<bool name="DefinesCapabilities">false</bool>
+					<string name="Name">Rem</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+		</Item>
+	</Item>
+</roblox>

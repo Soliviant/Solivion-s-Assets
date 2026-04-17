@@ -1,0 +1,3443 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Script" referent="RBX00ED7AE635B4491CA72E2FAF5D1806E1">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[--!native
+--!nolint
+--!nonstrict
+--Original By Rufus14
+--Heavily Edited By Solivion(~2000+ lines contribution, many edits with os.clock()'s usage in the system)
+local timed = 0
+repeat local dt = task.wait(.1) timed += dt until workspace.Name ~= 'Workspace' or timed > 10
+if workspace.Name:upper() == "VIPSERVER" or (game.PrivateServerOwnerId ~= '' and game.PrivateServerOwnerId ~= nil and game.PrivateServerOwnerId ~= 0) then script:Destroy() return end
+local rate = 1/60
+script:GetAttributeChangedSignal('RATELIMIT'):Connect(function()
+	rate = 1/(script:GetAttribute('RATELIMIT') or 60)
+end)
+local lt = 0
+local TweenService:TweenService = game:FindFirstChildOfClass("TweenService")
+local Debris:Debris = game:FindFirstChildOfClass("Debris")
+local Players:Players = game:FindFirstChildOfClass("Players")
+local ServerStorage = game:FindFirstChildOfClass("ServerStorage")
+local PhysicsService:PhysicsService = game:FindFirstChildOfClass("PhysicsService")
+local HandlesSpeed = script.Parent:FindFirstChild('HEATH&STATE_ENGINE')
+local Materials = Enum.Material:GetEnumItems()
+local Binded = game:GetService('ServerScriptService'):FindFirstChild('Heavily_Calculized_Handler') and game:GetService('ServerScriptService'):FindFirstChild('Heavily_Calculized_Handler'):FindFirstChild('HandAim') and game:GetService('ServerScriptService'):FindFirstChild('Heavily_Calculized_Handler'):FindFirstChild('HandAim'):FindFirstChild('Event')
+local IgnoreMaterials = {
+	Enum.Material.Air; Enum.Material.Water;
+	Enum.Material.Rock; Enum.Material.Asphalt;
+	Enum.Material.Snow; Enum.Material.Glacier;
+	Enum.Material.Sandstone; Enum.Material.Mud;
+	Enum.Material.Basalt; Enum.Material.Ground;
+	Enum.Material.CrackedLava; Enum.Material.Salt;
+	Enum.Material.LeafyGrass; Enum.Material.Limestone;
+	Enum.Material.Pavement
+} -- non basepart mat
+function retrieveplr(char: Model)
+	for i,v in Players:GetChildren() do
+		if v:IsA('Player') and v.Character == char then
+			return v
+		end
+	end
+end
+pcall(function()
+	for _, material in next, IgnoreMaterials do -- Removing unnecessary materials
+		if table.find(Materials, material) then	table.remove(Materials, table.find(Materials, material)) end
+	end
+end)
+IgnoreMaterials = {}
+local Thing
+local RLVisual
+local LLVisual
+local footstep_module
+if ServerStorage and ServerStorage:FindFirstChild("Actor")	and ServerStorage:FindFirstChild("Actor"):FindFirstChild("FootstepModule") then
+	footstep_module = require(ServerStorage:FindFirstChild("Actor"):FindFirstChild("FootstepModule"))
+end
+local tablesofid = {}
+function uniqueid(number: number) -- to register different freefall that occured so the cancoyotejump will not be disabled for that new fall if u r so fast
+	local uniqueid = math.random()
+	if uniqueid == number or table.find(tablesofid, uniqueid) then
+		repeat if uniqueid == number or table.find(tablesofid, uniqueid) then  uniqueid += math.random() uniqueid += math.random(1,5) end until not table.find(tablesofid, uniqueid)
+	end
+	table.insert(tablesofid, uniqueid)
+	task.delay(20, function()
+		if table.find(tablesofid, uniqueid) then
+			table.remove(tablesofid, table.find(tablesofid, uniqueid))
+		end
+	end)
+	return uniqueid
+end
+function AccurateMathRandom(Min:number,Max:number) return math.random(Min*100,Max*100)/100 end
+local function GenerateKeycode() local code = "" local characters = "ABCDFGHIJKLMNOPQRTVWYZabcdeghijlmnopqrstuvwxyz01246789!@#$%^&*()_+-=[]{}|;:',.<>/?" local numCharacters = #characters for i = 1, math.random(1,20) do local charIndex = math.random(1, numCharacters) code = code .. characters:sub(charIndex, charIndex) end return code end
+local EasyTween = function(itemtotween,property,value,tweentime,easingstyle,easingdirection)
+	local info = TweenInfo.new(tweentime,Enum.EasingStyle[easingstyle],Enum.EasingDirection[easingdirection],0,false,0)
+	local goal = {}
+	goal[property] = value
+	return game:FindFirstChildOfClass("TweenService"):Create(itemtotween,info,goal)
+end
+local groupName = _G.AfterImageCollisionGroupName or GenerateKeycode()
+task.synchronize()
+local params = RaycastParams.new()
+params.FilterDescendantsInstances = {workspace:FindFirstChildOfClass("Terrain")}
+params.IgnoreWater = false
+params.FilterType = Enum.RaycastFilterType.Include
+local tiem = -180
+--[[game:FindFirstChildOfClass('RunService').Heartbeat:Connect(function(dt)
+	tiem += dt
+	if tiem > 180 then
+		tiem -= 360
+	end
+end)]]
+
+function CT() return tiem end
+local SpringRotation = {}
+SpringRotation.__index = SpringRotation
+function SpringRotation.new()
+	return setmetatable({
+		current = Vector3.new(), -- The current rotation value
+		velocity = Vector3.new(), -- The velocity of the rotation change
+		target = Vector3.new(),   -- The target rotation
+		damping = 0.9,                   -- How much velocity is dampened each frame
+		stiffness = 0.9                  -- How fast it interpolates towards the target
+	}, SpringRotation)
+end
+
+-- Update function for interpolating the rotation
+function SpringRotation:update(deltaTime)
+	local springForce = (self.target - self.current) * self.stiffness
+	self.velocity = (self.velocity + springForce) * self.damping
+	self.current = self.current + self.velocity * deltaTime
+end
+function Lerp(cframe, destination,alpha)
+	if cframe == nil then cframe = CFrame.new() end
+	if destination == nil then destination = CFrame.new() end
+	if alpha == nil then alpha = 0.3 end
+	local thing
+	if cframe ~= destination then
+		task.desynchronize()
+		thing = cframe:Lerp(destination,alpha)
+		return thing
+	end
+	return destination
+end
+local function Lerp_2(current: CFrame, target: CFrame, factor: number)
+	local deltaTime = task.wait()
+	return current:Lerp(target, 1 - factor ^ deltaTime)
+end
+local Destruct = function(thing) thing:Destroy() --[[if thing then repeat if not thing then break end thing:Destroy() if not thing then break end until not thing end ]]end
+function SHADOWCHAR(Object)
+	task.synchronize()
+	if not PhysicsService:IsCollisionGroupRegistered(groupName) and _G.AfterImageCollisionGroupName == nil then
+		--DebugText("Creating >>" .. groupName .. "<< Collision Group")
+		PhysicsService:RegisterCollisionGroup(groupName)
+		for _, group in ipairs(game:FindFirstChildOfClass("PhysicsService"):GetRegisteredCollisionGroups()) do
+			game:FindFirstChildOfClass("PhysicsService"):CollisionGroupSetCollidable(groupName, group.name, false)
+		end
+		_G.AfterImageCollisionGroupName = groupName
+	end
+
+	Object.Archivable = true
+	local ShadowChar = Object:Clone()
+
+	Debris:AddItem(ShadowChar,5)
+	ShadowChar:SetAttribute("Disconnect_Execution",true)
+	--	Character.Name = Character.Name .. "_" .. Character.Name .. "_Give_Me_Your_Answer_To"
+	if ShadowChar then
+		ShadowChar.Name = GenerateKeycode().."(High Quality Version)"
+		if ShadowChar:FindFirstChildOfClass("Tool") then
+			Destruct(ShadowChar:FindFirstChildOfClass("Tool"))
+		end
+		local DestroyedEvent: RBXScriptConnection 
+		--	Debris:AddItem(ShadowChar, 5) -- 5 seconds delay before cleaning up
+		ShadowChar:PivotTo(Object:GetPivot()) ShadowChar.Parent = workspace
+		ShadowChar:PivotTo(Object:GetPivot())
+		DestroyedEvent = script.Destroying:Once(function()
+			Destruct(ShadowChar)
+		end)
+		task.wait()
+		for i, v in pairs(ShadowChar:GetDescendants()) do
+			if v:IsA("Tool") then
+				Destruct(v)
+			end
+			if v:IsA("Texture") or v:IsA("Decal") then
+				EasyTween(v,"Transparency",1,AccurateMathRandom(0.5,1),"Sine","In"):Play()
+			end
+			if( v:IsA("BasePart") or v:IsA("Part") or v:IsA("MeshPart") )and v.Parent and not v.Parent:IsA("Tool") then
+				local forallpart = AccurateMathRandom(1, 3)
+				local Woosh = v
+				if Woosh.Parent:IsA("Tool") then
+					Debris:AddItem(Woosh.Parent, 5)
+					Woosh.Parent = ShadowChar
+				end
+				EasyTween(Woosh,"Transparency",1,AccurateMathRandom(0.5,1),"Sine","In"):Play()
+				Woosh.Anchored = true
+				Woosh.CanCollide = false
+				Woosh.CastShadow = false
+				Woosh.CollisionGroup = groupName
+				-- Woosh.Material = Enum.Material.ForceField
+			--	ApplyAttribute(Woosh)
+				coroutine.wrap(function()
+					EasyTween(Woosh,"CFrame",Woosh.CFrame + Vector3.new(0, forallpart / 10, 0) * 10,AccurateMathRandom(0.5,1),"Sine","Out" ):Play()
+					EasyTween(Woosh,"Transparency",1,AccurateMathRandom(0.5,1),"Sine","In" ):Play()
+					task.wait(1.25)
+					Destruct(Woosh)
+					if not ShadowChar:FindFirstChildOfClass("BasePart") then
+						Destruct(ShadowChar)
+					end
+					task.wait(5)
+					if not ShadowChar:FindFirstChildOfClass("BasePart") then
+						Destruct(ShadowChar)
+					end
+					Destruct(ShadowChar)
+				end)()
+			elseif not v:IsA("SpecialMesh") and not v:IsA("CharacterMesh") and not v:IsA("DataModelMesh") and not v:IsA("BasePart") and not v:IsA("MeshPart") and not v:IsA("Shirt") and not v:IsA("Pants") and not v:IsA("Humanoid") and not v:IsA("Accessory") then
+				Destruct(v)
+			else
+				v.Name = GenerateKeycode()
+			end
+		end
+
+		-- Maybe I Should Add the ShadowChar to Debris, And Litterally Sent It To The Shadow Realm
+		if ShadowChar then
+			Debris:AddItem(ShadowChar,7)
+			task.delay(7, function() if DestroyedEvent then DestroyedEvent:Disconnect() end end)
+		end
+	end
+end
+function FindFirstChildOfNameAndClass(Where: Instance, Name: string, Class: string)
+	local Found: boolean = false
+	if Where == nil or not Name or not Class then
+		return
+	end
+	if script:FindFirstAncestorOfClass("Actor") then
+		task.desynchronize()
+	end
+	if Where:FindFirstChild(Name) and Where:FindFirstChild(Name).ClassName:upper():match(Class:upper()) then
+		return Where:FindFirstChild(Name)
+	end
+	for i,v in Where:GetChildren() do
+		if not Found then
+			if Where == nil then
+				Found = true
+				return nil
+			end
+			if v.Name:match(Name) and (v:IsA(Class) or v.ClassName:upper():match(Class:upper())) then
+				Found = true
+				return v
+			end
+		end
+	end
+end
+local charfolder = FindFirstChildOfNameAndClass(workspace,'Character','Folder')
+task.synchronize()
+
+pcall(function()
+	if HandlesSpeed then
+		task.synchronize()
+		script.Parent:FindFirstChild('HEATH&STATE_ENGINE').Destroying:Once(function()
+			HandlesSpeed = false
+		end)
+	end
+end)
+
+function checknil(thing)
+	return (not thing or typeof(thing) ~= 'Instance' or not thing.Parent or not thing.ClassName:lower():match('motor6d'))
+end
+
+function Old_Anim(Char)
+	local function waitForChild(parent, childName, class)
+		task.desynchronize()
+		if not parent or not class or not childName then return end
+		if class == nil then
+			class = "Instance"
+		end
+		local limit = 5
+		local found = false
+		local child = FindFirstChildOfNameAndClass(parent,childName,class)
+		if child then task.synchronize() return child end
+		while task.wait(1) and parent and parent.Parent ~= nil and limit > 0 and not FindFirstChildOfNameAndClass(parent,childName,class) do
+			limit -= 1
+			if not found then
+				task.synchronize()
+				child = parent.ChildAdded:Wait()
+				task.desynchronize()
+				if child.Name==childName and (not class or (child:IsA(class) or child.ClassName:upper():match(child:upper()))) then task.synchronize() found = true return child end
+			else
+				break
+			end
+		end
+	end
+	task.desynchronize()
+	-- ANIMATION
+	----(("Declaring Welds")
+	-- declarations
+	local LastPos = Char:GetPivot()
+	local LastPartPos = {}
+	local lt =  0 or CT()
+	local desiredAngle
+	local Figure = Char
+	local Head = FindFirstChildOfNameAndClass(Figure,"Head","BasePart") or waitForChild(Figure,"Head","BasePart") or Char.PrimaryPart 
+	local Torso = FindFirstChildOfNameAndClass(Figure,"Torso","BasePart") or FindFirstChildOfNameAndClass(Figure,"UpperTorso","BasePart") or waitForChild(Figure,"Torso","BasePart")  or waitForChild(Figure,"UpperTorso","BasePart") 
+	local RightShoulder = FindFirstChildOfNameAndClass(Torso,"Right Shoulder","JointInstance") or waitForChild(Torso,"Right Shoulder","JointInstance") 
+	local LeftShoulder = FindFirstChildOfNameAndClass(Torso,"Left Shoulder","JointInstance") or waitForChild(Torso,"Left Shoulder","JointInstance") 
+	local RightHip = FindFirstChildOfNameAndClass(Torso,"Right Hip","JointInstance") or waitForChild(Torso,"Right Hip","JointInstance") 
+	local LeftHip = FindFirstChildOfNameAndClass(Torso,"Left Hip","JointInstance") or waitForChild(Torso,"Left Hip","JointInstance") 
+	local Neck = FindFirstChildOfNameAndClass(Torso,"Neck","JointInstance") or waitForChild(Torso,"Neck","JointInstance")
+	if checknil(Neck) and Torso and Head then Neck = Instance.new('Motor6D', Torso) Neck.Part1 = Head Neck.Part0 = Torso Neck.C1 = CFrame.new(0,-.5,0) * CFrame.Angles(math.rad(-90), math.rad(-180),0) Neck.C0 = CFrame.new(0,1,0) * CFrame.Angles(math.rad(-90), math.rad(-180),0)  end
+	if checknil(RightShoulder) then
+		RightShoulder = Instance.new("Motor6D", Figure)
+		RightShoulder.Name = "Right Shoulder"
+		RightShoulder.C1 = CFrame.new(-0.5, 0.5, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+		RightShoulder.C0 = CFrame.new(1, 0.5, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+		RightShoulder.MaxVelocity = 0.1
+		RightShoulder.Parent = Torso
+		RightShoulder.Part0 = Torso
+		RightShoulder.Part1 = FindFirstChildOfNameAndClass(Figure,"Right Arm","BasePart") or FindFirstChildOfNameAndClass(Figure,"RightUpperArm","BasePart") or Torso
+	end
+	if checknil(LeftShoulder) then
+		LeftShoulder = Instance.new("Motor6D", Figure)
+		LeftShoulder.Name = "Left Shoulder"
+		LeftShoulder.C1 = CFrame.new(0.5, 0.5, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+		LeftShoulder.C0 = CFrame.new(-1, 0.5, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+		LeftShoulder.MaxVelocity = 0.1
+		LeftShoulder.Parent = Torso
+		LeftShoulder.Part0 = Torso
+		LeftShoulder.Part1 = FindFirstChildOfNameAndClass(Figure,"Left Arm","BasePart") or FindFirstChildOfNameAndClass(Figure,"LeftUpperArm","BasePart") or Torso
+	end
+	if checknil(RightHip) then
+		RightHip = Instance.new("Motor6D", Figure)
+		RightHip.Name = "Right Hip"
+		RightHip.C1 = CFrame.new(0.5, 1, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+		RightHip.C0 = CFrame.new(1, -1, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+		RightHip.MaxVelocity = 0.1
+		RightHip.Parent = Torso
+		RightHip.Part0 = Torso
+		RightHip.Part1 = FindFirstChildOfNameAndClass(Figure,"Right Leg","BasePart") or FindFirstChildOfNameAndClass(Figure,"RightUpperLeg","BasePart") or Torso
+	end
+	if checknil(LeftHip) then
+		LeftHip = Instance.new("Motor6D", Figure)
+		LeftHip.Name = "Left Hip"
+		LeftHip.C1 = CFrame.new(-0.5, 1, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+		LeftHip.C0 = CFrame.new(-1, -1, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+		LeftHip.MaxVelocity = 0.1
+		LeftHip.Parent = Torso
+		LeftHip.Part0 = Torso
+		LeftHip.Part1 = FindFirstChildOfNameAndClass(Figure,"Left Leg","BasePart") or FindFirstChildOfNameAndClass(Figure,"LeftUpperLeg","BasePart") or Torso
+	end
+	local pose = "Standing"
+	local Humanoid = Figure:FindFirstChildOfClass("Humanoid") or FindFirstChildOfNameAndClass(Figure,"Humanoid","Humanoid") or waitForChild(Figure,"Humanoid","Humanoid")
+	local toolAnim = "None"
+	local toolAnimTime = 0
+	--[[local Param = RaycastParams.new()
+	Param.FilterType = Enum.RaycastFilterType.Exclude
+	Param.IgnoreWater = true
+	task.synchronize()
+	Param.FilterDescendantsInstances = {Char}
+	if charfolder then
+		Param:AddToFilter(charfolder)
+	end
+	task.desynchronize()
+	Param.RespectCanCollide = true]]
+
+	----(("Declared Welds Ex "..Torso:GetFullName()..RightShoulder:GetFullName())
+	-- functions
+	local function onRunning(speed)
+		if speed>0 then
+			if pose ~= "Running" then
+				lt =  0 or CT()
+			end
+			pose = "Running"
+		else
+			if pose ~= "Standing" then
+				lt =  0 or CT()
+			end
+			pose = "Standing"
+		end
+	end
+
+	local function onDied()
+		if pose ~= "Dead" then
+			lt =  0 or CT()
+		end
+		pose = "Dead"
+	end
+
+	local function onJumping()
+		if pose ~= "Jumping" then
+			lt =  0 or CT()
+		end
+		pose = "Jumping"
+	end
+
+	local function onClimbing()
+		if pose ~= "Climbing" then
+			lt =  0 or CT()
+		end
+		pose = "Climbing"
+	end
+
+	local function onGettingUp()
+		if pose ~= "GettingUp" then
+			lt =  0 or CT()
+		end
+		pose = "GettingUp"
+	end
+
+	local function onFreeFall()
+		if pose ~= "FreeFall" then
+			lt =  0 or CT()
+		end
+		pose = "FreeFall"
+	end
+
+	local function onFallingDown()
+		if pose ~= "FallingDown" then
+			lt =  0 or CT()
+		end
+		pose = "FallingDown"
+	end
+
+	local function onSeated()
+		if pose ~= "Seated" then
+			lt =  0 or CT()
+		end
+		pose = "Seated"
+	end
+
+	local function onPlatformStanding()
+		if pose ~= "PlatformStanding" then
+			lt =  0 or CT()
+		end
+		pose = "PlatformStanding"
+	end
+
+	local function moveJump()
+		task.synchronize()
+		RightShoulder.MaxVelocity = 0.5
+		LeftShoulder.MaxVelocity = 0.5
+		RightShoulder.DesiredAngle = 3.14
+		LeftShoulder.DesiredAngle = -3.14
+		RightHip.DesiredAngle = 0
+		LeftHip.DesiredAngle = 0
+	end
+
+
+	-- same as jump for now
+
+	local function moveFreeFall()
+		task.synchronize()
+		RightShoulder.MaxVelocity = 0.5
+		LeftShoulder.MaxVelocity = 0.5
+		RightShoulder.DesiredAngle = 3.14
+		LeftShoulder.DesiredAngle = -3.14
+		RightHip.DesiredAngle = 0
+		LeftHip.DesiredAngle = 0
+	end
+
+	local function moveSit()
+		task.synchronize()
+		RightShoulder.MaxVelocity = 0.15
+		LeftShoulder.MaxVelocity = 0.15
+		RightShoulder.DesiredAngle = 3.14 /2
+		LeftShoulder.DesiredAngle = -3.14 /2
+		RightHip.DesiredAngle = 3.14 /2
+		LeftHip.DesiredAngle = -3.14 /2
+	end
+
+	local function getTool()
+		task.desynchronize()
+		for _, kid in ipairs(Figure:GetChildren()) do
+			if kid.className == "Tool" then task.synchronize() return kid end
+		end
+		task.synchronize()
+		return nil
+	end
+
+	local function getToolAnim(tool)
+		task.desynchronize()
+		for _, c in ipairs(tool:GetChildren()) do
+			if c.Name == "toolanim" and c.className == "StringValue" then
+				task.synchronize() return c
+			end
+		end
+		task.synchronize()
+		return nil
+	end
+
+	local function animateTool()
+		task.synchronize()
+		if (toolAnim == "None") then
+			RightShoulder.DesiredAngle = 1.57
+			return
+		end
+
+		if (toolAnim == "Slash") then
+			RightShoulder.MaxVelocity = 0.5
+			RightShoulder.DesiredAngle = 0
+			return
+		end
+
+		if (toolAnim == "Lunge") then
+			RightShoulder.MaxVelocity = 0.5
+			LeftShoulder.MaxVelocity = 0.5
+			RightHip.MaxVelocity = 0.5
+			LeftHip.MaxVelocity = 0.5
+			RightShoulder.DesiredAngle = 1.57
+			LeftShoulder.DesiredAngle = 1.0
+			RightHip.DesiredAngle = 1.57
+			LeftHip.DesiredAngle = 1.0
+			return
+		end
+	end
+
+	local function move()
+		task.desynchronize()
+		local amplitude = 0
+		local frequency = 0
+
+		if (pose == "Jumping") then
+			moveJump()
+			return
+		end
+
+		if (pose == "FreeFall") then
+			moveFreeFall()
+			return
+		end
+
+		if (pose == "Seated") then
+			moveSit()
+			return
+		end
+
+		local climbFudge = 0
+		task.synchronize()
+		if (pose == "Running") then
+			task.synchronize()
+			RightShoulder.MaxVelocity = 0.15
+			LeftShoulder.MaxVelocity = 0.15
+			amplitude = 1
+			frequency = 9
+		elseif (pose == "Climbing") then
+			task.synchronize()
+			RightShoulder.MaxVelocity = 0.5 
+			LeftShoulder.MaxVelocity = 0.5
+			amplitude = 1
+			frequency = 9
+			climbFudge = 3.14
+		else
+			task.synchronize()
+			amplitude = 0.1
+			frequency = 1
+		end
+		task.desynchronize()
+		local m = 1 or Vector3.new(Humanoid.RootVel.X,0,Humanoid.RootVel.Z).Magnitude/ Humanoid.WalkSpeed
+		desiredAngle = (amplitude or 1) * math.sin(--[[(lt - CT())]] lt *(frequency or 0.5) * m ) 
+		local RightShoulderDesiredAngle = desiredAngle + climbFudge
+		local LeftShoulderDesiredAngle = desiredAngle - climbFudge
+		local LegDesiredAngle = -desiredAngle
+		task.synchronize()
+		RightShoulder.DesiredAngle = RightShoulderDesiredAngle
+		LeftShoulder.DesiredAngle = LeftShoulderDesiredAngle
+		RightHip.DesiredAngle = LegDesiredAngle
+		LeftHip.DesiredAngle = LegDesiredAngle
+
+
+		local tool = getTool()
+
+		if tool then
+			task.desynchronize()
+			local animStringValueObject = getToolAnim(tool)
+
+			--[[if animStringValueObject then
+				toolAnim = animStringValueObject.Value
+				-- message recieved, delete StringValue
+				task.synchronize()
+				animStringValueObject.Parent = nil
+				toolAnimTime = lt + .3
+			end
+			task.desynchronize()
+			if CT() > toolAnimTime then
+				toolAnimTime = 0
+				toolAnim = "None"
+			end]]
+
+			--animateTool()
+
+
+		else
+			task.desynchronize()
+			toolAnim = "None"
+			toolAnimTime = 0
+		end
+	end
+
+
+	-- connect events
+	task.synchronize()
+	if not Humanoid or not Figure then
+		return
+	end
+	local suc
+	local Cons: {RBXScriptConnection} = {}
+	local function dis()
+		task.synchronize()
+		for i,v in Cons do
+			v:Disconnect()
+		end
+	end
+	task.synchronize()
+	repeat
+		suc = pcall(function()
+			dis()
+			Cons = {
+			Humanoid.Died:Once(onDied),
+			Humanoid.Running:connect(onRunning),
+			Humanoid.Jumping:connect(onJumping),
+			Humanoid.Climbing:connect(onClimbing),
+			Humanoid.GettingUp:connect(onGettingUp),
+			Humanoid.FreeFalling:connect(onFreeFall),
+			Humanoid.FallingDown:connect(onFallingDown),
+			Humanoid.Seated:connect(onSeated),
+			Humanoid.PlatformStanding:connect(onPlatformStanding),
+			}
+		end)
+		if suc == true or not Humanoid or not Figure then
+			break
+		else
+			task.wait(1)
+		end
+	until suc == true or not Humanoid or not Figure
+	-- break Thing
+	if not Humanoid or not Figure then
+		return
+	end
+	-- main program
+	if Char then
+		table.insert(Cons, Char.Destroying:Once(dis))
+		table.insert(Cons, Humanoid.Destroying:Once(dis))
+	end
+	local runService = game:FindFirstChildOfClass("RunService");
+	coroutine.resume(coroutine.create(function()
+		local Figure = Char
+		while Char and Figure.Parent ~= nil and Figure and Char.Parent and Char:IsDescendantOf(workspace) and Humanoid do
+			local Delta = task.wait(rate)
+			lt += Delta
+			if lt >= math.pi * 4/9.5 then
+				lt -= math.pi * 4/9.5
+			end
+			if Figure then
+				task.desynchronize()
+				if Char:GetAttribute("Disconnect_Execution") then
+					task.synchronize()
+					for i,v in Cons do
+						v:Disconnect()
+					end
+					break
+				end
+				if not Char:GetAttribute("Halt_Execution") then
+					task.desynchronize()
+					--[[if Char:FindFirstChildOfClass("Humanoid") and Char:FindFirstChildOfClass("Humanoid").WalkSpeed ~= 16 then
+						task.synchronize()Char:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 task.desynchronize()
+					end]]
+					if Char:FindFirstChild("Animate") and Char:FindFirstChild("Animate").Enabled == true then
+						task.synchronize()Char:FindFirstChild("Animate").Enabled = false task.desynchronize()
+					end
+					if Char:GetAttribute("Retro") then task.synchronize()	Char:SetAttribute("Retro",true) task.desynchronize() end
+					task.desynchronize()
+					move()
+				end
+			end
+		end dis()
+	end))
+end
+
+function CC(CF1: CFrame, CF2: CFrame)
+	if typeof(CF1) ~= 'CFrame' or typeof(CF2) ~= 'CFrame'  then return false end
+	return CF1.LookVector:Dot(CF2.LookVector) < .9 	or (CF1.Position - CF2.Position).Magnitude > .1
+end
+function lockin(CFRAME: CFrame)
+	return CFrame.new(math.clamp(CFRAME.X, -.5, .5),math.clamp(CFRAME.Y, -.5, .5),math.clamp(CFRAME.Z, -.5, .5))
+end
+function SetUpAnimation(Character)
+	if Character and Character.Parent == workspace and Character:IsA("Model") and Character:FindFirstChildOfClass("Humanoid") and not Character.Name:match("Quality Version") and not Character:GetAttribute("Disconnect_Execution") then
+		task.synchronize()
+		game:FindFirstChildOfClass("CollectionService"):AddTag(Character,"IncludeInCharacter")
+		local Character:Model = Character
+		repeat task.wait(.1) if Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("Head") then break end until Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("Head")
+		local StartingTime = lt
+		local LastStandingTime = lt
+		local LastStandingCFrame = Character:GetPivot()
+		local Running = false
+		local cooldown = true
+		local CurSteppingLeg = "Left"
+		local SteppingSwitchingPeriod = 0.5 --0.25
+		local RL
+		local LL
+		local RL_ORIGINC0
+		local LL_ORIGINC0
+		local TS_ORIGINC0
+		local TS
+		local RA
+		local LA
+		local HD
+		local s
+		local OFFSETARM_ = CFrame.new()
+		local OFFSETARM_ALT = CFrame.new()
+		local OFFSETYRELATE = true
+		local timer = 0
+		local ran = nil
+		local GOINGUP =false
+		local lastEXRL = CFrame.new()
+		local lastEXLL = CFrame.new()
+		task.synchronize()
+		Character:SetAttribute('Y_RELATIVE',true)
+		Character:SetAttribute('OFFSETARM_', CFrame.new())
+		Character:GetAttributeChangedSignal('OFFSETARM_'):Connect(function()
+			if typeof(Character:GetAttribute('OFFSETARM_')) == 'CFrame' then
+				OFFSETARM_ = lockin(Character:GetAttribute('OFFSETARM_'))
+				OFFSETARM_ALT = not OFFSETYRELATE and OFFSETARM_:Inverse() or CFrame.new(-OFFSETARM_.X, OFFSETARM_.Y, OFFSETARM_.Z)
+			end
+			if typeof(OFFSETARM_) ~= 'CFrame' then
+				OFFSETARM_ = CFrame.new()
+			end
+		end)
+		local OFFSETLEG_ = CFrame.new()
+		local OFFSETLEG_ALT = CFrame.new()
+		Character:SetAttribute('OFFSETLEG_', CFrame.new())
+		Character:GetAttributeChangedSignal('OFFSETLEG_'):Connect(function()
+			if typeof(Character:GetAttribute('OFFSETLEG_')) == 'CFrame' then
+				OFFSETLEG_ = lockin(Character:GetAttribute('OFFSETLEG_'))
+				OFFSETLEG_ALT = not OFFSETYRELATE and OFFSETLEG_:Inverse() or CFrame.new(-OFFSETLEG_.X, OFFSETLEG_.Y, OFFSETLEG_.Z)
+			end
+			if typeof(OFFSETLEG_) ~= 'CFrame' then
+				OFFSETLEG_ = CFrame.new()
+			end
+		end)
+		Character:GetAttributeChangedSignal('Y_RELATIVE'):Connect(function()
+			if Character:GetAttribute('Y_RELATIVE') then
+				OFFSETYRELATE = true
+				OFFSETLEG_ALT = CFrame.new(-OFFSETLEG_.X, OFFSETLEG_.Y, OFFSETLEG_.Z)
+				OFFSETARM_ALT = CFrame.new(-OFFSETARM_.X, OFFSETARM_.Y, OFFSETARM_.Z)
+			else
+				OFFSETYRELATE = false
+				OFFSETLEG_ALT = OFFSETLEG_:Inverse()
+				OFFSETARM_ALT = OFFSETARM_:Inverse()
+			end
+		end)
+		local disrate = rate
+		Character:GetAttributeChangedSignal('__RATELIMIT'):Connect(function()
+			if Character:GetAttribute('__RATELIMIT') then
+				disrate = 1/Character:GetAttribute('__RATELIMIT')
+			else
+				disrate = rate
+			end
+		end)
+		local VelocitySpin = SpringRotation.new()
+		local Jumpcon
+		local Connection: RBXScriptConnection?
+		local Player
+		local LastPartPos = {}
+		local Register_Land = false
+		local seatleftcframe = CFrame.new()
+		local seatrightcframe = CFrame.new()
+		local RightLegDis = math.random(-3,-2)
+		local LeftLegDis = math.random(-3,-2)
+		local ran1 = math.random(4,8)
+		local ran2 = math.random(4,8)
+		local ranting1 = math.random(5,10)/10
+		local ranting2 = math.random(5,10)/10
+		local movementxy = Vector3.new()
+		local lt =  0 or CT()
+		local LastStateChange = lt
+		local LastState = 'Nothing'
+		local StateAcceleration = 1
+		local StateInterpolationSpeed = 0.1
+		local GuiTick = lt
+		local ran = false
+		local climbmoved = 0
+		local crouchanimseed1 = 0 or math.random(-1000,1000)/50
+		local crouchanimseed2 = 0 or math.random(-1000,1000)/50
+		local crouchanimseed3 = 0 or math.random(-1000,1000)/50
+		local crouchanimseed4 = 0 or math.random(-1000,1000)/50
+		local ROLLING = 7
+		local tickdelay = 1
+		local climbscanpos = 1.5
+		local climbaspectrotation = 0
+		local footing = RaycastParams.new()
+		local NowJump = true
+		local humanoidWalkSpeed = 0
+		task.synchronize()
+		footing.FilterDescendantsInstances = {Character}
+		local HMD = Character:FindFirstChildOfClass("Humanoid")
+		local Humanoid, humanoid = HMD, HMD
+		local UTSR = FindFirstChildOfNameAndClass(Character, 'UpperTorso', 'BasePart')
+		local LastPos = Character:GetPivot()
+		
+		if charfolder then
+			footing:AddToFilter(charfolder)
+		end
+		footing.IgnoreWater = true
+		footing.RespectCanCollide = true
+		footing.FilterType = Enum.RaycastFilterType.Exclude
+		local timeout = 60 -- Set the timeout duration
+		local startTime	startTime = 0 -- Record the start time
+		repeat
+			local dt = task.wait(.1)
+			startTime += dt
+			if FindFirstChildOfNameAndClass(Character,"UpperTorso","BasePart") then
+				TS = FindFirstChildOfNameAndClass(Character,"UpperTorso","BasePart") or UTSR
+				LL = FindFirstChildOfNameAndClass(Character,"LeftUpperLeg","BasePart") or Character:FindFirstChild("LeftUpperLeg")
+				RL = FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart") or Character:FindFirstChild("RightUpperLeg")
+				LA = FindFirstChildOfNameAndClass(Character,"LeftUpperArm","BasePart") or Character:FindFirstChild("LeftUpperArm")
+				RA = FindFirstChildOfNameAndClass(Character,"RightUpperArm","BasePart") or Character:FindFirstChild("RightUpperArm")
+				HD = FindFirstChildOfNameAndClass(Character,"Head","BasePart") or Character:FindFirstChild("Head")
+			else
+				TS = FindFirstChildOfNameAndClass(Character,"Torso","BasePart") or Character:FindFirstChild("Torso")
+				LL = FindFirstChildOfNameAndClass(Character,"Left Leg","BasePart") or Character:FindFirstChild("Left Leg")
+				RL = FindFirstChildOfNameAndClass(Character,"Right Leg","BasePart") or Character:FindFirstChild("Right Leg")
+				LA = FindFirstChildOfNameAndClass(Character,"Left Arm","BasePart") or Character:FindFirstChild("Left Arm")
+				RA = FindFirstChildOfNameAndClass(Character,"Right Arm","BasePart") or Character:FindFirstChild("Right Arm")
+				HD = FindFirstChildOfNameAndClass(Character,"Head","BasePart") or Character:FindFirstChild("Head")
+			end
+		until (TS and LL and RL and LA and RA and HD) or not Character or not Character:IsDescendantOf(workspace) or not Character:FindFirstChild('HumanoidRootPart') or (startTime >= timeout)
+
+		if not (TS and LL and RL and LA and RA and HD) then
+			return
+		end
+		if TS then
+			for i,v in TS:GetChildren() do
+				if v:IsA("Weld") or v:IsA("Weld") and v.Name ~= 'Handle' then
+					task.synchronize()
+					v:Destroy()
+				end
+			end
+		end
+		local savedhip = 1
+		if not HMD then
+			return
+		else
+			savedhip = HMD .HipHeight
+		end
+		local runservice = game:FindFirstChildOfClass("RunService")
+		task.synchronize()
+		local CHARSCALE = Character:GetScale()
+		local rightleg = Instance.new("Weld", TS)
+		rightleg.Part0 = TS
+		rightleg.Part1 = RL
+		rightleg.C0 = CFrame.new(0.5,-2,0)
+		rightleg.Name = "RLSnap"
+		local leftleg = Instance.new("Weld", TS)
+		leftleg.Part0 = TS
+		leftleg.Part1 = LL
+		leftleg.C0 = CFrame.new(-0.5,-1,0)
+		leftleg.Name = "LLSnap"
+		local rightarm = Instance.new("Weld", TS)
+		rightarm.Part0 = TS
+		rightarm.Part1 = RA
+		rightarm.C0 = CFrame.new(1.5,0,0)
+		rightarm.Name = "RASnap"
+		rightarm.Enabled = true
+		local leftarm = Instance.new("Weld", TS)
+		leftarm.Part0 = TS
+		leftarm.Part1 = LA
+		leftarm.C0 = CFrame.new(-1.5,0,0)
+		leftarm.Name = "LASnap"
+		leftarm.Enabled = true
+		local Head = Instance.new("Weld", TS)
+		Head.Part0 = TS
+		Head.Part1 = HD
+		Head.C0 = CFrame.new(0,1.5,0)
+		Head.Name = "HSnap"
+		Head.Enabled = true
+		RL_ORIGINC0 = rightleg.C0
+		LL_ORIGINC0 = leftleg.C0
+		Head:SetAttribute('R_DIS', true)leftarm:SetAttribute('R_DIS', true)rightarm:SetAttribute('R_DIS', true)
+		leftleg:SetAttribute('EX', CFrame.new())rightleg:SetAttribute('EX', CFrame.new())
+		local CanTouch = true
+		if not HMD then
+			return
+		end
+		local humanoidrootpart = Instance.new("Weld", HMD.RootPart)
+		humanoidrootpart.Part0 = HMD.RootPart
+		humanoidrootpart.Part1 = TS
+		humanoidrootpart.Name = "RSnap"
+		humanoidrootpart:SetAttribute('R_DIS', true)rightleg:SetAttribute('R_DIS', true)
+		leftleg:SetAttribute('R_DIS', true)
+		for i,v in pairs(Character:GetDescendants()) do
+			if v:IsA('Sound') and v.Name:upper():match('RUNNING') then
+				v.Volume = 0
+				v.PlaybackSpeed = 0
+				v.SoundId = ''
+				Debris:AddItem(v, 1)
+			end
+		end
+		TS_ORIGINC0 = humanoidrootpart.C0
+		local ltors = (FindFirstChildOfNameAndClass(Character,"LowerTorso","BasePart") or Character:FindFirstChild("LowerTorso"))
+		pcall(function()
+			if ltors then
+				task.synchronize()
+				local LowerTorso = Instance.new("Weld", HMD.RootPart)
+				LowerTorso.Part0 = TS
+				LowerTorso.Part1 = ltors
+				LowerTorso.C0 = CFrame.new(0,-TS.Size.Y/2 + ltors.Size.Y/2,0)
+				LowerTorso.Name = "LowerTorsoWeld"
+				LowerTorso:SetAttribute('R_DIS', true)
+				if not LowerTorso then
+					(FindFirstChildOfNameAndClass(Character,"LowerTorso","BasePart") or Character:FindFirstChild("LowerTorso")):Destroy()
+				end
+			end
+		end)
+		local function Checkstats(Cframe: CFrame)
+			if HMD and HMD.RootPart and HMD.RootPart:FindFirstChild('LowerTorsoWeld') then
+				return Cframe * Cframe
+			end
+			return Cframe
+		end
+		local rootpart = HMD.RootPart
+		if not rootpart:FindFirstChild('___RLLO') then
+			task.synchronize()
+			local soundye = Instance.new('Sound', rootpart)
+			soundye.SoundId = 'rbxassetid://3834495137'
+			soundye.Volume = 0.1
+			soundye.Name = '___RLLO'
+			task.desynchronize()
+		end
+		local CrouchIdentifier = Character:FindFirstChild("Crouching") or Character:FindFirstChildOfClass("StringValue")
+		if not CrouchIdentifier then
+			task.synchronize()
+			Character:SetAttribute('__Animated', true)
+			local Crouchable = Instance.new("StringValue")
+			Crouchable.Name = "Crouching"
+			Crouchable.Parent = Character
+			Crouchable.Value = "Nothing"
+			CrouchIdentifier = Crouchable
+			CrouchIdentifier:SetAttribute("SpecialPose","None")
+			pcall(function()
+				script.HumanoidPropertyChanger:Clone().Parent = Crouchable
+			end)
+		end
+		local ThatGuyStamina = math.random(75,100) -- Out Of 100
+		local LastStamina = ThatGuyStamina
+		--HMD:GetPropertyChangedSignal('Jump'):Connect(function()
+		--	if HMD:GetState() == Enum.HumanoidStateType.Jumping or HMD:GetState() == Enum.HumanoidStateType.Freefall then --(('jumped') ThatGuyStamina = math.clamp(ThatGuyStamina -3.00, 0, 100) end
+		--end)
+		--[[task.synchronize()
+		CrouchIdentifier.AttributeChanged:Connect(function(Name)
+			if Name == 'ThatGuyStamina' then
+				GuiTick = lt
+			end
+		end)]]
+		local boostanim = 1
+		local Done = false
+		local flew: thread
+		local climbroute: thread
+		local soundsplash: thread
+		local soundswitch: thread
+		local removepush: thread
+		local AFI: thread
+		local recentfall = false
+		local operation,lastset,cooldown,Done,Connection,chcl,hit,LastState
+		local CrouchVariant = {
+			LeftLeg = CFrame.Angles((math.random() >.5 and 1 or -1) * math.random()/2,(math.random() >.5 and 1 or -1) *math.random()/4,(math.random() >.5 and 1 or -1) *math.random()/10),
+			RightLeg = CFrame.Angles((math.random() >.5 and 1 or -1) * math.random()/2,(math.random() >.5 and 1 or -1) *math.random()/4,(math.random() >.5 and 1 or -1) *math.random()/10),
+			LeftArm = CFrame.Angles((math.random() >.5 and 1 or -1) * math.random()/2,(math.random() >.5 and 1 or -1) *math.random()/4,(math.random() >.5 and 1 or -1) *math.random()/4),
+			RightArm = CFrame.Angles((math.random() >.5 and 1 or -1) * math.random()/2,(math.random() >.5 and 1 or -1) *math.random()/4,(math.random() >.5 and 1 or -1) *math.random()/4)
+		}
+		local pase = 0 local lasto = false
+		coroutine.resume(coroutine.create(function()
+			while Character and not Character:GetAttribute('Retro') and Character:IsDescendantOf(game) and HMD and HMD:GetState() ~= Enum.HumanoidStateType.Dead do
+				task.desynchronize()
+				local DELTA_ANIM = lt-- - CT()
+				local ABSOLUTE_DTA = math.abs(DELTA_ANIM)
+				local DTA9_5 = ABSOLUTE_DTA * 9.5
+				local COSDTA9_5 = math.cos(DTA9_5)
+				local Delta = task.wait(disrate) or 0
+				lt += Delta
+				if lt >= math.pi * 2 then
+					lt -= math.pi * 2
+				end
+				local Speed = (1 - (1 / 100000000) ^ Delta) or 0.3
+				if not Character then return end
+				if Character:GetAttribute("Disconnect_Execution") then
+					task.synchronize()
+					Character:SetAttribute('__Animated', nil)
+					Character:SetAttribute('Retro', true)
+					return
+				end
+				if Character:FindFirstChild("Animate") and Character:FindFirstChild("Animate"):IsA("LocalScript") then
+					task.synchronize()Character:FindFirstChild("Animate").Enabled = false Character:FindFirstChild('Animate'):Destroy()
+				end
+				Player = retrieveplr(Character)
+				task.desynchronize()
+				if lasto ~= Character:FindFirstChildOfClass('Tool') then
+					pase -= 3
+					lasto = Character:FindFirstChildOfClass('Tool')
+				end
+			--	pcall(function()
+				if not Character:GetAttribute("Halt_Execution") and ((CrouchIdentifier:GetAttribute("SpecialPose") and CrouchIdentifier:GetAttribute("SpecialPose") ~= "None") or not table.find({Enum.HumanoidStateType.PlatformStanding,Enum.HumanoidStateType.Ragdoll,Enum.HumanoidStateType.FallingDown}, HMD:GetState()) ) then
+				if HMD and rootpart and (HMD:GetState() == Enum.HumanoidStateType.Dead or HMD.Health <= 0) then return end
+					local RootVel = rootpart.AssemblyLinearVelocity
+					local absvel: Vector3 = rootpart.CFrame:vectorToObjectSpace(RootVel)
+					local yvelo = absvel.Y
+					if Vector3.new(absvel.X/2, -yvelo/5, 0).Magnitude >= movementxy.Magnitude then
+						movementxy = Vector3.new(absvel.X/2, -yvelo/5, 0)
+					else
+						movementxy = movementxy:Lerp(Vector3.new(),0.1)
+					end
+					task.synchronize() local Scale: number = CHARSCALE task.desynchronize()
+					VelocitySpin.target = Vector3.new(absvel.X, 0, absvel.Z)
+					VelocitySpin:update(Delta)
+					local xzVelocity: Vector3 = VelocitySpin.current --Vector3.new(absvel.X, 0, absvel.Z)
+					local XZMAG: number = xzVelocity.Magnitude
+					local XZMAG_16: number = XZMAG/16
+					local XZMAG_24: number = XZMAG/24
+					if XZMAG > 1 then
+						if Running == false then
+							Running = true
+							StartingTime = lt
+						--[[	if cooldown == true then
+								cooldown = false
+								coroutine.resume(coroutine.create(function()
+								--	SHADOWCHAR(Character)
+									task.wait(0.05)
+									cooldown = true	
+								end))				
+							end]]
+						end
+					else
+						if Running == true then
+							Running = false
+							StartingTime = lt
+						end
+					end	
+					local humanoid: Humanoid = HMD
+					if not humanoid then
+						return
+					end
+					local Allow = true
+					task.desynchronize() 
+					if Player then
+						if ServerStorage:FindFirstChild("Input_Storage") then
+							if ServerStorage:FindFirstChild("Input_Storage"):FindFirstChild(Player.Name..'#>(') then
+								if not ServerStorage:FindFirstChild("Input_Storage"):FindFirstChild(Player.Name..'#>('):FindFirstChild("Enum.KeyCode.Space") then
+									Allow = false
+								end
+							end
+						end
+					end
+					task.desynchronize()
+					if Character:GetAttribute('Jumping') and Character:GetAttribute('Jumping') == true and NowJump  then
+						NowJump = false	ThatGuyStamina = math.clamp(ThatGuyStamina - (((ran == 'Running' or ran == 'Walking') and 35) or 25),0,100)
+						task.synchronize() Character:SetAttribute('Jumping',false) task.desynchronize()
+					end
+				if Character:FindFirstChild("Animate") and Character:FindFirstChild("Animate"):IsA("LocalScript") then
+					pcall( function() task.synchronize()Character:FindFirstChild("Animate").Enabled = false end)	
+				end
+				task.desynchronize()	
+				if (CrouchIdentifier:GetAttribute("Running") and CrouchIdentifier:GetAttribute("Running") == false) or ((Player and humanoid.MoveDirection.Magnitude < 0.5) or (not Player and XZMAG <= 16)) or XZMAG <= 16* (humanoid.Health/humanoid.MaxHealth) or CrouchIdentifier.Value ~= "Nothing" then
+						--task.synchronize()	
+						--CrouchIdentifier:SetAttribute("Currently_Regen",true)
+						task.desynchronize()
+						if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and HD and HD.Position.Y > 0 then
+							task.desynchronize()
+--							local scanforwatersowecanknowurnotdrowning = workspace:Raycast(Head.Part1.Position + Vector3.new(0,1.5,0),Vector3.new(0,-1,0) * -3.5, params)	or workspace:Raycast(Head.Part1.Position+ Vector3.new(0,1.5,0),Head.Part1.CFrame.LookVector* 3.5, params)	-- or workspace:Raycast(Head.Part1.Position + Vector3.new(0,-1.5,0),Vector3.new(0,-1,0) * -3.5, params)	or workspace:Raycast(Head.Part1.Position+ Vector3.new(0,-1.5,0),Head.Part1.CFrame.LookVector* 3.5, params)	
+	--						if (scanforwatersowecanknowurnotdrowning and (scanforwatersowecanknowurnotdrowning.Material == Enum.Material.Water or scanforwatersowecanknowurnotdrowning.Material == Enum.Material.Air)) then
+	--							ThatGuyStamina = math.clamp(ThatGuyStamina - --[[0.035]] Delta * 1.5 * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100) -- Do Not Attempt To Run
+	--							task.desynchronize()
+	--							--CrouchIdentifier:SetAttribute("Current_Stamina_Regeneration_Per_Tick",0.25 * (1 + (humanoid.Health/humanoid.MaxHealth)))
+	--							if scanforwatersowecanknowurnotdrowning and Head.Part1.Position.Y < scanforwatersowecanknowurnotdrowning.Position.Y then
+	--								task.synchronize()
+	--								if Allow and rootpart and rootpart.Position.Y < -4 then
+	--									rootpart.AssemblyLinearVelocity = xzVelocity + Vector3.new(0,humanoid.JumpPower,0)
+	--									--[if rootpart:FindFirstChild("PushUp") then
+	-----										rootpart:FindFirstChild("PushUp"):Destroy()
+	--	--								end
+	--		--							if not rootpart:FindFirstChild("PushUp") then
+	--				--						local vel = Instance.new("BodyVelocity",rootpart)
+	--			--							vel.Velocity = Vector3.new(0,--[[50*rootpart.CurrentPhysicalProperties.Density]]100,0)
+	--									--	vel.Name = "PushUp"
+	--									--end
+	--									--if removepush then coroutine.close(removepush) end
+	--									--removepush = coroutine.create(function() task.wait(.1) 	if rootpart:FindFirstChild("PushUp") then rootpart:FindFirstChild("PushUp"):Destroy() end end)
+	--									--if removepush then coroutine.resume(removepush) end]]
+	--								end
+	--								ThatGuyStamina = math.clamp(ThatGuyStamina - --[[ 0.125 * Speed]] Delta * 5  * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100) -- Do Not Attempt To Run
+	--								if ThatGuyStamina <= 0 then
+	--									humanoid.Health = humanoid.Health - --[[0.125 * Speed]] Delta * 5 * humanoid.MaxHealth/100
+	--								end
+	--							end
+							--						else
+							if (Head.Part1.Position + (Head.Part1.CFrame.LookVector * Head.Part1.Size.Z/2)).Y < 0.2 then
+								ThatGuyStamina = math.clamp(ThatGuyStamina - --[[ 0.125 * Speed]] Delta * 4  * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100) -- Do Not Attempt To Run	
+							else
+								ThatGuyStamina = math.clamp(ThatGuyStamina + --[[0.25 * Speed]] Delta * 10 * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100) -- Do Not Attempt To Run
+								--task.synchronize()
+								--CrouchIdentifier:SetAttribute("Current_Stamina_Regeneration_Per_Tick",0.25 * (1 + (humanoid.Health/humanoid.MaxHealth)))
+							end
+					else
+							task.desynchronize()
+							
+							if not latte and not operation and Allow and not rootpart.Anchored and rootpart.Position.Y < 0 and not GOINGUP then
+								operation = coroutine.create(function()
+									latte = true
+									GOINGUP = true
+									local LEPart = rootpart
+									if LEPart then 
+										task.synchronize()
+										local SIZEY = 2 * Scale
+										Character:SetAttribute('PIVOTING__ENABLED', true)
+										rootpart.Anchored = true
+										local csfx = rootpart:FindFirstChild('___CLIMBUP')
+										if not csfx then
+											local newsound = Instance.new('Sound', rootpart)
+											newsound.SoundId = 'rbxassetid://5508953366'
+											newsound.Volume = 0.125
+											csfx = newsound
+										end
+										task.desynchronize()
+										local FORW = LEPart.CFrame.LookVector
+										FORW = Vector3.new(FORW.X,0,FORW.Z).Unit
+										local Scandis = 4
+										local ScanForw = workspace:Blockcast(LEPart.CFrame, LEPart.Size, FORW * Scandis, footing)
+										if ScanForw and ScanForw.Distance <= (Scandis - 1) then Scandis = (ScanForw.Distance + 1) end
+										local pos = LEPart.CFrame + FORW * Scandis + Vector3.new(0,SIZEY * 2,0)
+										local ScanDown = workspace:Blockcast(pos.Rotation + Vector3.new(pos.X,math.min(pos.Y, 5),pos.Z), LEPart.Size, -Vector3.new(0,SIZEY * 6,0), footing)
+										local noblocked = false
+										if ScanDown then
+											local scan = workspace:Blockcast(LEPart.CFrame.Rotation + ScanDown.Position, LEPart.Size, Vector3.new(0,SIZEY * 2,0), footing)
+											noblocked = not scan or scan.Instance == ScanDown.Instance
+										end
+										local Destination = Character:GetPivot().Position
+										local ssd = false
+										if ScanDown and ScanDown.Position.Y > LEPart.Position.Y and noblocked then ssd = true
+											--map path and go up
+											local LastPathingPos = LEPart.Position
+											local PlaybackPos = LastPathingPos
+											Destination = ScanDown.Position + Vector3.new(0,SIZEY * 2,0) + FORW.Unit * SIZEY
+											local RayCheckPath = workspace:Blockcast(LEPart.CFrame.Rotation + LastPathingPos, LEPart.Size, Destination - LastPathingPos, footing)
+											if not RayCheckPath then 
+												if not rootpart then return end
+												task.synchronize()
+												if LEPart then TweenService:Create(LEPart, TweenInfo.new((Destination - LastPathingPos).Magnitude/(Humanoid.WalkSpeed * 4)), {Position = Destination}):Play()
+												LEPart.AssemblyLinearVelocity = Vector3.new() end if Character then Character:SetAttribute('TARGET_DES', typeof(Destination) == 'Vector3' and CFrame.new(Destination) or Destination or nil) end
+												task.wait((Destination - LastPathingPos).Magnitude/(Humanoid.WalkSpeed * 4)) if LEPart then LEPart.AssemblyLinearVelocity = Vector3.new() end
+											else
+												local Paths = {}
+												task.desynchronize()
+												while (#Paths <= 0 or (Paths[#Paths] - Destination).Magnitude > 0.1) and LEPart and #Paths < 1000 do
+													if not rootpart or not LEPart then break end
+													local ScanVec  = Destination - LastPathingPos
+													local RayCheckPath = workspace:Blockcast(LEPart.CFrame.Rotation + LastPathingPos, LEPart.Size, math.min(1020, ScanVec.Magnitude) * ScanVec.Unit, footing)
+													if RayCheckPath then LastPathingPos += Vector3.new(0,SIZEY/4,0) else LastPathingPos += SIZEY/4 * ScanVec.Unit end
+													if #Paths <= 0 or (Paths[#Paths] - LastPathingPos).Magnitude > .1 then table.insert(Paths, LastPathingPos) end
+													if (LastPathingPos - Destination).Magnitude <= SIZEY or (RayCheckPath and (RayCheckPath.Position - Destination).Magnitude < SIZEY) or LastPathingPos.Y > 5 then LastPathingPos = Destination break end
+												end
+												table.insert(Paths, Destination)
+												if #Paths > 0 then
+													if csfx:IsA('Sound') then
+														task.synchronize()
+														csfx.PlaybackSpeed = .9 + math.random()/5
+														csfx:Play() task.desynchronize()
+													end
+													local lefthand = FindFirstChildOfNameAndClass(Character, 'LeftHand', 'BasePart') or FindFirstChildOfNameAndClass(Character, 'Left Arm', 'BasePart')	or leftarm.Part1
+													local righthand = FindFirstChildOfNameAndClass(Character, 'RightHand', 'BasePart') or FindFirstChildOfNameAndClass(Character, 'Right Arm', 'BasePart')	or rightarm.Part1
+													task.synchronize()
+													if Binded then	Binded:Fire(false, righthand, Character, nil) Binded:Fire(false, lefthand, Character, nil)
+													Binded:Fire(false, nil, Character, nil) end
+													task.desynchronize()
+													local step = 0
+													local last = 1	--left/right
+													local GrabPoint = nil
+													for i,v in Paths do task.desynchronize()
+														if not rootpart or not LEPart or not Character then break end
+														local TotalTweenTime = (PlaybackPos - v).Magnitude/(Humanoid.WalkSpeed * 4)
+														step += 1
+														if step >= 2 then step = 0 last = -last end
+														
+														local hand = last > 0 and righthand or lefthand
+														local otherhand = last > 0 and lefthand or righthand
+
+														-- Raycast forward from hand to waypoint
+														local handPos = hand and hand.CFrame or CFrame.new(PlaybackPos)
+														local direction = humanoidrootpart.Part0.CFrame.LookVector.Unit
+														local rayResult = workspace:Blockcast(handPos, hand.Size, direction * SIZEY, footing)
+
+														if rayResult then
+															GrabPoint = CFrame.new(rayResult.Position, v)
+														else
+															-- Raycast from max forward position to opposite side
+															local maxForward = handPos + direction * SIZEY
+															local sideOffset = (last > 0 and Vector3.new(-SIZEY/2,0,0) or Vector3.new(SIZEY/2,0,0))
+															local rayResultSide = workspace:Blockcast(maxForward, hand.Size, sideOffset, footing)
+															if rayResultSide then
+																GrabPoint = CFrame.new(rayResultSide.Position, v)
+															else
+																-- Try with other hand
+																if otherhand then
+																	local otherHandPos = otherhand.CFrame
+																	local otherDirection = (v - otherHandPos.Position).Unit
+																	local rayResultOther = workspace:Blockcast(otherHandPos, otherhand.Size, otherDirection * SIZEY, footing)
+																	if rayResultOther then
+																		GrabPoint = CFrame.new(rayResultOther.Position, v)
+																	end
+																end
+															end
+														end
+														task.synchronize()
+														if righthand or lefthand then if not lefthand then last = 1 elseif not righthand then last = -1 end
+														if last > 0 then
+													if Binded	 then	Binded:Fire(true, righthand, Character, GrabPoint) end
+															else 
+													if Binded then		Binded:Fire(true, lefthand, Character, GrabPoint) end
+														end end
+														task.synchronize()
+														if Character then	Character:SetAttribute('TARGET_DES', typeof(v) == 'Vector3' and CFrame.new(v) or v or nil) end
+														if LEPart then TweenService:Create(LEPart, TweenInfo.new(TotalTweenTime), {Position = v}):Play()  end  if LEPart then LEPart.AssemblyLinearVelocity = Vector3.new() end
+														task.wait((i == #Paths and TotalTweenTime) or TotalTweenTime/1.25) if LEPart then LEPart.AssemblyLinearVelocity = Vector3.new() end
+													end
+													task.synchronize()
+													if Binded then
+													Binded:Fire(false, righthand, Character, nil) Binded:Fire(false, lefthand, Character, nil)
+													Binded:Fire(false, nil, Character, nil) end
+												end	 
+												LastPathingPos = rootpart.Position
+												Paths = {}
+											end
+										end
+										local a = CFrame.new(Destination)
+										if LEPart then
+											task.synchronize()
+											LEPart.Anchored = false
+											if ssd then
+												local rotate = CFrame.lookAt(LEPart.Position, Destination).Rotation
+												if rotate.LookVector.X ~= rotate.LookVector.X or rotate ~= rotate or typeof(rotate) ~= "CFrame" or rotate.LookVector.Magnitude ~= 1 or rotate.LookVector ~= rotate.LookVector then rotate = CFrame.new() end
+												a = CFrame.new(Destination) * rotate
+											if Destination and Character and LEPart then Character:PivotTo(a) end end
+										end task.synchronize()  if ssd then Character:SetAttribute('TARGET_DES', a) end task.delay(1, function() latte = false Character:SetAttribute('PIVOTING__ENABLED', nil) end) if ssd and Destination and Character and LEPart then Character:PivotTo(a) task.delay(1, function() if Character:GetAttribute('TARGET_DES') == a then Character:SetAttribute('TARGET_DES', nil) end end) end
+									else latte = false end operation = nil 
+									task.delay(.05, function()  GOINGUP = false end)	
+								end)
+								coroutine.resume(operation)
+							end
+							--local scanforwatersowecanknowurnotdrowning = workspace:Raycast(Head.Part1.Position,Head.Part1.CFrame.UpVector * -1.5, params)	or workspace:Raycast(Head.Part1.Position,Head.Part1.CFrame.LookVector* 1.5, params)	
+							--if (scanforwatersowecanknowurnotdrowning and (scanforwatersowecanknowurnotdrowning.Material == Enum.Material.Water or scanforwatersowecanknowurnotdrowning.Material == Enum.Material.Air)) or not scanforwatersowecanknowurnotdrowning then
+							if (Head.Part1.Position + (Head.Part1.CFrame.LookVector * Head.Part1.Size.Z/2)).Y < 0.2 then
+								ThatGuyStamina = math.clamp(ThatGuyStamina - Delta * 4 --[[0.1]] * (1 + (humanoid.Health/(humanoid.MaxHealth * 2))), 0 , 100) -- Do Not Attempt To Run
+								if Allow and rootpart and rootpart.Position.Y < -3 then
+									task.synchronize() rootpart.AssemblyLinearVelocity = xzVelocity + Vector3.new(0,humanoid.JumpPower,0)
+									--RootVel = RootVel + Vector3.new(0,Humanoid.JumpPower,0)
+								end
+								task.desynchronize()
+								if humanoid and ThatGuyStamina <= 0 then
+									local a =	humanoid.Health - --[[0.275 * ]] Delta * 1.33 * 	humanoid.MaxHealth/100
+									task.synchronize() humanoid.Health = a
+								end
+						end
+						task.desynchronize()
+					end
+				--Staying Afloat Cause Stamina Decrease	
+				ThatGuyStamina = math.clamp(ThatGuyStamina - --[[0.025]] Delta * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100) -- Do Not Attempt To Run
+				if ThatGuyStamina <= 0 then
+							if CrouchIdentifier:GetAttribute("Running") then
+					task.synchronize()
+					CrouchIdentifier:SetAttribute("Running",false) end
+					task.desynchronize()
+					ThatGuyStamina = 0
+				elseif ThatGuyStamina > 100 then
+					ThatGuyStamina = 100	
+				end	
+			else
+				--CrouchIdentifier:SetAttribute("Currently_Regen",false)
+			end
+					task.desynchronize()
+					if CC(rightleg:GetAttribute('EX'),lastEXRL) then
+						timer -= .33
+						lastEXRL = rightleg:GetAttribute('EX')
+					end
+					if CC(leftleg:GetAttribute('EX'),lastEXLL) then
+						timer -= .33
+						lastEXLL = leftleg:GetAttribute('EX')
+					end
+			if CrouchIdentifier or Character:FindFirstChildOfClass("StringValue")  then	
+						local Speed_DELTA = StateInterpolationSpeed * Speed
+				if CrouchIdentifier.Value == "Crouch" and timer < 10 and humanoid and (humanoid:GetState() == Enum.HumanoidStateType.Running or humanoid:GetState() == Enum.HumanoidStateType.RunningNoPhysics) then
+							if Character:GetAttribute('__ACTION') ~= 'Crouching' then
+							task.synchronize()
+								Character:SetAttribute('__ACTION', 'Crouching') timer = 0 ROLLING = 0 end
+							task.desynchronize()
+							if UTSR then
+								local UpperTorso = UTSR
+								local RootC1 = Lerp(humanoidrootpart.C1, CFrame.new(0, 1, 0) * CFrame.Angles(math.rad(5), 0, 0), Speed_DELTA)
+								local RLC1 = Lerp(rightleg.C1, CFrame.new(rightleg.Part1.Size.X/8, -1, -0.5) * OFFSETLEG_ * CrouchVariant.RightLeg * CFrame.Angles(math.rad(60), 0, 0) * Checkstats(lastEXRL), Speed_DELTA)
+								local LLC1 = Lerp(leftleg.C1, CFrame.new(-leftleg.Part1.Size.X/8, -1, -0.5) * OFFSETLEG_ALT * CrouchVariant.LeftLeg * CFrame.Angles(math.rad(60), 0, 0) * Checkstats(lastEXLL), Speed_DELTA)
+								local HeadC1 = Lerp(Head.C1, CFrame.new(0, -(UpperTorso.Size.Y - 0.25) / 4, .5) * CFrame.Angles(20, 0, 0), Speed_DELTA)
+								local RAC1 = Lerp(rightarm.C1, CFrame.new(-(UpperTorso.Size.X - rightarm.Part1.Size.X  -1.75) / 2, 0, 0)  * OFFSETARM_ * CrouchVariant.RightArm, Speed_DELTA)
+								local LAC1 = Lerp(leftarm.C1, CFrame.new((UpperTorso.Size.X - leftarm.Part1.Size.X  -1.75) / 2, 0, 0)  * OFFSETARM_ALT * CrouchVariant.LeftArm, Speed_DELTA)
+								task.synchronize()
+								humanoidrootpart.C1 = RootC1
+								rightleg.C1 =RLC1
+								leftleg.C1 =LLC1
+								Head.C1 =HeadC1
+								rightarm.C1 =RAC1
+								leftarm.C1 =LAC1
+							else
+								local humanoidrootpartC1 = Lerp(humanoidrootpart.C1, CFrame.new(0, 1, 0) * CFrame.Angles(math.rad(5),	0,  math.rad(5) * (crouchanimseed3/10 - crouchanimseed4/10)), Speed_DELTA)
+								local rightlegC1 = Lerp(rightleg.C1, CFrame.new(0, -0.3 + crouchanimseed3/10, -0.5) * OFFSETLEG_ * CrouchVariant.RightLeg * CFrame.Angles(math.rad(60) +  math.rad(45) * crouchanimseed3/10, math.rad(15) * crouchanimseed3/10, 0) * Checkstats(lastEXRL), Speed_DELTA)
+								local leftlegC1 = Lerp(leftleg.C1, CFrame.new(0, -0.3 + crouchanimseed4/10, -0.5) * OFFSETLEG_ALT * CrouchVariant.LeftLeg * CFrame.Angles(math.rad(60) +  math.rad(45) * crouchanimseed4/10, math.rad(15) * crouchanimseed4/10, 0) * Checkstats(lastEXLL), Speed_DELTA)
+								local HeadC1 = Lerp(Head.C1, CFrame.new(0, -0.5, 0.75) * CFrame.Angles(20, 0, 0), Speed_DELTA)
+								local rightarmC1 = Lerp(rightarm.C1, CFrame.new(0, 0, 0) * CrouchVariant.RightArm * OFFSETARM_, Speed_DELTA)
+								local leftarmC1 = Lerp(leftarm.C1, CFrame.new(0, 0, 0) * CrouchVariant.LeftArm * OFFSETARM_ALT, Speed_DELTA)
+								task.synchronize()
+								humanoidrootpart.C1 = humanoidrootpartC1
+								rightleg.C1 = rightlegC1
+								leftleg.C1 = leftlegC1
+								Head.C1 = HeadC1
+								rightarm.C1 =rightarmC1
+								leftarm.C1 =leftarmC1
+							end
+							task.desynchronize()
+							if humanoid:IsA("Humanoid") then
+								
+								if not HandlesSpeed then
+									if humanoid.WalkSpeed > 10* (humanoid.Health/humanoid.MaxHealth)*Scale then
+										humanoidWalkSpeed = humanoid.WalkSpeed-0.25 * Delta * 15
+									elseif humanoid.WalkSpeed < 10* (humanoid.Health/humanoid.MaxHealth)*Scale then
+										humanoidWalkSpeed = humanoid.WalkSpeed+0.25 * Delta * 15
+									end
+									task.synchronize()
+									humanoid.WalkSpeed = humanoidWalkSpeed
+								end		
+						
+						if humanoid.UseJumpPower == false then
+							task.synchronize() humanoid.UseJumpPower = true
+						end
+						if humanoid.JumpPower > 0 then
+							task.synchronize() humanoid.JumpPower = 0
+								end
+								
+							end
+							if ROLLING < 1.5 then
+								ROLLING += Delta
+								if CrouchIdentifier:GetAttribute('Roll') then
+									task.synchronize()
+									CrouchIdentifier:SetAttribute('Roll', nil)
+									task.desynchronize()
+								end
+							elseif movementxy.Magnitude > .05 and ThatGuyStamina > 25 and CrouchIdentifier:GetAttribute('Roll') and not rootpart.Anchored then
+								ROLLING = 0
+								task.synchronize()
+								CrouchIdentifier:SetAttribute('Roll', nil)
+								task.desynchronize()
+								coroutine.resume(coroutine.create(function()
+									local SavedVELUnit = rootpart.AssemblyLinearVelocity.Unit
+									SavedVELUnit -= Vector3.new(0,SavedVELUnit.Y,0)
+									SavedVELUnit = SavedVELUnit.Unit
+									local filtnew = footing
+									filtnew:AddToFilter(Character)
+									local checkHit = workspace:Blockcast(rootpart.CFrame,Vector3.new(2,2,1) * Scale, SavedVELUnit * 2, filtnew)	
+									if SavedVELUnit.Magnitude == 0 or checkHit then ROLLING = 1.4 return end
+									local EL = 0
+									local VELS = SavedVELUnit
+									local Hit
+									local gnd
+
+									if rootpart:FindFirstChild('___RLLO') then
+										task.synchronize()
+										pcall(function() rootpart:FindFirstChild('___RLLO'):Play() end)	
+										task.desynchronize()
+									end
+									timer = 20
+									local GRAV = Vector3.new()
+									
+									task.synchronize()
+									rootpart.Anchored = true
+									Character:SetAttribute('Roll', true)
+									task.desynchronize()
+									while (not Hit or not Hit.Instance or Hit.Instance:IsDescendantOf(Character) or not Hit.Instance.CanCollide or Hit.Instance.Transparency >= 0.9 or Hit.Normal:Dot((VELS - Vector3.new(0,VELS.Y,0))) > -0.5) and rootpart.Position.Y > -1 and VELS:Dot(SavedVELUnit) >= 0 and Character and EL < .33 and Character.Parent and not CrouchIdentifier:GetAttribute('Roll') do
+										task.desynchronize()
+										local Del = task.wait()
+										EL += Del
+
+										-- Ground detection with expanded search area
+										gnd = workspace:Blockcast(rootpart.CFrame,Vector3.new(2,2,1)* Scale, Vector3.new(0,-Scale * 2.01,0), footing)	
+
+										if not gnd then
+											GRAV += Vector3.new(0,-196.2,0) * Del
+										else
+											GRAV = Vector3.new(0, math.abs(GRAV.Y), 0)
+										end
+
+										VELS = (SavedVELUnit * 45 * (((.4) - EL)/(.5))) + GRAV
+										Hit = workspace:Blockcast(rootpart.CFrame,Vector3.new(1,1,1) * Scale, (VELS - Vector3.new(0,VELS.Y,0)) * (.1 + Del), footing)	
+										ROLLING = 0
+										local apos = CFrame.new(Character:GetPivot().Position + VELS * Del, Character:GetPivot().Position  + VELS * Del * 2)
+										local angular = CFrame.Angles(VELS.Magnitude/3.3 * Del * math.pi,0,0) --[[rootpart.CFrame:ToObjectSpace(CFrame.lookAt(Vector3.new(),SavedVELUnit):ToWorldSpace(CFrame.Angles(VELS.Magnitude/3.3 * Del * math.pi,0,0))).Rotation]]
+
+										if gnd then
+											local groundPos = gnd.Position
+											local groundNormal = gnd.Normal
+											local currentPos = rootpart.Position
+
+											-- Project movement direction onto ground plane using dot product
+											local movementDirection = SavedVELUnit
+											local projectedMovement = movementDirection - (movementDirection:Dot(groundNormal) * groundNormal)
+											projectedMovement = projectedMovement.Unit
+
+											-- Calculate ground slope in movement direction using vector projection
+											local forwardSlope = projectedMovement:Dot(groundNormal)
+											local slopeAngle = math.asin(math.clamp(forwardSlope, -1, 1))
+
+											-- Use trigonometry to calculate proper ground-following position
+											local horizontalDistance = (Vector3.new(groundPos.X, 0, groundPos.Z) - Vector3.new(currentPos.X, 0, currentPos.Z)).Magnitude
+											local verticalDistance = groundPos.Y - currentPos.Y
+
+											-- Calculate the hypotenuse distance and ground angle
+											local groundDistance = math.sqrt(horizontalDistance^2 + verticalDistance^2)
+											local terrainAngle = math.atan2(verticalDistance, horizontalDistance)
+
+											-- Use cosine and sine to project position onto terrain surface
+											local surfaceOffset = Vector3.new(
+												math.cos(terrainAngle) * groundDistance,
+												math.sin(terrainAngle) * groundDistance,
+												0
+											)
+
+											-- Apply terrain following with trigonometric smoothing
+											local lerpFactor = 1 - math.exp(-Del * 8) -- Exponential smoothing
+											local targetY = groundPos.Y + Scale/2
+
+											if math.abs(verticalDistance) > 0.3 then
+												apos = Vector3.new(apos.X, 
+													currentPos.Y + (targetY - currentPos.Y) * lerpFactor, 
+													apos.Z)
+											elseif gnd.Position.Y > rootpart.Position.Y then
+												apos = apos + Vector3.new(0, gnd.Position.Y - rootpart.Position.Y, 0)
+											end
+										end
+										if (not Hit or not Hit.Instance or Hit.Instance:IsDescendantOf(Character) or not Hit.Instance.CanCollide or Hit.Instance.Transparency >= 0.9 or Hit.Normal:Dot((VELS - Vector3.new(0,VELS.Y,0))) > -0.5) then
+											-- TRIGONOMETRIC GROUNDING SYSTEM
+											timer = 20
+											task.synchronize()
+											pcall(function() filtnew:AddToFilter(Hit.Instance) end)
+											Character:PivotTo(typeof(apos) == 'Vector3' and CFrame.new(apos) or apos)
+											rootpart.Anchored = true
+											rootpart.AssemblyLinearVelocity = VELS/10
+											humanoidrootpart.C1 = humanoidrootpart.C1.Rotation * CFrame.new(0,math.abs(math.cos(VELS.Magnitude/3.3 * EL * math.pi)), 0) * angular
+										end
+									end
+									task.synchronize()
+									Character:SetAttribute('Roll', nil)
+									rootpart.Anchored = false
+									task.desynchronize()
+									ThatGuyStamina -= EL * 75
+									timer = 8
+									ROLLING = 1 - EL
+									if EL < .1 or Hit or humanoid.FloorMaterial == Enum.Material.Air then ROLLING = 1.8 end
+								end))
+							
+							elseif CrouchIdentifier:GetAttribute('Roll') then
+								if ROLLING < 1.7 then ROLLING += Delta 
+									if ROLLING > 1.65 then
+										if CrouchIdentifier:GetAttribute('Roll') then
+											task.synchronize()
+											CrouchIdentifier:SetAttribute('Roll', nil)
+											task.desynchronize()
+										end
+										ROLLING = 1.6
+									end
+								end
+							end
+					boostanim = 3
+					--humanoid.CameraOffset = Vector3.new(0,0.25,-1.5)
+				elseif CrouchIdentifier.Value == "Crawl" or (Character:GetAttribute('State') and Character:GetAttribute('State') == 'Downed') and humanoid and (humanoid:GetState() == Enum.HumanoidStateType.Running or humanoid:GetState() == Enum.HumanoidStateType.RunningNoPhysics) then
+							if Character:GetAttribute('__ACTION') ~= 'Crawling' then
+								task.synchronize()
+								Character:SetAttribute('__ACTION', 'Crawling') timer = 0  if humanoid.JumpPower > 0 then
+									task.synchronize() humanoid.JumpPower = 0
+									end end
+							task.desynchronize()
+							--local rightarmsizexz = rightarm and rightarm.Part1 and Vector3.new(rightarm.Part1.Size.X,0,rightarm.Part1.Size.Y)
+							local rightarmdown: RaycastResult? = (rightarm and rightarm.Part0 and rightarm.Part1 and workspace:Raycast(rightarm.Part0.CFrame:ToWorldSpace(rightarm.C0).Position,Vector3.new(0,-rightarm.Part1.Size.Y * 3,0),footing))
+							local leftarmdown: RaycastResult? = (leftarm and leftarm.Part0 and leftarm.Part1 and workspace:Raycast(leftarm.Part0.CFrame:ToWorldSpace(leftarm.C0).Position,Vector3.new(0,-leftarm.Part1.Size.Y * 3,0),footing))
+							local rightlegdown: RaycastResult?  = (rightleg and rightleg.Part0 and rightleg.Part1 and workspace:Raycast(rightleg.Part0.CFrame:ToWorldSpace(rightleg.C0).Position,Vector3.new(0,-rightleg.Part1.Size.Y * 3,0),footing))
+							local leftlegdown: RaycastResult?  = (leftleg and leftleg.Part0 and leftleg.Part1 and workspace:Raycast(leftleg.Part0.CFrame:ToWorldSpace(leftleg.C0).Position,Vector3.new(0,-leftleg.Part1.Size.Y * 3,0),footing))
+							local rightarmdownframe = CFrame.new()
+							local leftarmdownframe = CFrame.new()
+							local rightlegdownframe = CFrame.new()
+							local leftlegdownframe = CFrame.new()
+							local totallimbgrounded = 0
+							if rightarmdown then
+								rightarmdownframe = CFrame.new(0,0,-(rightarmdown.Distance - rightarm.Part1.Size.Z)) totallimbgrounded += 1
+							end
+							if leftarmdown then
+								leftarmdownframe = CFrame.new(0,0,-(leftarmdown.Distance - leftarm.Part1.Size.Z )) totallimbgrounded += 1
+							end
+							if rightlegdown then
+								rightlegdownframe = CFrame.new(0,0,rightlegdown.Distance - rightleg.Part1.Size.Z / 2) totallimbgrounded += 1
+							end
+							if leftlegdown then
+								leftlegdownframe = CFrame.new(0,0,leftlegdown.Distance - leftleg.Part1.Size.Z / 2) totallimbgrounded += 1
+							end
+							local rightarmforward: RaycastResult? = (rightarm and rightarm.Part0 and rightarm.Part1 and workspace:Raycast(rightarm.Part0.CFrame:ToWorldSpace(rightarm.C0).Position + rightarm.Part0.CFrame.LookVector * rightarmdownframe.Z,rightarm.Part0.CFrame.UpVector *  rightarm.Part1.Size.Y,footing))
+							local leftarmforward: RaycastResult? = (leftarm and leftarm.Part0 and leftarm.Part1 and workspace:Raycast(leftarm.Part0.CFrame:ToWorldSpace(leftarm.C0).Position + leftarm.Part0.CFrame.LookVector * leftarmdownframe.Z,leftarm.Part0.CFrame.UpVector *  leftarm.Part1.Size.Y,footing))
+							local rightlegforward: RaycastResult?  = (rightleg and rightleg.Part0 and rightleg.Part1 and workspace:Raycast(rightleg.Part0.CFrame:ToWorldSpace(rightleg.C0).Position + rightleg.Part0.CFrame.LookVector * rightlegdownframe.Z,rightleg.Part0.CFrame.UpVector * -rightleg.Part1.Size.Y,footing))
+							local leftlegforward: RaycastResult?  = (leftleg and leftleg.Part0 and leftleg.Part1 and workspace:Raycast(leftleg.Part0.CFrame:ToWorldSpace(leftleg.C0).Position + leftleg.Part0.CFrame.LookVector * leftlegdownframe.Z,leftleg.Part0.CFrame.UpVector * -leftleg.Part1.Size.Y,footing))
+							if rightarmforward then
+								local downer = (rightarm and rightarm.Part0 and rightarm.Part1 and workspace:Raycast(rightarm.Part0.CFrame:ToWorldSpace(rightarm.C0).Position + rightarm.Part0.CFrame.UpVector * rightarmforward.Distance,Vector3.new(0,-rightarm.Part1.Size.Y * 3,0),footing))
+								if downer then
+									rightarmdownframe = rightarmdownframe * CFrame.Angles(rightarmdownframe.Z - (downer.Distance - rightarm.Part1.Size.Z / 2) * math.rad(1/2),0, 0):Inverse()
+								else
+									rightarmdownframe = rightarmdownframe * CFrame.Angles((rightarmforward.Distance - rightarm.Part1.Size.Z / 2) * math.rad(1/2),0,0):Inverse()
+								end
+							else
+								local downer = (rightarm and rightarm.Part0 and rightarm.Part1 and workspace:Raycast(rightarm.Part0.CFrame:ToWorldSpace(rightarm.C0).Position + rightarm.Part0.CFrame.UpVector * rightarm.Part1.Size.Y,Vector3.new(0,-rightarm.Part1.Size.Y * 3,0),footing))
+								if downer then
+									rightarmdownframe = rightarmdownframe * CFrame.Angles(rightarmdownframe.Z - (downer.Distance - rightarm.Part1.Size.Z / 2) * math.rad(1/2),0, 0):Inverse()
+								end
+							end
+							if leftarmforward then
+								local downer = (leftarm and leftarm.Part0 and leftarm.Part1 and workspace:Raycast(leftarm.Part0.CFrame:ToWorldSpace(leftarm.C0).Position + leftarm.Part0.CFrame.UpVector * leftarmforward.Distance, Vector3.new(0, -leftarm.Part1.Size.Y * 3, 0), footing))
+								if downer then
+									leftarmdownframe = leftarmdownframe * CFrame.Angles(leftarmdownframe.Z - (downer.Distance - leftarm.Part1.Size.Z / 2) * math.rad(1/2), 0, 0):Inverse()
+								else
+									leftarmdownframe = leftarmdownframe * CFrame.Angles((leftarmforward.Distance - leftarm.Part1.Size.Z / 2) * math.rad(1/2), 0, 0):Inverse()
+								end
+							else
+								local downer = (leftarm and leftarm.Part0 and leftarm.Part1 and workspace:Raycast(leftarm.Part0.CFrame:ToWorldSpace(leftarm.C0).Position + leftarm.Part0.CFrame.UpVector * leftarm.Part1.Size.Y, Vector3.new(0, -leftarm.Part1.Size.Y * 3, 0), footing))
+								if downer then
+									leftarmdownframe = leftarmdownframe * CFrame.Angles(leftarmdownframe.Z - (downer.Distance - leftarm.Part1.Size.Z / 2) * math.rad(1/2), 0, 0):Inverse()
+								end
+							end
+
+							if leftlegforward then
+								local downer = (leftleg and leftleg.Part0 and leftleg.Part1 and workspace:Raycast(leftleg.Part0.CFrame:ToWorldSpace(leftleg.C0).Position - leftleg.Part0.CFrame.UpVector * leftlegforward.Distance, Vector3.new(0, -leftleg.Part1.Size.Y * 3, 0), footing))
+								if downer then
+									leftlegdownframe = leftlegdownframe * CFrame.Angles((  (downer.Distance - leftleg.Part1.Size.Z / 2)-leftlegdownframe.Z) * math.rad(-1/2), 0, 0)
+								else
+									leftlegdownframe = leftlegdownframe * CFrame.Angles( (leftlegforward.Distance - leftleg.Part1.Size.Z / 2) * math.rad(-1/2), 0,0)
+								end
+							else
+								local downer = (leftleg and leftleg.Part0 and leftleg.Part1 and workspace:Raycast(leftleg.Part0.CFrame:ToWorldSpace(leftleg.C0).Position - leftleg.Part0.CFrame.UpVector * leftleg.Part1.Size.Y, Vector3.new(0, -leftleg.Part1.Size.Y * 3, 0), footing))
+								if downer then
+									leftlegdownframe = leftlegdownframe * CFrame.Angles((  (downer.Distance - leftleg.Part1.Size.Z / 2)-leftlegdownframe.Z) * math.rad(-1/2), 0, 0)
+								end
+							end
+
+							if rightlegforward then
+								local downer = rightleg and rightleg.Part0 and rightleg.Part1 and workspace:Raycast(rightleg.Part0.CFrame:ToWorldSpace(rightleg.C0).Position - rightleg.Part0.CFrame.UpVector * rightlegforward.Distance, Vector3.new(0, -rightleg.Part1.Size.Y * 3, 0), footing)
+								if downer then
+									rightlegdownframe = rightlegdownframe * CFrame.Angles((downer.Distance - rightleg.Part1.Size.Z / 2 - rightlegdownframe.Z) * math.rad(-1/2), 0, 0)
+								else
+									rightlegdownframe = rightlegdownframe * CFrame.Angles((rightlegforward.Distance - rightleg.Part1.Size.Z / 2) * math.rad(-1/2), 0, 0)
+								end
+							else
+								local downer = rightleg and rightleg.Part0 and rightleg.Part1 and workspace:Raycast(rightleg.Part0.CFrame:ToWorldSpace(rightleg.C0).Position - rightleg.Part0.CFrame.UpVector * rightleg.Part1.Size.Y, Vector3.new(0, -rightleg.Part1.Size.Y * 3, 0), footing)
+								if downer then
+									rightlegdownframe = rightlegdownframe * CFrame.Angles((downer.Distance - rightleg.Part1.Size.Z / 2 - rightlegdownframe.Z) * math.rad(-1/2), 0, 0)
+								end
+							end
+							local root = Lerp(humanoidrootpart.C1, CFrame.new(0, 1.5, 1.5) * CFrame.Angles(math.rad(75), 0, 0), Speed_DELTA)
+							local legr, legl = Lerp(rightleg.C1, CFrame.new(0, -0.3, 0) * OFFSETLEG_ * rightlegdownframe, Speed_DELTA), Lerp(leftleg.C1, CFrame.new(0, -0.3, 0) * OFFSETLEG_ALT * leftlegdownframe, Speed_DELTA)
+							local rightarmC1 = rightarm.C1
+							local leftarmC1 = leftarm.C1
+							if not UTSR then
+								rightarmC1 = Lerp(rightarm.C1, CFrame.new(0, 1, -0.5) * CFrame.Angles(math.rad(220), 0, 0) * OFFSETARM_ * rightarmdownframe, Speed_DELTA)
+								leftarmC1 = Lerp(leftarm.C1, CFrame.new(0, 1, -0.5) * CFrame.Angles(math.rad(220), 0, 0) * OFFSETARM_ALT * leftarmdownframe, Speed_DELTA)	
+							else
+								local UpperTorso = UTSR
+								rightarmC1 = Lerp(rightarm.C1, CFrame.new(-(UpperTorso.Size.X - rightarm.Part1.Size.X  -1.75) / 2, 1, -0.5) * OFFSETARM_ * CFrame.Angles(math.rad(220), 0, 0) * rightarmdownframe, Speed_DELTA)
+								leftarmC1 = Lerp(leftarm.C1, CFrame.new((UpperTorso.Size.X - leftarm.Part1.Size.X  -1.75) / 2, 1, -0.5) * OFFSETARM_ALT * CFrame.Angles(math.rad(220), 0, 0) * leftarmdownframe, Speed_DELTA)		
+							end
+							local head = Lerp(Head.C1, CFrame.new(), Speed)
+							if totallimbgrounded < 4 then
+								ThatGuyStamina -= Delta * 15 * (4 - totallimbgrounded)
+							end
+							if ThatGuyStamina <= 0 then
+								task.synchronize()CrouchIdentifier.Value = 'Nothing'
+								if humanoid then
+									humanoid:ChangeState(Enum.HumanoidStateType.Ragdoll)
+								end
+							end
+							task.synchronize()
+							humanoidrootpart.C1 = root
+							rightleg.C1 = legr
+							leftleg.C1 = legl
+							leftarm.C1 = leftarmC1
+							rightarm.C1 = rightarmC1
+							--[[if not UTSR then
+								rightarm.C1 = Lerp(rightarm.C1, CFrame.new(0, 1, -0.5) * CFrame.Angles(math.rad(220), 0, 0) * rightarmdownframe, Speed_DELTA)
+								leftarm.C1 = Lerp(leftarm.C1, CFrame.new(0, 1, -0.5) * CFrame.Angles(math.rad(220), 0, 0) * leftarmdownframe, Speed_DELTA)	
+							else
+								local UpperTorso = UTSR
+								rightarm.C1 = Lerp(rightarm.C1, CFrame.new(-(UpperTorso.Size.X - rightarm.Part1.Size.X  -1.75) / 2, 1, -0.5) * CFrame.Angles(math.rad(220), 0, 0) * rightarmdownframe, Speed_DELTA)
+								leftarm.C1 = Lerp(leftarm.C1, CFrame.new((UpperTorso.Size.X - leftarm.Part1.Size.X  -1.75) / 2, 1, -0.5) * CFrame.Angles(math.rad(220), 0, 0) * leftarmdownframe, Speed_DELTA)		
+							end]]
+
+							Head.C1 = head
+							task.desynchronize()
+					if humanoid:IsA("Humanoid") then
+								if not HandlesSpeed then
+									if humanoid.WalkSpeed > 5* (humanoid.Health/humanoid.MaxHealth)*Scale then
+										humanoidWalkSpeed = humanoid.WalkSpeed-0.25 * Delta * 15
+									elseif humanoid.WalkSpeed < 5* (humanoid.Health/humanoid.MaxHealth)*Scale then
+										humanoidWalkSpeed = humanoid.WalkSpeed+0.25 * Delta * 15
+									end
+									task.synchronize()
+									humanoid.WalkSpeed = humanoidWalkSpeed
+								end		
+						if humanoid.UseJumpPower == false then
+							task.synchronize()humanoid.UseJumpPower = true
+						end
+						if humanoid.JumpPower > 0 then
+							task.synchronize()humanoid.JumpPower = humanoid.JumpPower-3
+						end
+					end
+
+					boostanim = 2
+					--humanoid.CameraOffset = Vector3.new(0,0.25,-1.5)
+						elseif timer < 10 then
+							task.desynchronize()
+							local humanoidrootpartC1, rightlegC1, leftlegC1, HeadC1, rightarmC1, leftarmC1
+							if UTSR and Character:FindFirstChild("LowerTorso") then
+								humanoidrootpartC1 = Lerp(humanoidrootpart.C1, CFrame.new(), Speed/3)
+								rightlegC1 = Lerp(rightleg.C1, CFrame.new(rightleg.Part1.Size.X/8, Scale * ((UTSR.Size.Y -rightleg.Part1.Size.Y /4 + Character:FindFirstChild("LowerTorso").Size.Y -2.0) / 2 * CHARSCALE - 0.5), 0) * OFFSETLEG_  * Checkstats(lastEXRL), Speed_DELTA/3)
+								leftlegC1 = Lerp(leftleg.C1, CFrame.new(-leftleg.Part1.Size.X/8, Scale * ((UTSR.Size.Y -leftleg.Part1.Size.Y /4+ Character:FindFirstChild("LowerTorso").Size.Y -2.0) / 2 * CHARSCALE - 0.5), 0) * OFFSETLEG_ALT * Checkstats(lastEXLL), Speed_DELTA/3)
+								HeadC1 = Lerp(Head.C1, CFrame.new(0, Scale * (-(UTSR.Size.Y / CHARSCALE -2.0) / 2 - 0.0675 / 1.5), 0), Speed_DELTA/3)
+								rightarmC1 = Lerp(rightarm.C1, CFrame.new(Scale * (-(UTSR.Size.X -rightarm.Part1.Size.X  -1.75) / 2 * CHARSCALE), Scale * (-(UTSR.Size.Y / CHARSCALE -2.0) / 2 - 0.3), 0) * OFFSETARM_, Speed_DELTA)
+								leftarmC1 = Lerp(leftarm.C1, CFrame.new(Scale * ((UTSR.Size.X -leftarm.Part1.Size.X  -1.75) / 2 * CHARSCALE), Scale * (-(UTSR.Size.Y / CHARSCALE -2.0) / 2 - 0.3), 0) * OFFSETARM_ALT, Speed_DELTA)
+							else
+								humanoidrootpartC1 = Lerp(humanoidrootpart.C1, CFrame.new(), Speed_DELTA/3)
+								rightlegC1 = Lerp(rightleg.C1,  Checkstats(lastEXRL * OFFSETLEG_), Speed_DELTA/3)
+								leftlegC1 = Lerp(leftleg.C1,  Checkstats(lastEXLL * OFFSETLEG_ALT), Speed_DELTA/3)
+								HeadC1 = Lerp(Head.C1, CFrame.new(), Speed_DELTA/3)
+								rightarmC1 = Lerp(rightarm.C1,  OFFSETARM_, Speed_DELTA/3)
+								leftarmC1 = Lerp(leftarm.C1,  OFFSETARM_ALT, Speed_DELTA/3)
+							end
+					--for i,v in pairs(Character:GetDescendants())  do
+					--			task.desynchronize()
+								
+					--	if v:IsA("Part") or v:IsA("MeshPart") then
+					--		if v ~= RL and v ~= LL then
+					--			task.synchronize()
+					--			--v.CanCollide = true
+					--		else
+					--			task.synchronize()
+					--			--v.CanCollide = true
+					--			--v.CanQuery = false
+					--		end
+					--	end
+					--	if v.Name == "Animate" and v:IsA("LocalScript") then
+					--		task.synchronize()v.Enabled = false
+					--	end		
+							--		end 
+							task.synchronize()
+							
+							humanoidrootpart.C1 = humanoidrootpartC1
+							rightleg.C1 = rightlegC1 or Lerp(rightleg.C1, CFrame.new(rightleg.Part1.Size.X/8, Scale * ((UTSR.Size.Y -rightleg.Part1.Size.Y /4 + Character:FindFirstChild("LowerTorso").Size.Y -2.0) / 2 * CHARSCALE - 0.5), 0)  * Checkstats(lastEXRL), Speed_DELTA/3)
+							leftleg.C1 = leftlegC1 or Lerp(leftleg.C1, CFrame.new(-leftleg.Part1.Size.X/8, Scale * ((UTSR.Size.Y -leftleg.Part1.Size.Y /4+ Character:FindFirstChild("LowerTorso").Size.Y -2.0) / 2 * CHARSCALE - 0.5), 0)  * Checkstats(lastEXLL), Speed_DELTA/3)
+							Head.C1 = HeadC1 or Lerp(Head.C1, CFrame.new(0, Scale * (-(UTSR.Size.Y / CHARSCALE -2.0) / 2 - 0.0675 / 1.5), 0), Speed_DELTA/3)
+							rightarm.C1 = rightarmC1 or Lerp(rightarm.C1, CFrame.new(Scale * (-(UTSR.Size.X -rightarm.Part1.Size.X  -1.75) / 2 * CHARSCALE), Scale * (-(UTSR.Size.Y / CHARSCALE -2.0) / 2 - 0.3), 0), Speed_DELTA)
+							leftarm.C1 = leftarmC1 or Lerp(leftarm.C1, CFrame.new(Scale * ((UTSR.Size.X -leftarm.Part1.Size.X  -1.75) / 2 * CHARSCALE), Scale * (-(UTSR.Size.Y / CHARSCALE -2.0) / 2 - 0.3), 0), Speed_DELTA)
+						task.desynchronize()
+						boostanim = 1
+					--humanoid.CameraOffset= Vector3.new(0,0.25,-1.5)
+						end if timer <= 10 then	timer += Delta end
+						if CrouchIdentifier.Value == "Nothing" and humanoid:IsA("Humanoid") then
+							
+							if CrouchIdentifier:GetAttribute("Running") and CrouchIdentifier:GetAttribute("Running") == true and ((--[[Players:GetPlayerFromCharacter(Character) and ]]humanoid.MoveDirection.Magnitude > 0.5) or (--[[not Players:GetPlayerFromCharacter(Character) and]] XZMAG >= 16* (humanoid.Health/humanoid.MaxHealth))) and CrouchIdentifier.Value == "Nothing" and ThatGuyStamina > 0 then
+								task.desynchronize()	
+								if  XZMAG > 16 * (humanoid.Health/humanoid.MaxHealth) then
+									--CrouchIdentifier:SetAttribute("Currently_Deducting",true)
+									ThatGuyStamina = math.clamp(ThatGuyStamina - Delta * 10 --[[0.2]] * (1 + (1 - (humanoid.Health/humanoid.MaxHealth))), 0 , 100)
+									--CrouchIdentifier:SetAttribute("Current_Stamina_Deduction_Per_Tick",0.5 * (1 + (1 - (humanoid.Health/humanoid.MaxHealth))))
+								elseif XZMAG < 16 * (humanoid.Health/humanoid.MaxHealth) then
+									--CrouchIdentifier:SetAttribute("Currently_Deducting",false)
+									end
+									
+								if ThatGuyStamina <= 0 then
+									task.synchronize()
+									CrouchIdentifier:SetAttribute("Running",false)
+									ThatGuyStamina = 0
+									end task.desynchronize()
+									if ThatGuyStamina > 0 then
+										if not HandlesSpeed then
+											if humanoid.WalkSpeed > 24* (humanoid.Health/humanoid.MaxHealth)*Scale then
+												humanoidWalkSpeed = humanoid.WalkSpeed-0.25 * Delta * 15
+											elseif humanoid.WalkSpeed < 24* (humanoid.Health/humanoid.MaxHealth)*Scale then
+												humanoidWalkSpeed = humanoid.WalkSpeed+0.25 * Delta * 15
+											end
+										if math.abs(humanoid.WalkSpeed - humanoidWalkSpeed) > .2 then
+											task.synchronize()
+											humanoid.WalkSpeed = humanoidWalkSpeed
+										end		
+										end		
+									if humanoid.UseJumpPower == false then
+										task.synchronize()humanoid.UseJumpPower = true
+									end
+									local Target = (math.min(ThatGuyStamina, 40)/2) * (humanoid.Health/humanoid.MaxHealth)*Scale
+									if  math.abs(humanoid.JumpPower - Target) > .5 then
+										local increment = 15 * Delta
+										if humanoid.JumpPower < Target then
+											humanoidJumpPower = humanoid.JumpPower + increment
+										elseif humanoid.JumpPower > Target then
+											humanoidJumpPower = humanoid.JumpPower - increment
+										end
+										task.synchronize() humanoid.JumpPower = humanoidJumpPower
+									end
+									if Character:GetAttribute('__ACTION') ~= 'Running' then
+										task.synchronize()
+										Character:SetAttribute('__ACTION', 'Running') timer = 0 end end
+							elseif CrouchIdentifier.Value == "Nothing" then task.desynchronize()
+									if not HandlesSpeed then
+										if humanoid.WalkSpeed > 16* (humanoid.Health/humanoid.MaxHealth)*Scale then
+											humanoidWalkSpeed = humanoid.WalkSpeed-0.25 * Delta * 15
+										elseif humanoid.WalkSpeed < 16* (humanoid.Health/humanoid.MaxHealth)*Scale then
+											humanoidWalkSpeed = humanoid.WalkSpeed+0.25 * Delta * 15 
+										end
+									if math.abs(humanoid.WalkSpeed - humanoidWalkSpeed) > .2 then
+										task.synchronize()
+										humanoid.WalkSpeed = humanoidWalkSpeed task.desynchronize()
+									end	
+									end
+								if humanoid.UseJumpPower == false then
+									task.synchronize()humanoid.UseJumpPower = true
+									end task.desynchronize()
+								local Target = (math.min(ThatGuyStamina, 40)) * (humanoid.Health/humanoid.MaxHealth)*Scale
+								if  math.abs(humanoid.JumpPower - Target) > .5 then
+									local increment = 15 * Delta
+									if humanoid.JumpPower < Target then
+										humanoidJumpPower = humanoid.JumpPower + increment
+									elseif humanoid.JumpPower > Target then
+										humanoidJumpPower = humanoid.JumpPower - increment
+									end
+									task.synchronize() humanoid.JumpPower = humanoidJumpPower task.desynchronize()
+								end
+									if Character:GetAttribute('__ACTION') ~= 'Walking' then
+										task.synchronize()
+										Character:SetAttribute('__ACTION', 'Walking') timer = 0 end
+							end
+					end
+					
+					
+						task.desynchronize()
+						local Diff
+						Diff = math.ceil(LastStamina)
+						ThatGuyStamina = math.clamp(ThatGuyStamina,0,100)
+						LastStamina = math.clamp(ThatGuyStamina,0,100) -- Lastfornextrow
+						if LastState and LastState ~= CrouchIdentifier.Value then
+							LastStateChange = lt
+							LastState = CrouchIdentifier.Value
+							StateInterpolationSpeed = 0
+							StateAcceleration = 0
+						elseif not LastState then
+							LastState = CrouchIdentifier.Value
+						end
+						StateAcceleration = math.clamp(StateAcceleration + Delta/2,0,1)
+						StateInterpolationSpeed = math.clamp(StateInterpolationSpeed+StateAcceleration,0,1)
+						if (Diff < 100 or Diff ~= math.ceil(ThatGuyStamina) or (CrouchIdentifier and CrouchIdentifier:GetAttribute("Running") and CrouchIdentifier:GetAttribute("Running") == true)  or (Player and ServerStorage and ServerStorage:FindFirstChild("Input_Storage")  and ServerStorage:FindFirstChild("Input_Storage"):FindFirstChild(Player.Name..'#>(') and (ServerStorage:FindFirstChild("Input_Storage"):FindFirstChild(Player.Name..'#>('):FindFirstChild("Enum.KeyCode.E")))) then
+							GuiTick = lt - tickdelay
+							----(('yez')
+							tickdelay = math.clamp(tickdelay - 0.25 * Delta * 60,0,1)
+						else
+							----(('no')
+							tickdelay = math.clamp(tickdelay + 0.01 * Delta * 60,0,1)
+						end
+						local Elapsed = tickdelay or (CT() - GuiTick)
+						if Elapsed <= 3 then
+							task.synchronize()if Player then
+								local dis = Player		
+								task.desynchronize()if 	dis:FindFirstChildOfClass('PlayerGui') then
+									local differ: number
+									local invert: boolean = false
+									if (ThatGuyStamina - Diff) >= 0 then
+										invert = false
+									else
+										invert = true
+									end
+									differ = math.abs(ThatGuyStamina - Diff)
+									task.desynchronize()			
+									if not FindFirstChildOfNameAndClass(dis:FindFirstChildOfClass('PlayerGui'),'StaminaTeller','ScreenGui')  then
+										task.synchronize()		
+										local Gui = Instance.new('ScreenGui',dis:FindFirstChildOfClass('PlayerGui'))
+										Gui.Name = 'StaminaTeller'
+										Gui.ResetOnSpawn = true
+										local Frame = Instance.new('Frame',Gui)
+										Frame.Name = "Background"	
+										local Corner = Instance.new('UICorner',Frame)
+										Corner.Name = "Soften"
+										local Highlight = Instance.new('UIStroke',Frame)
+										Highlight.Name = "Outliner"
+										--Preset
+										if Frame then
+											Frame.BackgroundColor3 = Color3.new(0,0,0)
+											Frame.Transparency = 1
+											Frame.Size = UDim2.fromScale(0,  0.025)
+											Frame.Position = UDim2.fromScale(0.5 - Frame.Size.X.Scale/2,1 - (0.15 + Frame.Size.Y.Scale/2 - Elapsed/7.5)) + UDim2.fromOffset(Frame.Size.X.Offset/2, Frame.Size.Y.Offset/2) --+ UDim2.fromOffset(absvel.Unit.X, absvel.Unit.Y) --+ ShakeItOff
+											local Corner: UICorner? = FindFirstChildOfNameAndClass(Frame,"Soften", 'UICorner')
+											if Corner then
+												task.synchronize()
+												Corner.CornerRadius = UDim.new(0,2)
+											end
+											local Highlight: UIStroke? = FindFirstChildOfNameAndClass(Frame,"Outliner", 'UIStroke')
+											if Highlight then
+												task.synchronize()
+												Highlight.Thickness = 0
+												Highlight.Color = Color3.new(0,0,0)
+											end
+										end
+									end
+									task.desynchronize()
+									local Gui: ScreenGui? = FindFirstChildOfNameAndClass(dis:FindFirstChildOfClass('PlayerGui'),'StaminaTeller','ScreenGui')
+									if Gui then
+										local Frame: Frame? = FindFirstChildOfNameAndClass(Gui,"Background", 'Frame')
+										if Frame then
+											task.desynchronize()
+											local ShakeItOff = UDim2.fromScale(Random.new():NextInteger(-math.abs(100-ThatGuyStamina), math.abs(100- ThatGuyStamina))/4000,Random.new():NextInteger(-math.abs(100-ThatGuyStamina), math.abs(100- ThatGuyStamina))/4000)
+											local BackgroundColor3 = Frame.BackgroundColor3:Lerp(Color3.new(1 - Elapsed, ThatGuyStamina/100 , ThatGuyStamina/100),Speed) 
+											local Size = Frame.Size:Lerp(UDim2.fromScale(0.0025* ThatGuyStamina,  0.025 - Elapsed/40),Speed)
+											local Position = Frame.Position:Lerp(UDim2.fromScale(0.5 - Frame.Size.X.Scale/2,1 - (0.15 + Frame.Size.Y.Scale/2 - Elapsed/7.5)) + UDim2.fromOffset(Frame.Size.X.Offset/2, Frame.Size.Y.Offset/2) + ShakeItOff,Speed)
+											local CornerRadius = UDim.new(0,2 + Elapsed * 6)
+											local Posit = Position + UDim2.fromScale(math.clamp(movementxy.X/500,-0.05,0.05), math.clamp(movementxy.Y/500,-0.05,0.05)) --+ UDim2.fromOffset(absvel.Unit.X, absvel.Unit.Y) --+ ShakeItOff
+											local Highlight: UIStroke? = FindFirstChildOfNameAndClass(Frame,"Outliner", 'UIStroke')
+											local HIThick = 0
+											local HIColor = Color3.new()
+											local Corner: UICorner? = FindFirstChildOfNameAndClass(Frame,"Soften", 'UICorner')
+											if Highlight then
+												HIThick = Highlight.Thickness
+												HIColor = Highlight.Color
+												if differ == 0 then
+													HIColor = Highlight.Color:Lerp(Color3.new(0,0,0),Delta * 20 * 0.075)
+												else
+													if (differ) > Highlight.Thickness then
+														HIThick = math.clamp(math.abs(differ) / 20, 0, 5) 
+													end
+													if invert then
+														HIColor = Highlight.Color:Lerp(Color3.new(differ,0,0),Delta * 20 * 0.15)
+													else
+														HIColor = Highlight.Color:Lerp(Color3.new(0,differ,0),Delta * 20 * 0.15)
+													end
+												end
+												if HIThick > 0 then
+													HIThick = math.clamp(Highlight.Thickness - 0.25 * 10 * Delta,0, 100) 
+												end
+											end
+											task.synchronize()	
+										--	--((ShakeItOff)
+											----((Random.new():NextInteger(-math.abs(100-ThatGuyStamina), math.abs(100- ThatGuyStamina))/25)
+											Frame.BackgroundColor3 = BackgroundColor3
+											Frame.Transparency = Elapsed
+											Frame.Size = Size
+											Frame.Position = Posit
+											if Corner then
+												Corner.CornerRadius = CornerRadius
+											end
+											if Highlight then
+												Highlight.Color = HIColor
+												Highlight.Thickness = HIThick
+											end
+										else
+											task.synchronize()	
+											Gui:Destroy() -- retry
+										end
+									else
+										task.synchronize()	
+										local Gui = Instance.new('ScreenGui',Player:FindFirstChildOfClass('PlayerGui'))
+										Gui.Name = 'StaminaTeller'
+										Gui.ResetOnSpawn = true		
+									end	
+								end
+							end
+						end			
+						task.synchronize()	 CrouchIdentifier:SetAttribute("ThatGuyStamina",ThatGuyStamina)  task.desynchronize()	
+			end 
+			--[[if not leftarm or not leftleg or not rightarm or not rightleg or not humanoidrootpart then
+				if UTSR then
+					if  UTSR and Character:FindFirstChildOfClass("Weld") and UTSR:FindFirstChild("RLW") then
+						rightleg = UTSR:FindFirstChild("RLW")
+						leftleg = UTSR:FindFirstChild("LLW")
+						leftarm = UTSR:FindFirstChild("LAW")
+						rightarm = UTSR:FindFirstChild("RAW")
+						humanoidrootpart = UTSR:FindFirstChild("HumanoidRootPartWeld")
+					end
+				else
+					if  Character:FindFirstChild("Torso") and Character:FindFirstChildOfClass("Weld") then
+						rightleg = Character:FindFirstChild("Torso"):FindFirstChild("RLW")
+						leftleg = Character:FindFirstChild("Torso"):FindFirstChild("LLW")
+						leftarm = Character:FindFirstChild("Torso"):FindFirstChild("LAW")
+						rightarm = Character:FindFirstChild("Torso"):FindFirstChild("RAW")
+						humanoidrootpart = Character:FindFirstChild("Torso"):FindFirstChild("HumanoidRootPartWeld")
+					end
+				end
+			end]]
+			--coroutine.wrap(
+				--	function() sтŦu
+				if CrouchIdentifier and CrouchIdentifier:GetAttribute("SpecialPose") and CrouchIdentifier:GetAttribute("SpecialPose") ~= "Slide" then
+						local absvel = rootpart.CFrame:vectorToObjectSpace(RootVel)
+			local xzVelocity = Vector3.new(absvel.X, 0, absvel.Z)
+						local yvelo = absvel.Y
+			
+			task.desynchronize()			
+			if yvelo < -workspace.Gravity/20.0204082 * rootpart:GetMass() * 4 then
+				if not Done then	
+					Done = true
+					if UTSR then
+						for i,v in Character:GetChildren() do
+							task.desynchronize()	
+							if v.Name:match("Hand") and (v.Name:match("Right") or v.Name:match("Left")) and v:IsA("MeshPart") then
+								if not v:FindFirstChild("Falling_Trail") or (v:FindFirstChild("Falling_Trail") and not v:FindFirstChild("Falling_Trail"):IsA("Trail")) then
+									task.synchronize() if  v:FindFirstChild("Falling_Trail") then  v:FindFirstChild("Falling_Trail"):Destroy() end				
+									local At1: Attachment = FindFirstChildOfNameAndClass(v,'Wrist1','Attachment') or Instance.new("Attachment")
+									local At2: Attachment = FindFirstChildOfNameAndClass(v,'Grip1','Attachment') or  Instance.new("Attachment")
+									local Tr = FindFirstChildOfNameAndClass(v,"Falling_Trail","Trail") or Instance.new("Trail")
+									task.synchronize()
+									At1.Parent = v At2.Parent = v Tr.Parent = v			
+									Tr.Name = 	"Falling_Trail"			
+									if not At1.Name:match("Wrist1") and At1:IsA('Attachment') and not table.find({"RightWristRigAttachment" , "LeftWristRigAttachment"},At1.Name) then
+										At1.Name = "Wrist1"
+										At1.CFrame = CFrame.new(0, 0.124, 0)	
+									end
+									if not At2.Name:match("Grip1") and At2:IsA('Attachment') and not table.find({"RightGripAttachment" , "LeftGripAttachment"},At2.Name) then
+										At2.Name = "Grip1"
+										At2.CFrame = CFrame.new(0, -0.144, 0)	 * CFrame.Angles(math.rad(-90) , 0, 0)
+									end	
+									Tr.Attachment0 = 	At1 Tr.Attachment1 = At2 Tr.Color = ColorSequence.new(Color3.new(1,1,1)) Tr.Transparency = NumberSequence.new({
+										NumberSequenceKeypoint.new(0, 0.75),   -- Start with 0 transparency
+										NumberSequenceKeypoint.new(1, 1)    -- End with 1 transparency
+										}) Tr.Lifetime = 0.5
+										Tr.Brightness = 0.1
+								else
+									task.synchronize()					
+									v:FindFirstChild("Falling_Trail").Enabled = true
+								end			
+							end			
+						end
+									
+					else		
+						for i,v in Character:GetChildren() do
+							task.desynchronize()			
+							if v.Name:match("Arm") and v:IsA("Part") then
+								if not v:FindFirstChild("Falling_Trail") or not FindFirstChildOfNameAndClass(v,"Falling_Trail",'Trail') or (v:FindFirstChild("Falling_Trail") and not v:FindFirstChild("Falling_Trail"):IsA("Trail")) then
+									task.synchronize() if  v:FindFirstChild("Falling_Trail") then  v:FindFirstChild("Falling_Trail"):Destroy() end
+									local At1: Attachment = v:FindFirstChild("A") or v:FindFirstChild("Wrist") or  Instance.new("Attachment",v)
+									local At2: Attachment =  v:FindFirstChild("B") or v:FindFirstChild("Grip") or  Instance.new("Attachment",v)
+									local Tr = v:FindFirstChild("Falling_Trail") or Instance.new("Trail",v)
+									Tr.Name = 	"Falling_Trail"			
+									if At1.Name == "Attachment" then
+										At1.CFrame =  CFrame.new(0, -v.Size.Y / 2, 0)
+										At1.Name = 'A'
+									end
+									if At2.Name == "Attachment" then
+										At2.CFrame =  CFrame.new(0, (-v.Size.Y / 5) * 1.75, 0)
+										At2.Name = 'B'
+									end
+									if not At1.Name:match("Wrist") and not At1.Name:match("A") and not table.find({"RightWristRigAttachment" , "LeftWristRigAttachment"},At1.Name) then
+										At1.Name = "A"
+										At1.CFrame = CFrame.new(-0.5* Scale, -1* Scale, -0.25 * Scale)	
+									end
+									if not At1.Name:match("Grip") and not At1.Name:match("B") and table.find({"RightGripAttachment" , "LeftGripAttachment"},At2.Name) then
+										At2.Name = "B"
+										At2.CFrame = CFrame.new(0.5* Scale, -1* Scale, 0.25* Scale)
+									end	
+									Tr.Attachment0 = 	At1 Tr.Attachment1 = At2 Tr.Color = ColorSequence.new(Color3.new(1,1,1)) Tr.Transparency = NumberSequence.new({
+										NumberSequenceKeypoint.new(0, 0.75),   -- Start with 0 transparency
+										NumberSequenceKeypoint.new(1, 1)    -- End with 1 transparency
+									}) Tr.Lifetime = 0.5
+									Tr.Brightness = 0.1
+								else
+									task.synchronize()	
+									v:FindFirstChild("Falling_Trail").Enabled = true
+								end	
+							end
+						end
+					end
+					if cooldown == true then
+						cooldown = false
+						if AFI then coroutine.close(AFI) end			
+						AFI = coroutine.create(function()
+						task.synchronize()	
+						if not UTSR then
+							SHADOWCHAR(Character)				
+						end
+						task.wait(0.05)
+						cooldown = true	
+						end)				
+						if AFI then coroutine.resume(AFI) end
+					end	
+					local detectfloor = false
+					local thrRaycastParams = RaycastParams.new()
+					thrRaycastParams.IgnoreWater = true
+					task.synchronize()				
+					thrRaycastParams.FilterDescendantsInstances ={Character}
+					task.desynchronize()	
+					thrRaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+					if flew then coroutine.close(flew) end		
+					flew = coroutine.create(function()
+						while task.wait(.05) and Done and detectfloor == false do
+							if Character and HMD and (HMD.FloorMaterial ~= Enum.Material.Air or HMD:GetState() == Enum.HumanoidStateType.Swimming) then
+								task.synchronize()	
+								detectfloor = true			
+											if HMD and HMD:GetState() ~= Enum.HumanoidStateType.Swimming then
+									HMD:ChangeState(Enum.HumanoidStateType.Physics)
+									coroutine.resume(coroutine.create(function() task.wait(math.clamp(math.abs(yvelo)/10,0,20)) task.synchronize() if HMD then HMD.Jump = true end	 end))
+									break			
+								end
+							end
+							task.desynchronize()			
+							local CastedRay = workspace:Raycast(rootpart.Position + Vector3.new(0,-0.5,0),Vector3.new(0,-5,0),thrRaycastParams)
+							if CastedRay then
+								detectfloor = true
+								if CastedRay.Material ~= Enum.Material.Water then
+									if HMD then
+										task.synchronize()					
+										HMD:ChangeState(Enum.HumanoidStateType.Physics)
+										coroutine.resume(coroutine.create(function() task.wait(math.clamp(math.abs(yvelo)/10,0,20)) task.synchronize() if HMD then HMD.Jump = true end	 end))
+									end				
+								end				
+							end			
+						end				
+					end)
+					if flew then coroutine.resume(flew) end			
+				end
+							
+			else
+				if Done and HMD.FloorMaterial ~= Enum.Material.Air then
+					Done = false
+					for i,v in Character:GetChildren() do
+					task.desynchronize()	
+					
+						if (v.Name:match("Hand") or v.Name:match("Arm")) and (v.Name:match("Right") or v.Name:match("Left")) and (v:IsA("MeshPart") or v:IsA("Part")) then
+							for i,v2 in v:GetChildren() do
+								task.desynchronize()				
+								if v2.Name == "Falling_Trail" and v2:IsA("Trail") then
+									task.synchronize()	
+									v2.Enabled = false		
+								end
+							end				
+						end
+					end
+							
+				end	
+			end	
+				task.desynchronize()	
+				local state = (HMD and HMD:GetState()) or Enum.HumanoidStateType.None
+			--	--((state)
+				local HitPoints = HMD.Health or 0
+				local HitPointsPercentage = (HMD.Health/ HMD.MaxHealth) or 0
+				local ToBasedSpeedPercentage = (HMD.WalkSpeed/ 16) or 0			
+				if table.find({Enum.HumanoidStateType.Swimming , Enum.HumanoidStateType.Physics , Enum.HumanoidStateType.PlatformStanding , Enum.HumanoidStateType.Seated , Enum.HumanoidStateType.Ragdoll , Enum.HumanoidStateType.FallingDown , Enum.HumanoidStateType.GettingUp , Enum.HumanoidStateType.None , Enum.HumanoidStateType.Flying , Enum.HumanoidStateType.Dead , Enum.HumanoidStateType.StrafingNoPhysics},state) then
+					if lastset then lastset = false	
+					--HMD.HipHeight = 0
+							if CrouchIdentifier and CrouchIdentifier.Value ~= 'Nothing' then
+								task.synchronize()	CrouchIdentifier.Value = 'Nothing'
+							end 		
+					task.synchronize()			
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Climbing,false) 
+					--HMD:SetStateEnabled(Enum.HumanoidStateType.None,false)
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Landed,false)
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Freefall,false) end
+						else
+							if not lastset then lastset = true	
+					task.synchronize()
+					HMD.HipHeight = savedhip*Scale
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Climbing,true) 
+					--HMD:SetStateEnabled(Enum.HumanoidStateType.None,true)
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Landed,true)
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Jumping,true)
+					HMD:SetStateEnabled(Enum.HumanoidStateType.Freefall,true) end
+			end	
+			if state == Enum.HumanoidStateType.Climbing then
+				if ran ~= "Climbing" then
+					ran = "Climbing" lt =  0 or CT() --climbmoved = 0
+					--if climbroute then coroutine.close(climbroute) end
+					--climbroute = coroutine.create(function()
+					--	for i,v in pairs(Character:GetDescendants())  do
+					--		task.desynchronize()			
+					--		if v:IsA("Part") or v:IsA("MeshPart") and v.Name ~= "HumanoidRootPart" and v ~= RL and v ~= LL then
+					--			if v ~= RA and v ~= LA and v ~= RL and v ~= LL and v.Parent == Character then
+					--				task.synchronize()--v.CanCollide = true
+					--			else
+					--				task.synchronize()--v.CanCollide = false
+					--			end
+					--		end
+					--		if v.Name == "Animate" and v:IsA("LocalScript") then
+					--			task.synchronize()v.Enabled = false
+					--		end		
+					--	end	
+					--end)
+					--if climbroute and ran == 'Climbing' then coroutine.resume(climbroute) end			
+				end
+				task.desynchronize()
+							if Head and Head.Part1 and humanoidrootpart and humanoidrootpart.Part0 then
+								local whatifray = workspace:Blockcast(humanoidrootpart.Part0.CFrame.Rotation + Head.Part1.Position,humanoidrootpart.Part0.CFrame.LookVector * 1.5, Head.Part1.Size, footing )			
+								climbscanpos = 1.5
+								if whatifray then
+									climbscanpos = (whatifray and math.min(1.5, whatifray.Distance + 0.1))
+								end
+								local thereis = workspace:Blockcast(humanoidrootpart.Part0.CFrame.Rotation + Head.Part1.Position+humanoidrootpart.Part0.CFrame.LookVector * climbscanpos, Head.Part1.Size, -humanoidrootpart.Part0.CFrame.UpVector * 5, footing)
+								climbaspectrotation = (thereis and thereis.Distance) or 0
+
+							end	
+							local OffsetLeftLeg, OffsetRightLeg, OffsetLeftArm, OffsetRightArm = CFrame.new(),CFrame.new(),CFrame.new(),CFrame.new()
+							if humanoidrootpart and humanoidrootpart.Part0 then
+								local thepart: BasePart = humanoidrootpart.Part0
+								local rlf = workspace:Blockcast(rightleg.Part1.CFrame.Rotation + thepart.Position + thepart.CFrame.RightVector * thepart.Size.X/4 - thepart.CFrame.UpVector * thepart.Size.Y/2, rightleg.Part1.Size,humanoidrootpart.Part0.CFrame.LookVector * 2, footing )	
+								local llf = workspace:Blockcast(leftleg.Part1.CFrame.Rotation + thepart.Position - thepart.CFrame.RightVector * thepart.Size.X/4 - thepart.CFrame.UpVector * thepart.Size.Y/2, leftleg.Part1.Size,humanoidrootpart.Part0.CFrame.LookVector * 2, footing )	
+								local raf = workspace:Blockcast(rightarm.Part1.CFrame.Rotation + thepart.Position + thepart.CFrame.RightVector * thepart.Size.X/2 + thepart.CFrame.UpVector * thepart.Size.Y/4, rightarm.Part1.Size,humanoidrootpart.Part0.CFrame.LookVector * 2, footing )	
+								local laf = workspace:Blockcast(leftarm.Part1.CFrame.Rotation + thepart.Position - thepart.CFrame.RightVector * thepart.Size.X/2 + thepart.CFrame.UpVector * thepart.Size.Y/4, leftarm.Part1.Size,humanoidrootpart.Part0.CFrame.LookVector * 2, footing )	
+								local rlinward = workspace:Blockcast(rightleg.Part1.CFrame.Rotation + thepart.Position + (thepart.CFrame.LookVector * (rlf and math.min(2, rlf.Distance + .1) or 2)) + thepart.CFrame.RightVector * thepart.Size.X/4 - thepart.CFrame.UpVector * thepart.Size.Y/2, rightleg.Part1.Size,-thepart.CFrame.RightVector * thepart.Size.X/4, footing )	
+								local llinward = workspace:Blockcast(leftleg.Part1.CFrame.Rotation + thepart.Position + (thepart.CFrame.LookVector * (llf and math.min(2, llf.Distance + .1) or 2))  - thepart.CFrame.RightVector * thepart.Size.X/4 - thepart.CFrame.UpVector * thepart.Size.Y/2, leftleg.Part1.Size,thepart.CFrame.RightVector * thepart.Size.X/4, footing )	
+								local rainward = workspace:Blockcast(rightarm.Part1.CFrame.Rotation + thepart.Position + (thepart.CFrame.LookVector * (raf and math.min(2, raf.Distance + .1) or 2))  + thepart.CFrame.RightVector * thepart.Size.X/2 + thepart.CFrame.UpVector * thepart.Size.Y/4, rightarm.Part1.Size,-thepart.CFrame.RightVector * thepart.Size.X/2, footing )	
+								local lainward = workspace:Blockcast(leftarm.Part1.CFrame.Rotation + thepart.Position + (thepart.CFrame.LookVector * (laf and math.min(2, laf.Distance + .1) or 2))  - thepart.CFrame.RightVector * thepart.Size.X/2 + thepart.CFrame.UpVector * thepart.Size.Y/4, leftarm.Part1.Size,thepart.CFrame.RightVector * thepart.Size.X/2, footing )	
+								OffsetRightLeg = CFrame.new(rlinward and -rlinward.Distance or 0, 0, rlf and -rlf.Distance or rlinward and -1.5 or 0)
+								OffsetLeftLeg = CFrame.new(llinward and llinward.Distance or 0, 0, llf and -llf.Distance or llinward and -1.5 or 0)
+								OffsetRightArm = CFrame.new(rainward and -rainward.Distance or 0, 0, raf and -raf.Distance or rainward and -1.5 or  0)
+								OffsetLeftArm = CFrame.new(lainward and lainward.Distance or 0, 0, laf and -laf.Distance or lainward and -1.5 or  0)
+							end
+							if math.abs(COSDTA9_5) >= .95 then
+								if not hit then
+									hit = true
+									local parto = humanoidrootpart.Part0
+									local climbsfx =  FindFirstChildOfNameAndClass(parto, 'ClimbSFX', 'Sound')
+									if parto and not climbsfx then
+										task.synchronize()
+										local sound = Instance.new('Sound')
+										sound.Name = 'ClimbSFX'
+										sound.Parent = parto
+										climbsfx = sound
+										sound.SoundId = 'rbxasset://sounds//switch.wav'
+									end 
+									if climbsfx then
+										local ab = math.abs(yvelo)/16
+										local a,b =  ab,  ab/8
+										task.synchronize()
+										climbsfx.PlaybackSpeed = a
+										climbsfx.Volume = b
+										climbsfx:Play()
+									end
+								end
+							else
+								hit = false
+							end
+							
+				lrot = (yvelo >= 0 and math.rad(7.5 * math.clamp(yvelo/4,0, math.huge)  )or math.rad(7.5 * math.clamp(yvelo/4,-math.huge, -0.2))		)	--
+				rrot = (yvelo >= 0 and math.rad(-7.5 * math.clamp(yvelo/4,0, math.huge)  )or math.rad(-7.5 * math.clamp(yvelo/4,-math.huge, -0.2))		)	--+ ((yvelo >= 0 and math.rad(180)) or math.rad(180))
+				ry = 1.5 * Scale + math.cos(lt *(9.5 or  math.abs(yvelo/16))) * -1 *  yvelo/16
+				ly = 1.5 * Scale + math.cos(lt *(9.5 or math.abs(yvelo/16) )) * 1 * yvelo/16
+							targetrl = CFrame.new(0.5 * Scale, -1.5 * Scale + math.cos(lt *(9.5 or yvelo/16)) * -1 * yvelo/16, math.cos(lt *(9.5 or yvelo/16)) * yvelo/4 * 0.2 * Scale) * CFrame.Angles(math.cos(lt *(9.5 or yvelo/16)) * math.rad(-7.5 * yvelo/4), 0, 0)
+							targetll = CFrame.new(-0.5 * Scale, -1.5 * Scale + math.cos(lt *(9.5 or yvelo/16)) * 1 * yvelo/16, math.cos(lt *(9.5 or yvelo/16)) * yvelo/4 * -0.2 * Scale) * CFrame.Angles(math.cos(lt *(9.5 or yvelo/16)) * math.rad(7.5 * yvelo/4), 0, 0)
+							RL_ORIGINC0 = RL_ORIGINC0:Lerp(OffsetRightLeg * targetrl, Speed)
+							LL_ORIGINC0 = LL_ORIGINC0:Lerp(OffsetLeftLeg *targetll, Speed)		
+							TS_ORIGINC0 = TS_ORIGINC0:Lerp(CFrame.new(), Speed)									
+							rightlegC0 = rightleg.C0:Lerp(OffsetRightLeg * targetrl, Speed)
+							rightarmC0 = rightarm.C0:Lerp(OffsetRightArm * CFrame.new(1.5 * Scale,ry - climbaspectrotation/1.75,math.cos(lt *(9.5 or yvelo/16)) * yvelo/4 * 0.2 * Scale) * CFrame.Angles(math.clamp(math.cos(lt *(9.5 or yvelo/16)) * 3,0.2,3)  * rrot + ((yvelo >= 0 and math.rad(180)) or math.rad(270+180)) , 0, 0), Speed)
+							leftarmC0 = leftarm.C0:Lerp(OffsetLeftArm * CFrame.new(-1.5 * Scale,ly - climbaspectrotation/1.75,math.cos(lt *(9.5 or yvelo/16)) * yvelo/4 * -0.2 * Scale) * CFrame.Angles(math.clamp(math.cos(lt *(9.5 or yvelo/16)) * 3,-3,-0.2) * lrot + ((yvelo >= 0 and math.rad(180)) or math.rad(270+180))  , 0, 0), Speed)
+							leftlegC0 = leftleg.C0:Lerp(OffsetLeftLeg *targetll, Speed)
+							humanoidrootpartC0 = humanoidrootpart.C0:Lerp(CFrame.new(), Speed)					
+				task.synchronize()	
+				if CrouchIdentifier and CrouchIdentifier.Value ~= 'Nothing' then CrouchIdentifier.Value = 'Nothing' end
+							rightleg.C0 = rightlegC0
+							rightarm.C0 = rightarmC0
+							leftarm.C0 = leftarmC0
+							leftleg.C0 = leftlegC0
+							humanoidrootpart.C0 = humanoidrootpartC0			
+						else
+							task.desynchronize()
+				if (RootVel.x > 1 or RootVel.x < -1 or RootVel.z > 1 or RootVel.z < -1) and (state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.RunningNoPhysics or state == Enum.HumanoidStateType.Swimming) and state ~= Enum.HumanoidStateType.Climbing then		
+					curex = 0.4875
+					savedrleg = CFrame.Angles(math.rad(-50),0,0)
+					savedlleg = CFrame.Angles(math.rad(-50),0,0)
+					--if (RootVel.x > 20 or RootVel.x < -20 or RootVel.z > 20 or RootVel.z < -20) then
+					--local curcos = COSDTA9_5
+					local sindta9_5 = math.sin(DTA9_5)		
+					if CrouchIdentifier:GetAttribute("Running") and CrouchIdentifier:GetAttribute("Running") == true and ((Player and humanoid.MoveDirection.Magnitude > 0.5) or (not Player and XZMAG >= 16* (humanoid.Health/humanoid.MaxHealth))) and CrouchIdentifier.Value == "Nothing" and ThatGuyStamina > 0 then
+							if state == Enum.HumanoidStateType.Swimming then
+									if ran ~= "Swimming" then
+										ran = "Swimming" lt =  0 or CT()
+									end	
+									local Root local RL local RA local LA local LL
+									task.desynchronize() Root =CFrame.new(0, 0, 0)*CFrame.Angles(0+math.rad(absvel.Magnitude/ 100)*math.cos(DTA9_5), 0 ,0)	RL = CFrame.new((0.75 + math.cos(DTA9_5) * 0.3 )*Scale, (-sindta9_5*0.15-2)*Scale,0)*CFrame.Angles(math.rad(math.cos(-DTA9_5)* 10),math.rad(math.cos(-DTA9_5)* 15) , math.rad(math.cos(DTA9_5)* 45)) RA = CFrame.new(1.5 *Scale, (0.5+math.cos(-DTA9_5)) *Scale, (math.cos(DTA9_5))*Scale)*CFrame.Angles(math.rad(120 + math.cos(DTA9_5) *90), - math.rad(DTA9_5) ,0) LA = CFrame.new(-1.5 *Scale, (0.5+math.cos(DTA9_5))*Scale, (math.cos(-DTA9_5))*Scale)*CFrame.Angles(math.rad(120 + math.cos(DTA9_5) *90), - math.rad(DTA9_5) ,0) LL = CFrame.new((-0.75 - math.cos(DTA9_5) * 0.3) *Scale, (math.sin(-DTA9_5)*0.15-2)*Scale, 0 )*CFrame.Angles(math.rad(math.cos(DTA9_5)* -10),math.rad(math.cos(DTA9_5)* -15) ,math.rad(math.cos(-DTA9_5)* -45))
+									ThatGuyStamina = ThatGuyStamina - Delta * 1.5 --0.075 -- Extra Work To Get Underwater	'
+									RL_ORIGINC0 = RL_ORIGINC0:Lerp(RL,Speed)
+									LL_ORIGINC0 = LL_ORIGINC0:Lerp(LL,Speed)
+										TS_ORIGINC0 = TS_ORIGINC0:lerp(Root,Speed)
+										humanoidrootpartC0 = humanoidrootpart.C0:lerp(Root,Speed)
+										rightlegC0 = rightleg.C0:Lerp(RL,Speed)
+										rightarmC0 = rightarm.C0:Lerp(RA,Speed)
+										leftarmC0 = leftarm.C0:Lerp(LA,Speed)
+										leftlegC0 = leftleg.C0:Lerp(LL,Speed)	
+									task.synchronize()
+										humanoidrootpart.C0 = humanoidrootpartC0
+										rightleg.C0 = rightlegC0
+										rightarm.C0 = rightarmC0
+										leftarm.C0 = leftarmC0
+										leftleg.C0 = leftlegC0
+								else	
+									if ran ~= "Running" then
+									if ran ~= 'Walking' then lt =  0 or CT() end	ran = "Running" 
+									end
+									curex = 0.9125 -- 0.975
+										local Root local RL local RA local LA local LL
+										task.desynchronize()
+										local rootrot = CFrame.fromEulerAnglesXYZ(absvel.z/60,(sindta9_5*(XZMAG_16)/4.25),(sindta9_5*(XZMAG_16)/8.5)+(-absvel.x/60))
+										 Root = CFrame.new(0,(math.sin(ABSOLUTE_DTA*19)*(XZMAG_16)/12)*Scale,0) * rootrot
+										XScale = lasto and -Scale/2 or Scale  
+										RL = CFrame.new((0.5 + sindta9_5 * (lasto and -1 or 1) * 0.125)*Scale,(-1-COSDTA9_5*(XZMAG_16)/2.5)*Scale,(math.cos(DTA9_5 + (absvel.z/20))*(XZMAG_16)/1.5)*Scale) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*sindta9_5*boostanim,math.rad(50*(xzVelocity.Z/16)/4.25) -(sindta9_5*(XZMAG_16)/4.25),math.rad(-boostanim) - (-absvel.x/20)*COSDTA9_5*boostanim) * CFrame.fromEulerAnglesXYZ(math.rad(2),0,0) * CFrame.new(0,-1,0)  --* CFrame.Angles(0,math.rad(90) * -xzVelocity.X/16,0)
+										RA = CFrame.new((1.5-COSDTA9_5*(XZMAG_16)/5)*Scale,(0.25-COSDTA9_5*(XZMAG_16)/5)*XScale,(-math.cos(DTA9_5 + (absvel.z/30))*(XZMAG_16) /1.5)*XScale) * (lasto and (CFrame.Angles(1.5, 0, 0) * rootrot:Inverse()) or (CFrame.fromEulerAnglesXYZ((-absvel.z/15)*sindta9_5 + math.rad(30) *(XZMAG_24),math.rad(40)*sindta9_5 *(XZMAG_24),math.rad(-5) + (absvel.x/15)*sindta9_5) * CFrame.Angles(0,0,math.rad(-60) * sindta9_5 *(XZMAG_24)))) * CFrame.new(0,-0.5,0)
+										LL = CFrame.new((-0.5 + math.sin(-DTA9_5) * -0.125) *Scale,(-1+COSDTA9_5*(XZMAG_16)/2.5)*Scale,(-math.cos(DTA9_5 + (absvel.z/20))*(XZMAG_16) /1.5)*Scale) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*-sindta9_5*boostanim,math.rad(-50*(xzVelocity.Z/16)/4.25) - (sindta9_5*(XZMAG_16)/4.25),math.rad(boostanim) + (-absvel.x/20)*COSDTA9_5*boostanim) * CFrame.fromEulerAnglesXYZ(math.rad(-2),0,0) * CFrame.new(0,-1,0) --* CFrame.Angles(0,math.rad(90) * -xzVelocity.X/16,0)
+									LA = CFrame.new((-1.5-COSDTA9_5*(XZMAG_16)/5)*Scale,(0.25+COSDTA9_5*(XZMAG_16)/5)*Scale,(math.cos(DTA9_5 + (absvel.z/30))*(XZMAG_16) /1.5)*Scale) * CFrame.fromEulerAnglesXYZ((-absvel.z/15)*-sindta9_5 + math.rad(30) *(XZMAG_24), math.rad(40--[[50]])*sindta9_5 *(XZMAG_24),math.rad(5) + (-absvel.x/15)*sindta9_5) * CFrame.Angles(0,0,math.rad(-60) * sindta9_5 *(XZMAG_24)) * CFrame.new(0,-0.5,0)
+									savedrlegy,savedrlegx,savedrlegz = rightleg.C0:Lerp(RL,Speed):ToOrientation()
+									savedrleg = CFrame.Angles(savedrlegy,0,0)
+									savedllegy,savedllegx,savedllegz = leftleg.C0:Lerp(LL,Speed):ToOrientation()
+									savedlleg = CFrame.Angles(savedllegy,0,0)
+									RL_ORIGINC0 = RL_ORIGINC0:Lerp(RL,Speed)
+									LL_ORIGINC0 = LL_ORIGINC0:Lerp(LL,Speed)
+										TS_ORIGINC0 = TS_ORIGINC0:lerp(Root,Speed)
+										rightlegC0 = rightleg.C0:lerp(RL,Speed)
+										leftlegC0 = leftleg.C0:lerp(LL,Speed)
+										rightarmC0 = rightarm.C0:lerp(RA,Speed)
+										leftarmC0 = leftarm.C0:lerp(LA,Speed)
+										humanoidrootpartC0 = humanoidrootpart.C0:lerp(Root,Speed)	
+									task.synchronize()
+										rightleg.C0 = rightlegC0
+										leftleg.C0 = leftlegC0
+										rightarm.C0 = rightarmC0
+										leftarm.C0 = leftarmC0
+										humanoidrootpart.C0 = humanoidrootpartC0
+							end	
+							else
+								if ran ~= "Walking" then
+										if ran ~= 'Running' then lt =  0 or CT() end ran = "Walking"
+								end
+								local Root local RL local RA local LA local LL
+									task.desynchronize()
+									local RootRot =  CFrame.fromEulerAnglesXYZ(absvel.z/60,0,(sindta9_5/17)+(-absvel.x/60))
+									Root = CFrame.new(0,(math.sin(ABSOLUTE_DTA*19)/12)*Scale,0) * RootRot
+								RL = CFrame.new(0.5*Scale,(-1-COSDTA9_5*(XZMAG_16)/2.5)*Scale,(math.cos(DTA9_5 + (absvel.z/20))*(XZMAG_16)/1.5)*Scale) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*sindta9_5*boostanim,0,(-absvel.x/20)*sindta9_5*boostanim) * CFrame.fromEulerAnglesXYZ(math.rad(2),0,0) * CFrame.new(0,-1*Scale,0)
+								LL = CFrame.new(-0.5*Scale,(-1+COSDTA9_5*(XZMAG_16)/2.5)*Scale,(-math.cos(DTA9_5 + (absvel.z/20))*(XZMAG_16) /1.5)*Scale) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*-sindta9_5*boostanim,0,(-absvel.x/20)*-sindta9_5*boostanim) * CFrame.fromEulerAnglesXYZ(math.rad(-2),0,0) * CFrame.new(0,-1*Scale,0)
+									RA = CFrame.new(1.5*Scale,0.5*Scale,0) * (lasto and (CFrame.Angles(1.5, 0, 0) * RootRot:Inverse()) or CFrame.fromEulerAnglesXYZ((-absvel.z/15)*sindta9_5,0,math.rad(5) + (absvel.x/30)*sindta9_5)) * CFrame.new(0,-0.5,0)
+								LA = CFrame.new(-1.5*Scale,0.5*Scale,0) * CFrame.fromEulerAnglesXYZ((-absvel.z/15)*-sindta9_5,0,math.rad(-5) + (-absvel.x/30)*sindta9_5) * CFrame.new(0,-0.5,0)
+								savedrlegy,savedrlegx,savedrlegz = rightleg.C0:Lerp(RL,Speed):ToOrientation()
+								savedrleg = CFrame.Angles(savedrlegy,0,0)
+								savedllegy,savedllegx,savedllegz = leftleg.C0:Lerp(LL,Speed):ToOrientation()
+								savedlleg = CFrame.Angles(savedllegy,0,0)
+								RL_ORIGINC0 = RL_ORIGINC0:Lerp(RL,Speed)
+								LL_ORIGINC0 = LL_ORIGINC0:Lerp(LL,Speed)
+									TS_ORIGINC0 = TS_ORIGINC0:lerp(Root,Speed)
+									rightlegC0 = rightleg.C0:lerp(RL,Speed)
+									leftlegC0 = leftleg.C0:lerp(LL,Speed)
+									rightarmC0 = rightarm.C0:lerp(RA,Speed)
+									leftarmC0 = leftarm.C0:lerp(LA,Speed)
+									humanoidrootpartC0 = humanoidrootpart.C0:lerp(Root,Speed)
+								task.synchronize()
+									rightleg.C0 = rightlegC0
+									leftleg.C0 = leftlegC0
+									rightarm.C0 = rightarmC0
+									leftarm.C0 = leftarmC0
+									humanoidrootpart.C0 = humanoidrootpartC0
+					end
+					
+					--elseif (RootVel.x < 20 or RootVel.x > -20 or RootVel.z < 20 or RootVel.z > -20) then
+					--	rightleg.C0 = rightleg.C0:lerp(CFrame.new(0.5,-1-COSDTA9_5*(XZMAG_16)/2.5,math.cos(DTA9_5 + (absvel.z/20))*(XZMAG_16)/1.5) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*sindta9_5*boostanim,0,(-absvel.x/20)*sindta9_5*boostanim) * CFrame.fromEulerAnglesXYZ(math.rad(2),0,0) * CFrame.new(0,-1,0),Speed)
+					--	leftleg.C0 = leftleg.C0:lerp(CFrame.new(-0.5,-1+COSDTA9_5*(XZMAG_16)/2.5,-math.cos(DTA9_5 + (absvel.z/20))*(XZMAG_16) /1.5) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*-sindta9_5*boostanim,0,(-absvel.x/20)*-sindta9_5*boostanim) * CFrame.fromEulerAnglesXYZ(math.rad(-2),0,0) * CFrame.new(0,-1,0),Speed)
+					--	rightarm.C0 = rightarm.C0:lerp(CFrame.new(1.5,0.5,0) * CFrame.fromEulerAnglesXYZ((-absvel.z/15)*sindta9_5,0,math.rad(5) + (absvel.x/30)*sindta9_5) * CFrame.new(0,-0.5,0),Speed)
+					--	leftarm.C0 = leftarm.C0:lerp(CFrame.new(-1.5,0.5,0) * CFrame.fromEulerAnglesXYZ((-absvel.z/15)*-sindta9_5,0,math.rad(-5) + (-absvel.x/30)*sindta9_5) * CFrame.new(0,-0.5,0),Speed)
+					--	humanoidrootpart.C0 = humanoidrootpart.C0:lerp(CFrame.new(0,math.sin(ABSOLUTE_DTA*19)/12,0) * CFrame.fromEulerAnglesXYZ(absvel.z/60,0,(sindta9_5/17)+(-absvel.x/60)),Speed)
+					--end
+					task.desynchronize()
+					if 	FindFirstChildOfNameAndClass(Character,"UpperTorso","BasePart") then
+						if curex > 5 then
+							curex = curex * 2.2
+						else
+							curex = curex * 1.8
+						end
+					end
+					if curex then
+						curex = curex * 1.5 --[[1.275	]]--
+					end
+					local cursin = sindta9_5 or math.sin(DTA9_5)		
+					if cursin > (1 - SteppingSwitchingPeriod) then
+						if CurSteppingLeg ~= "Right" then
+							CurSteppingLeg = "Right"
+							--pcall(function()
+								task.desynchronize()
+								local ScanLength: number = (FindFirstChildOfNameAndClass(Character,"UpperTorso","BasePart") and (FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart") and FindFirstChildOfNameAndClass(Character,"RightLowerLeg","BasePart") and FindFirstChildOfNameAndClass(Character,"RightLowerLeg","RightFoot") and ((FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart").Position + (FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart").Size.Y/2)) - (FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart").Position + (-FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart").Size.Y/2))).Magnitude) or 2) or (FindFirstChildOfNameAndClass(Character,"Right Leg","BasePart") and FindFirstChildOfNameAndClass(Character,"Right Leg","BasePart").Size.Y) or 2
+								local leg: BasePart = ((FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart") and FindFirstChildOfNameAndClass(Character,"RightLowerLeg","BasePart") and FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart")) or FindFirstChildOfNameAndClass(Character,"Right Leg","BasePart"))
+										local StepMatScan = leg and (workspace:Raycast(leg.Position + (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)),-leg.CFrame.UpVector * (ScanLength+ curex + 0.05), footing) or workspace:Blockcast(leg.CFrame + (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)),Vector3.new(leg.Size.X,0,leg.Size.Z),-leg.CFrame.UpVector * (ScanLength+ curex + 0.05), footing) or workspace:Raycast(leg.Position - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)),-Vector3.new(0,0.05,0), footing) or workspace:Raycast(leg.Position - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,-leg.Size.Z /2,0)),leg.CFrame.LookVector * (leg.Size.Z) * 2, footing) or workspace:Raycast(leg.Position - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,leg.Size.Z /2,0)),-leg.CFrame.LookVector * (leg.Size.Z), footing))
+								if Thing and leg and RLVisual then
+								--	task.synchronize()
+								--	RLVisual:Raycast(leg.Position + (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y/2,0)) ,-leg.CFrame.UpVector * (ScanLength+ 0.35), footing)	
+								end	
+								if StepMatScan then
+									if Character and Character:FindFirstChild("HumanoidRootPart") and not Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash1') then
+										task.synchronize()
+										local sound = Instance.new('Sound',Character:FindFirstChild("HumanoidRootPart"))	
+										sound.Name = 'Splash1'
+										sound.Volume = .5
+										sound.SoundId = 'rbxasset://sounds//switch.wav'
+										Instance.new('ReverbSoundEffect',sound).WetLevel = 0.05
+										Instance.new('EchoSoundEffect',sound).WetLevel = 0.1
+										Instance.new('CompressorSoundEffect',sound).Release = 0.7
+									end	
+									if footstep_module and Character.Name ~= "melon5926" then
+										local tc = (StepMatScan.Instance and StepMatScan.Instance:IsA("BasePart") and StepMatScan.Instance.Color) or workspace:FindFirstChildOfClass("Terrain"):GetMaterialColor(StepMatScan.Material)
+										local tp = (StepMatScan.Instance and StepMatScan.Instance:IsA("BasePart") and StepMatScan.Instance.Transparency) or 0
+										tp = math.clamp(tp + (1 - (XZMAG_16)),0,1)
+										local tpt = ((1 - tp) * 4 )* (XZMAG_16)
+										local mt = (StepMatScan and Materials[StepMatScan.Material] and StepMatScan.Material) or leg.Material or Enum.Material.SmoothPlastic
+										local rx, ry, rz =  leg.CFrame:ToOrientation()
+										local orientation = Vector3.new(math.deg(rx), math.deg(ry),math.deg(rz))
+										local pcf = (CFrame.new(StepMatScan.Position , (StepMatScan.Position + StepMatScan.Normal--[[ + leg.CFrame.LookVector * Vector3.new(1,-1,1) ]])) * CFrame.Angles(0,0,ry):Inverse()) or (CFrame.new(leg.Position  , (leg.Position + StepMatScan.Normal --[[ + leg.CFrame.LookVector * Vector3.new(1,-1,1) ]])) * CFrame.Angles(0,0,ry):Inverse()) -- * savedlleg 
+										local lpcf = pcf + Vector3.new(0,-0.05,0)
+										task.synchronize()
+										local att = Instance.new('Attachment')
+										att.Parent = workspace:FindFirstChildOfClass("Terrain")
+										att.Position = StepMatScan.Position
+										local att2 = Instance.new('Part')
+										att2.Parent = workspace
+										--att2.CFrame = CFrame.new()
+										--local x, y, z, R00, R01, R02, R10, R11, R12, R20, R21, R22 =  leg.CFrame:GetComponents()
+										----((R00..','..R01..','..R02..','..R10..','..R11..','..R12..','..R20..','..R21..','..R22)
+										--local orientation = Vector3.new(math.deg(rx), math.deg(ry),math.deg(rz))
+										----((orientation.X..orientation.Y..orientation.Z)
+										att2.Size = Vector3.new(1.25* (XZMAG_16),1.25* (XZMAG_16),0.1)
+										att2.CFrame = pcf
+										att2.Anchored = true
+										att2.Color = Color3.new(0,0,0)
+										att2.Material = mt
+										att2.Anchored = true
+										att2.CanCollide = false
+										att2.CanTouch = false
+										att2.CanQuery = false
+										EasyTween(att2,'Color',tc, tpt, "Sine", "Out"):Play()
+										att2.Transparency = tp
+										EasyTween(att2,'Transparency',1, tpt, "Sine", "Out"):Play()
+										EasyTween(att2,'CFrame', lpcf, tpt, "Sine", "Out"):Play()
+										EasyTween(att2,'Size', Vector3.new(0.1,0.1,0.1), tpt, "Sine", "Out"):Play()
+										Debris:AddItem(att2,tpt)	
+										Debris:AddItem(att,tpt)	
+										local sound = Instance.new('Sound')	
+										sound.SoundId = (task.synchronize() or true) and footstep_module:GetRandomSound(footstep_module:GetTableFromMaterial(StepMatScan.Material)) or 'rbxasset://sounds//switch.wav'
+										sound.PlaybackSpeed = math.random(950,1050) * (XZMAG_16) /1000
+										sound.Volume = 0.15 * (XZMAG_16)	
+										sound.Parent = att or leg
+										sound:Play()	
+									end
+									if not footstep_module or Character.Name == "melon5926" then
+											if Character and Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash1') then
+													task.synchronize()
+													Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash1').Volume = (XZMAG_24)/4
+											Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash1').PlaybackSpeed = math.random(900,1100) * (XZMAG/48) /1000
+													Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash1'):Play()
+													if soundsplash then coroutine.close(soundsplash) end
+											soundsplash = coroutine.create(function()
+												task.wait(1)
+												if Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash1').TimeLength == 0 then
+													Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash1').SoundId = 'rbxasset://sounds//switch.wav'
+												end
+											end)
+													if soundsplash then coroutine.resume(soundsplash) end 
+										end	
+									end
+									if humanoid and humanoid.PlatformStand == false and humanoid.FloorMaterial ~= Enum.Material.Air  and humanoid:GetState() == Enum.HumanoidStateType.Running and CrouchIdentifier and CrouchIdentifier.Value == 'Nothing' then
+										LastStandingCFrame = Character:GetPivot()	
+										----(('change')
+									end
+									----(("Right Hit:" .. tostring(StepMatScan.Material) )	
+								end			
+							--end)
+							task.synchronize()
+							----(("Right")
+						end
+					elseif cursin < (-1 + SteppingSwitchingPeriod) then
+						if CurSteppingLeg ~= "Left" then
+								CurSteppingLeg = "Left"
+								--pcall(function()
+									task.desynchronize()
+									local ScanLength: number = (FindFirstChildOfNameAndClass(Character, "UpperTorso", "BasePart") and (FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftLowerLeg", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftLowerLeg", "LeftFoot") and ((FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart").Position + (FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart").Size.Y / 2)) - (FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart").Position + (-FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart").Size.Y / 2))).Magnitude) or 2) or (FindFirstChildOfNameAndClass(Character, "Left Leg", "BasePart") and FindFirstChildOfNameAndClass(Character, "Left Leg", "BasePart").Size.Y) or 2
+									local leg: BasePart = ((FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftLowerLeg", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart")) or FindFirstChildOfNameAndClass(Character, "Left Leg", "BasePart"))
+										local StepMatScan = leg and (workspace:Raycast(leg.Position + (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)),-leg.CFrame.UpVector * (ScanLength+ curex + 0.05), footing) or workspace:Blockcast(leg.CFrame + (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)), Vector3.new(leg.Size.X,0,leg.Size.Z),-leg.CFrame.UpVector * (ScanLength+ curex + 0.05), footing) or workspace:Raycast(leg.Position - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)),-Vector3.new(0,0.05,0), footing) or workspace:Raycast(leg.Position - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,-leg.Size.Z /2,0)),leg.CFrame.LookVector * (leg.Size.Z) * 2, footing) or workspace:Raycast(leg.Position - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,leg.Size.Z /2,0)),-leg.CFrame.LookVector * (leg.Size.Z), footing))
+									if Thing and leg and LLVisual then
+									--	task.synchronize()
+									--	LLVisual:Raycast(leg.Position + (leg.CFrame.UpVector * Vector3.new(0, leg.Size.Y / 2, 0)), -leg.CFrame.UpVector * (ScanLength + 0.35), footing)
+									end
+									if StepMatScan then
+										if Character and Character:FindFirstChild("HumanoidRootPart") and not Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash2') then
+											task.synchronize()
+											local sound = Instance.new('Sound',Character:FindFirstChild("HumanoidRootPart"))	
+											sound.Name = 'Splash2'
+											sound.Volume = .5
+												sound.SoundId = 'rbxasset://sounds//switch.wav'
+											Instance.new('ReverbSoundEffect',sound).WetLevel = 0.05
+											Instance.new('EchoSoundEffect',sound).WetLevel = 0.1
+											Instance.new('CompressorSoundEffect',sound).Release = 0.7
+										end
+										if footstep_module and Character.Name ~= "melon5926" then
+											local tc = (StepMatScan.Instance and StepMatScan.Instance:IsA("BasePart") and StepMatScan.Instance.Color) or workspace:FindFirstChildOfClass("Terrain"):GetMaterialColor(StepMatScan.Material)
+											local tp = (StepMatScan.Instance and StepMatScan.Instance:IsA("BasePart") and StepMatScan.Instance.Transparency) or 0
+											tp = math.clamp(tp + (1 - (XZMAG_16)),0,1)
+											local tpt = ((1 - tp) * 4 )* (XZMAG_16)
+											local mt = (StepMatScan and Materials[StepMatScan.Material] and StepMatScan.Material) or leg.Material or Enum.Material.SmoothPlastic
+											local rx, ry, rz =  leg.CFrame:ToOrientation()
+											local orientation = Vector3.new(math.deg(rx), math.deg(ry),math.deg(rz))
+											local pcf = (CFrame.new(StepMatScan.Position , (StepMatScan.Position + StepMatScan.Normal--[[ + leg.CFrame.LookVector * Vector3.new(1,-1,1) ]])) * CFrame.Angles(0,0,ry):Inverse()) or (CFrame.new(leg.Position  , (leg.Position + StepMatScan.Normal --[[ + leg.CFrame.LookVector * Vector3.new(1,-1,1) ]])) * CFrame.Angles(0,0,ry):Inverse()) -- * savedlleg 
+											local lpcf = pcf + Vector3.new(0,-0.05,0)
+											task.synchronize()
+											local att = Instance.new('Attachment')
+											att.Parent = workspace:FindFirstChildOfClass("Terrain")
+											att.Position = StepMatScan.Position
+											local att2 = Instance.new('Part')
+											att2.Parent = workspace
+											--att2.CFrame = CFrame.new()
+											--local x, y, z, R00, R01, R02, R10, R11, R12, R20, R21, R22 =  leg.CFrame:GetComponents()
+											----((R00..','..R01..','..R02..','..R10..','..R11..','..R12..','..R20..','..R21..','..R22)
+											--local orientation = Vector3.new(math.deg(rx), math.deg(ry),math.deg(rz))
+											----((orientation.X..orientation.Y..orientation.Z)
+											att2.Size = Vector3.new(1.25* (XZMAG_16),1.25* (XZMAG_16),0.1)
+											att2.CFrame = pcf
+											att2.Anchored = true
+											att2.Color = Color3.new(0,0,0)
+											att2.Material = mt
+											att2.Anchored = true
+											att2.CanCollide = false
+											att2.CanTouch = false
+											att2.CanQuery = false
+											EasyTween(att2,'Color',tc, tpt, "Sine", "Out"):Play()
+											att2.Transparency = tp
+											EasyTween(att2,'Transparency',1, tpt, "Sine", "Out"):Play()
+											EasyTween(att2,'CFrame', lpcf, tpt, "Sine", "Out"):Play()
+											EasyTween(att2,'Size', Vector3.new(0.1,0.1,0.1), tpt, "Sine", "Out"):Play()
+											Debris:AddItem(att2,tpt)
+											Debris:AddItem(att,tpt)	
+											local sound = Instance.new('Sound')	
+												sound.SoundId = (task.synchronize() or true) and footstep_module:GetRandomSound(footstep_module:GetTableFromMaterial(StepMatScan.Material)) or 'rbxasset://sounds//switch.wav'
+											sound.PlaybackSpeed = math.random(950,1050) * (XZMAG_16) /1000
+											sound.Volume = 0.35 * (XZMAG_16)
+											sound.Parent = att or leg
+											sound:Play()
+										end
+										if not footstep_module or Character.Name == "melon5926" then
+											if Character and Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash2') then
+													task.synchronize()
+													Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash2').Volume = (XZMAG_24)/4
+												Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash2').PlaybackSpeed = math.random(900,1100) * (XZMAG/48) /1000
+												Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash2'):Play()
+													if soundswitch then coroutine.close(soundswitch) end
+												soundswitch =	coroutine.create(function()
+													task.wait(1)
+													if Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash2').TimeLength == 0 then
+														Character:FindFirstChild("HumanoidRootPart"):FindFirstChild('Splash2').SoundId = 'rbxasset://sounds//switch.wav'
+													end
+													end)
+													if soundswitch then coroutine.resume(soundswitch) end
+											end
+										end
+										task.desynchronize()
+										if humanoid and humanoid.PlatformStand == false and humanoid.FloorMaterial ~= Enum.Material.Air  and humanoid:GetState() == Enum.HumanoidStateType.Running and CrouchIdentifier and CrouchIdentifier.Value == 'Nothing' then
+											LastStandingCFrame = Character:GetPivot()	
+											----(('change')
+										end
+										----(("Left Hit:" .. tostring(StepMatScan.Material))	
+									end	
+								--end)
+							--	--(("Left")
+						end		
+					end	
+					task.synchronize()
+			else
+				CurSteppingLeg = "nil"
+				if  state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.RunningNoPhysics then
+					if CrouchIdentifier and CrouchIdentifier.Value == "Nothing" then
+						for i,v in pairs(Character:GetDescendants())  do
+							task.desynchronize()			
+							if v:IsA("Part") or v:IsA("MeshPart") and v.Name ~= "HumanoidRootPart" and v ~= RL and v ~= LL then
+								if v ~= RL and v ~= LL then
+						--			v.CanCollide = true
+								else
+						--			v.CanCollide = false
+								end
+							end
+							if v.Name == "Animate" and v:IsA("LocalScript") then
+								task.synchronize()v.Enabled = false
+							end		
+						end			
+				end			
+				LastStandingTime = lt
+				task.synchronize()
+				if 	state ~= Enum.HumanoidStateType.Climbing then
+					local Root local RL local RA local LA local LL
+					task.desynchronize()
+					local DTA_4 = ABSOLUTE_DTA*4 local cosofct = math.cos(lt)	local sinofct = math.sin(lt)	
+					if ran ~= "Idle" then
+						ran = "Idle" lt =  0 or CT() 
+					end
+					Root = 	 CFrame.Angles(math.rad(-1-math.cos(DTA_4)),0,0)
+					LA = CFrame.new(-1.5*Scale,0.5*Scale,0) * CFrame.Angles(0,0,math.rad(-5)+cosofct/20) * CFrame.new(0,-0.5 *Scale,0)
+					RA	= lasto and CFrame.new(1.5*Scale,0.2*Scale,-0.25*Scale) * CFrame.Angles(-math.rad(-1-math.cos(DTA_4) -90),0,0) or CFrame.new(1.5*Scale,0.5*Scale,0) * CFrame.Angles(0,0,math.rad(5)-cosofct/20) * CFrame.new(0,-0.5 *Scale,0)
+					LL = CFrame.new(-0.5*Scale,(-1-sinofct/20)*Scale,0) * CFrame.Angles(-math.rad(-1-math.cos(DTA_4)*2),0,math.rad(-3)-sinofct/30) * CFrame.new(0,-1*Scale,0)
+					RL = CFrame.new(0.5*Scale,(-1-sinofct/20)*Scale,0) * CFrame.Angles(-math.rad(-1-math.cos(DTA_4)*2),0,math.rad(3)-sinofct/30) * CFrame.new(0,-1*Scale,0)			
+					RL_ORIGINC0 = RL_ORIGINC0:Lerp(RL,Speed)
+					LL_ORIGINC0 = LL_ORIGINC0:Lerp(LL,Speed)	
+										TS_ORIGINC0 = TS_ORIGINC0:Lerp(Root,Speed)
+										humanoidrootpartC0 = humanoidrootpart.C0:lerp(Root,Speed)		
+										leftarmC0 = leftarm.C0:lerp(LA,Speed)
+										rightarmC0 = rightarm.C0:lerp(RA,Speed)
+										leftlegC0 = leftleg.C0:lerp(LL,Speed)
+										rightlegC0 = rightleg.C0:lerp(RL,Speed)
+					task.synchronize()
+										humanoidrootpart.C0 = humanoidrootpartC0
+										leftarm.C0 = leftarmC0
+										rightarm.C0 = rightarmC0
+										leftleg.C0 = leftlegC0
+										rightleg.C0 = rightlegC0			
+				end	
+				elseif state == Enum.HumanoidStateType.Freefall then
+				if ran ~= "Falling" then
+					if Character:GetAttribute('Jumping') == nil and NowJump then	if ran == 'Jumping' or ran == 'Idle'  or ran == 'Running'  or ran == 'Walking' or ran == 'Falling' or yvelo > 1 or humanoid.Jump == true or humanoid.MoveDirection.Y > 0 then ThatGuyStamina = math.clamp(ThatGuyStamina - (((ran == 'Running' or ran == 'Walking') and 30) or 45),0,100) end end
+					ran = "Falling" lt =  0 or CT()
+					
+					if CrouchIdentifier and CrouchIdentifier.Value == "Nothing" then
+						Register_Land = true
+						for i,v in pairs(Character:GetDescendants())  do
+							task.desynchronize()
+							if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+								task.synchronize()--v.CanCollide = true
+							end
+							if v.Name == "Animate" and v:IsA("LocalScript") then
+								task.synchronize()
+								v.Enabled = false
+							end		
+						end
+					end
+				end	
+				task.synchronize()				
+				if yvelo > -workspace.Gravity/20.0204082 * rootpart:GetMass() * 4 then
+					local rightlegframe local leftlegframe task.desynchronize() rightlegframe = 	CFrame.new(0.5,1-math.cos(ABSOLUTE_DTA*9 --[[+ (absvel.z/20)]])/10,math.cos(ABSOLUTE_DTA*9 + (absvel.z/20))/10) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*math.sin(ABSOLUTE_DTA*9)/2.5,0,(-absvel.x/20)*math.sin(ABSOLUTE_DTA*9)/2.5) * CFrame.fromEulerAnglesXYZ(math.rad(2),0,0) * CFrame.new(0,RightLegDis,-ranting1/5 + RightLegDis / ran2)  leftlegframe = CFrame.new(-0.5,1-math.cos(ABSOLUTE_DTA*9 --[[- (absvel.z/20)]])/10,math.cos(ABSOLUTE_DTA*9 + (absvel.z/20))/10) * CFrame.fromEulerAnglesXYZ((absvel.z/20)*math.sin(ABSOLUTE_DTA*9)/2.5,0,(-absvel.x/20)*math.sin(ABSOLUTE_DTA*9)/2.5) * CFrame.fromEulerAnglesXYZ(math.rad(2),0,0) * CFrame.new(0,LeftLegDis,-ranting2/5 + LeftLegDis / ran1) local trfr1 =  CFrame.fromEulerAnglesXYZ(absvel.z/60,0,(math.sin(DTA9_5)/17)+(-absvel.x/60)) 
+					RL_ORIGINC0 = RL_ORIGINC0:Lerp(rightlegframe,Speed)
+					LL_ORIGINC0 = LL_ORIGINC0:Lerp(leftlegframe,Speed)	
+										TS_ORIGINC0 = TS_ORIGINC0:lerp(trfr1,Speed)
+										rightlegC0 = rightleg.C0:lerp(rightlegframe,Speed)
+										leftlegC0 = leftleg.C0:lerp(leftlegframe,Speed)
+										humanoidrootpartC0 = humanoidrootpart.C0:lerp(trfr1,Speed)
+					task.synchronize()			
+										rightleg.C0 = rightlegC0
+										leftleg.C0 = leftlegC0
+										humanoidrootpart.C0 = humanoidrootpartC0
+										task.desynchronize()
+										if CrouchIdentifier:GetAttribute("Running") and CrouchIdentifier:GetAttribute("Running") == true and ((Player and humanoid.MoveDirection.Magnitude > 0.5) or (not Player and XZMAG >= 16* (humanoid.Health/humanoid.MaxHealth))) and CrouchIdentifier.Value == "Nothing" and ThatGuyStamina > 0 then
+											local raf local laf 	raf = 	CFrame.new((math.clamp(1.5-math.cos(-DTA9_5 --[[- (absvel.z/20)]])*(XZMAG_16)/5 ,-2.5,2.5))*Scale,(math.clamp(0.25-math.cos(-DTA9_5 --[[- (absvel.z/20)]])*(XZMAG_16)/5,-2.5,2.5))*Scale,(math.clamp(-math.cos(-DTA9_5 + (absvel.z/30))*(XZMAG_16) /1.5,-2.5,2.5))*Scale) * CFrame.fromEulerAnglesXYZ((-absvel.z/15)*math.sin(-DTA9_5) + math.rad(30) *(XZMAG_24),math.rad(50)*math.sin(-DTA9_5) *(XZMAG_24),math.rad(5) + (absvel.x/15)*math.sin(-DTA9_5)) * CFrame.Angles(0,0,math.rad(-60) * math.sin(-DTA9_5) *(XZMAG_24)) * CFrame.new(0,-0.5,0) laf = CFrame.new((math.clamp(-1.5+math.cos(-DTA9_5 --[[- (absvel.z/20)]])*(XZMAG_16)/5,-2.5,2.5))*Scale ,(math.clamp(0.25-math.cos(-DTA9_5 --[[- (absvel.z/20)]])*(XZMAG_16)/5, -2.5 , 2.5))*Scale,(math.clamp(-math.cos(-DTA9_5 + (absvel.z/30))*(XZMAG_16) /1.5,-2.5,2.5))*Scale) * CFrame.fromEulerAnglesXYZ((-absvel.z/15)*-math.sin(DTA9_5) + math.rad(30) *(XZMAG_24),math.rad(50)*math.sin(DTA9_5) *(XZMAG_24),math.rad(-5) + (-absvel.x/15)*math.sin(DTA9_5)) * CFrame.Angles(0,0,math.rad(-60) * math.sin(DTA9_5) *(XZMAG_24)) * CFrame.new(0,-0.5,0) 
+											rightarmC0 = rightarm.C0:lerp(raf,Speed)
+											leftarmC0 = leftarm.C0:lerp(laf,Speed)			
+											task.synchronize()
+											rightarm.C0 = rightarmC0
+											leftarm.C0 = leftarmC0	
+					else
+											local raf local laf	raf = CFrame.new((math.clamp(1.6 - 0.025*XZMAG,-2.5,2.5))*Scale,(math.clamp(0.2 + 0.005 *yvelo, -0.4 , 0.7 ))*Scale  , (math.clamp(-0.01 *XZMAG,-2.5,2.5))*Scale) * CFrame.Angles(math.rad(75 +220 + 10*XZMAG),math.clamp(-0.005 *yvelo, -0.2,0.8) ,math.rad(32-2*XZMAG) )  laf = CFrame.new((math.clamp(-1.6 + 0.025*XZMAG,-2.5,2.5))*Scale,(math.clamp(0.2 + 0.0025 *yvelo, - 0.4 , 0.7 ))*Scale ,(math.clamp( -0.01 *XZMAG,-2.5,2.5))*Scale) * CFrame.Angles(math.rad(75 +220 + 10*XZMAG), math.clamp(0.0025 *yvelo, -0.2,0.8 ),math.rad(-32+2*XZMAG) ) 
+											rightarmC0 = rightarm.C0:lerp(raf,Speed)
+											leftarmC0 = leftarm.C0:lerp(laf,Speed)			
+											task.synchronize()
+											rightarm.C0 = rightarmC0
+											leftarm.C0 = leftarmC0	
+					end	
+				else
+										local humf task.desynchronize()	humf = CFrame.new(0, 0, 0)*CFrame.Angles(-90+math.rad(absvel.Magnitude/ 100)*math.cos(DTA9_5), 0 ,0) * CFrame.Angles(math.rad(absvel.X)  , 0, math.rad(absvel.Z)) TS_ORIGINC0 = TS_ORIGINC0:lerp(humf,Speed) 
+										humanoidrootpartC0 = humanoidrootpart.C0:lerp( humf,Speed)
+										task.synchronize()
+										humanoidrootpart.C0 = humanoidrootpartC0
+					--rightleg.C0 = rightleg.C0:Lerp(CFrame.new(1 + math.sin(DTA9_5) * 0.5, -math.sin(DTA9_5)*0.5-2,0)*CFrame.Angles(math.rad(math.cos(-DTA9_5)* 10),math.rad(math.cos(-DTA9_5)* 45) , math.rad(math.cos(DTA9_5)* 45)),Speed)
+					--rightarm.C0 = rightarm.C0:Lerp(CFrame.new(1.5, 0.5+math.cos(-DTA9_5), math.cos(DTA9_5))*CFrame.Angles(math.rad(180 + math.cos(DTA9_5) *45), - math.rad(DTA9_5) ,0),Speed)
+					--leftarm.C0 = leftarm.C0:Lerp(CFrame.new(-1.5, 0.5+math.cos(DTA9_5), math.cos(-DTA9_5))*CFrame.Angles(math.rad(180 + math.cos(DTA9_5) *45), - math.rad(DTA9_5) ,0),Speed)
+					--leftleg.C0 = leftleg.C0:Lerp(CFrame.new(-1 - math.sin(DTA9_5) * 0.5, math.sin(-DTA9_5)*0.5-2, 0 )*CFrame.Angles(math.rad(math.cos(DTA9_5)* -10),math.rad(math.cos(DTA9_5)* -45) ,math.rad(math.cos(-DTA9_5)* -45)),Speed)
+					--	humanoidrootpart.C0 = humanoidrootpart.C0:lerp(CFrame.new(0, 0, 0)*CFrame.Angles(90+math.rad(absvel.Magnitude/ 50), 0 + math.cos(DTA9_5) * math.rad(absvel.Magnitude/ 100) ,0),Speed)
+				end
+			elseif state == Enum.HumanoidStateType.Flying or state == Enum.HumanoidStateType.PlatformStanding then
+					if ran ~= "Flying" then
+						ran = "Flying" lt =  0 or CT()
+					end
+									task.desynchronize()
+									targetrl = CFrame.new(0.5 * Scale, -2 * Scale, 0)
+									targetll = CFrame.new(-0.5 * Scale, -2 * Scale, 0)
+									RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+									LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)	
+					TS_ORIGINC0 = Lerp(TS_ORIGINC0, CFrame.new(), Speed)
+									rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+					rightarmC0 = Lerp(rightarm.C0, CFrame.new(2 * Scale, 0.5 * Scale, 0) * CFrame.Angles(math.rad(90), 0, math.rad(90)), Speed)
+					leftarmC0 = Lerp(leftarm.C0, CFrame.new(-2 * Scale, 0.5 * Scale, 0) * CFrame.Angles(math.rad(90), 0, math.rad(-90)), Speed)
+		leftlegC0 = Lerp(leftleg.C0, targetll, Speed)
+					humanoidrootpartC0 = Lerp(humanoidrootpart.C0, CFrame.new(), Speed)
+					task.synchronize()
+									rightleg.C0 = rightlegC0
+									rightarm.C0 =  rightarmC0
+									leftarm.C0 = leftarmC0 
+									leftleg.C0 = leftlegC0
+									humanoidrootpart.C0 = humanoidrootpartC0
+				elseif state == Enum.HumanoidStateType.Ragdoll then
+					if ran ~= "Ragdolled" then
+						ran = "Ragdolled" lt =  0 or CT()
+					end
+				elseif state == Enum.HumanoidStateType.Seated then
+					if ran ~= "Seated" then
+						Register_Land = false --cancel fall
+										ran = "Seated" lt =  0 or CT() pase = 0
+						local randomone = Random.new():NextInteger(-15,15)
+						local randomtoo = Random.new():NextInteger(-15,15)		
+						local randomtree = Random.new():NextInteger(-7.5,7.5)/1.75
+						local randomfor = Random.new():NextInteger(-7.5,7.5)/1.75		
+						seatleftcframe = CFrame.new(randomtree / 20, randomtree / 15 , randomtree / 15) * CFrame.Angles(math.rad(randomone),math.rad(randomone),math.rad(randomone))
+						seatrightcframe = CFrame.new(-randomfor / 20, randomfor / 15 , randomfor / 15) * CFrame.Angles(math.rad(randomtoo),math.rad(randomtoo),math.rad(randomtoo))
+									end
+									if pase < 5 then
+									task.desynchronize()
+									local DTA_4 = ABSOLUTE_DTA*4 
+					local isthereathing = workspace:Raycast(rootpart.Position + rootpart.CFrame.LookVector * (rootpart.Size.Z - 0.1 + rootpart.Size.Z) , - rootpart.CFrame.UpVector * rootpart.Size.Y * 1.5, footing) or workspace:Raycast(rootpart.Position + rootpart.CFrame.LookVector * (rootpart.Size.Z + 0.1) , - rootpart.CFrame.UpVector * rootpart.Size.Y * 1.5, footing)-- or workspace:Raycast(rootpart.Position + rootpart.CFrame.UpVector*0.1 + rootpart.CFrame.LookVector * (rootpart.Size.Z - 0.1 + rootpart.Size.Z) , - rootpart.CFrame.UpVector * rootpart.Size.Y * 2) or workspace:Raycast(rootpart.Position + rootpart.CFrame.UpVector*0.1 + rootpart.CFrame.LookVector * (rootpart.Size.Z + 0.1) , - rootpart.CFrame.UpVector * rootpart.Size.Y * 2)		
+					local isthereathingleft = workspace:Raycast(rootpart.Position + rootpart.CFrame.LookVector * (rootpart.Size.Z - 0.1 + rootpart.Size.Z) + rootpart.CFrame.RightVector * Vector3.new(1.5,0,0)  , - rootpart.CFrame.UpVector * rootpart.Size.Y * 1.5, footing) or workspace:Raycast(rootpart.Position + rootpart.CFrame.LookVector * (rootpart.Size.Z + 0.1) + rootpart.CFrame.RightVector * Vector3.new(1.5,0,0) , - rootpart.CFrame.UpVector * rootpart.Size.Y * 1.5, footing)				
+					local isthereathingright = workspace:Raycast(rootpart.Position + rootpart.CFrame.LookVector * (rootpart.Size.Z - 0.1 + rootpart.Size.Z) + rootpart.CFrame.RightVector * Vector3.new(-1.5,0,0)  , - rootpart.CFrame.UpVector * rootpart.Size.Y * 1.5, footing) or workspace:Raycast(rootpart.Position + rootpart.CFrame.LookVector * (rootpart.Size.Z + 0.1) + rootpart.CFrame.RightVector * Vector3.new(-1.5,0,0) , - rootpart.CFrame.UpVector * rootpart.Size.Y * 1.5, footing)						
+										if rootpart.Position.Y < -1 then
+											task.synchronize()
+											humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+											task.desynchronize()
+										else				
+					if humanoid.SeatPart ~= nil and workspace:IsAncestorOf(humanoid.SeatPart)  then
+										if humanoid.SeatPart:IsA("VehicleSeat") then
+											task.desynchronize()
+							if Running then
+								ThatGuyStamina = math.clamp(ThatGuyStamina - Delta/5 --[[0.005]] * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100)
+												rightarmC0 = Lerp(rightarm.C0, lasto and CFrame.new(1.5*Scale,0.2*Scale,-0.25*Scale) * CFrame.Angles(-math.rad(-1-math.cos(DTA_4) -90),0,0) or (CFrame.new(1.5 * Scale, 0.5 * Scale, -0.5 * Scale) * CFrame.Angles(math.rad(90), 0, 0)), Speed)
+												leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale, 0.5 * Scale, -0.5 * Scale) * CFrame.Angles(math.rad(90), 0, 0), Speed)
+												task.synchronize()
+												rightarm.C0 = rightarmC0
+												leftarm.C0 = leftarmC0
+							else
+								ThatGuyStamina = math.clamp(ThatGuyStamina + Delta * 1.8 --[[0.045]] * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100)
+												rightarmC0 = Lerp(rightarm.C0,lasto and CFrame.new(1.5*Scale,0.2*Scale,-0.25*Scale) * CFrame.Angles(-math.rad(-1-math.cos(DTA_4) -90),0,0) or (CFrame.new(1.5 * Scale, 0, -0.25 * Scale) * CFrame.Angles(math.rad(45), 0, 0)), Speed)
+												leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale, 0, -0.25 * Scale) * CFrame.Angles(math.rad(45), 0, 0), Speed)		
+												task.synchronize()
+												rightarm.C0 = rightarmC0
+												leftarm.C0 = leftarmC0
+											end				
+										elseif humanoid.SeatPart:IsA("Seat") then
+											task.desynchronize()
+							ThatGuyStamina = math.clamp(ThatGuyStamina + --[[ 0.05]]  Delta * 2 * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100)
+							if isthereathing then
+								ThatGuyStamina = math.clamp(ThatGuyStamina +  Delta * 3 --[[0.075]] * (1 + (humanoid.Health/humanoid.MaxHealth)), 0 , 100)
+								local elapsed = ((rootpart.Size.Y) - isthereathing.Distance)	
+												rightarmC0 = Lerp(rightarm.C0, lasto and CFrame.new(1.5*Scale,0.2*Scale,-0.25*Scale) * CFrame.Angles(-math.rad(-1-math.cos(DTA_4) -90),0,0) or (CFrame.new(1.5 * Scale, 0, -0.25 * Scale) * CFrame.Angles(math.rad(15 + elapsed * 55), math.rad(elapsed * 45), math.rad(-elapsed * 35))), Speed)
+												leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale, 0, -0.25 * Scale) * CFrame.Angles(math.rad(15 + elapsed * 55), math.rad(-elapsed * 45), math.rad(elapsed * 35)), Speed)				
+												task.synchronize()	
+												rightarm.C0 = rightarmC0
+												leftarm.C0 = leftarmC0
+											else
+												rightarmC0 = Lerp(rightarm.C0, lasto and CFrame.new(1.5*Scale,0.2*Scale,-0.25*Scale) * CFrame.Angles(-math.rad(-1-math.cos(DTA_4) -90),0,0) or (CFrame.new(1.5 * Scale, 0, -0.25 * Scale) * CFrame.Angles(math.rad(15), 0, 0)), Speed)
+												leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale, 0, -0.25 * Scale) * CFrame.Angles(math.rad(15), 0, 0), Speed)				
+								task.synchronize()	
+												rightarm.C0 = rightarmC0
+												leftarm.C0 = leftarmC0
+											end
+						end				
+					else
+										if yvelo < -workspace.Gravity * rootpart:GetMass() then
+											rightarmC0 = Lerp(rightarm.C0, CFrame.new(1.5 * Scale, 0, 0 * Scale) * CFrame.Angles(math.rad(45) + math.cos(CT()*4.75) * math.rad(4) , 0, 0), Speed)
+											leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale, 0, 0 * Scale) * CFrame.Angles(math.rad(45) + math.cos(CT()*4.75) * math.rad(4) , 0, 0), Speed)				
+							task.synchronize()				
+											rightarm.C0 = rightarmC0
+											leftarm.C0 = leftarmC0
+										else
+											rightarmC0 = Lerp(rightarm.C0, CFrame.new(1.5 * Scale, 0, 0 * Scale) * CFrame.Angles( (yvelo/workspace.Gravity) * math.rad(-75) , 0, 0), Speed)
+											leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale, 0, 0 * Scale) * CFrame.Angles( (yvelo/workspace.Gravity) * math.rad(-75) , 0, 0), Speed)
+							task.synchronize()				
+											rightarm.C0 = rightarmC0
+											leftarm.C0 = leftarmC0
+						end
+									end
+									task.desynchronize()
+					if humanoid.SeatPart ~= nil and workspace:IsAncestorOf(humanoid.SeatPart)  then
+						if (isthereathing or isthereathingleft or isthereathingright) and humanoid.SeatPart:IsA("Seat") and not humanoid.SeatPart:IsA("VehicleSeat") then
+							local elapsed = (isthereathing and ((rootpart.Size.Y) - isthereathing.Distance))	or 0
+							local elapsedl = (isthereathingleft and ((rootpart.Size.Y) - isthereathingleft.Distance))	or elapsed				
+											local elapsedr = (isthereathingright and ((rootpart.Size.Y) - isthereathingright.Distance))	or elapsed				
+											if Running then	
+												task.desynchronize()
+					targetrl = CFrame.new(0.5 * Scale, -1 * Scale + elapsedr, -1 * Scale) * CFrame.Angles(math.rad(90), 0, 0) * seatrightcframe
+					targetll = CFrame.new(-0.5 * Scale, -0.77 * Scale + elapsedl, -1 * Scale) * CFrame.Angles(math.rad(60), 0, 0) * seatleftcframe
+					RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed) 
+					LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)	
+					rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+					leftlegC0 = Lerp(leftleg.C0, targetll, Speed)		
+												task.synchronize() 
+												rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+											else
+												targetrl = CFrame.new(0.5 * Scale, -1 * Scale+ elapsedr, -1 * Scale) * CFrame.Angles(math.rad(55 + elapsedr * 40), 0, 0) * seatrightcframe
+												targetll = CFrame.new(-0.5 * Scale, -1 * Scale+ elapsedl, -1 * Scale) * CFrame.Angles(math.rad(55 + elapsedl * 40), 0, 0) * seatleftcframe
+												RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+												LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)
+												rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+												leftlegC0 = Lerp(leftleg.C0, targetll, Speed)
+												task.synchronize()
+												rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+							end				
+						else
+											if Running then
+												targetrl = CFrame.new(0.5 * Scale, -1 * Scale, -1 * Scale) * CFrame.Angles(math.rad(90), 0, 0)
+												targetll = CFrame.new(-0.5 * Scale, -1 * Scale, -1 * Scale) * CFrame.Angles(math.rad(90), 0, 0)
+												RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+												LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)	
+												rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+												leftlegC0 = Lerp(leftleg.C0, targetll, Speed)		
+								task.synchronize()
+												rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+											else
+												targetrl = CFrame.new(0.5 * Scale, -1 * Scale, -1 * Scale) * CFrame.Angles(math.rad(45), 0, 0)
+												targetll = CFrame.new(-0.5 * Scale, -1 * Scale, -1 * Scale) * CFrame.Angles(math.rad(45), 0, 0)
+												RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+												LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)
+												rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+												leftlegC0 = Lerp(leftleg.C0, targetll, Speed)
+								task.synchronize()
+												rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+							end								
+						end
+					else
+						if isthereathing then
+											local elapsed = ((rootpart.Size.Y) - isthereathing.Distance)/2
+											targetrl = CFrame.new(0.5 * Scale, (-0.5 + math.cos(lt *2) /4) * Scale + elapsed , -1 * Scale) * CFrame.Angles(math.rad(90 +  math.cos(lt *2) * 15), 0, 0)
+											targetll = CFrame.new(-0.5 * Scale, (-0.5 + -math.cos(lt *2) /4)  * Scale + elapsed, -1 * Scale) * CFrame.Angles(math.rad(90 +  -math.cos(lt *2) * 15), 0, 0)
+											RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+											LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)	
+											rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+											leftlegC0 = Lerp(leftleg.C0, targetll, Speed)			
+											task.synchronize()			
+											rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+						else
+											if yvelo < -workspace.Gravity * rootpart:GetMass() then
+												targetrl =CFrame.new(0.5 * Scale, 0 * Scale, -1 * Scale) * CFrame.Angles(math.rad(50), 0, 0)
+												targetll =CFrame.new(-0.5 * Scale, 0 * Scale, -1 * Scale) * CFrame.Angles(math.rad(50), 0, 0)
+												RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+												LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)
+												rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+												leftlegC0 = Lerp(leftleg.C0, targetll, Speed)			
+												task.synchronize()			
+												rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+											else
+												targetrl = CFrame.new(0.5 * Scale, -1 * Scale, -1 * Scale) * CFrame.Angles(math.rad(90), 0, math.rad(15))
+												targetll = CFrame.new(-0.5 * Scale, -1 * Scale, -1 * Scale) * CFrame.Angles(math.rad(90), 0, math.rad(-15))
+												RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+												LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)	
+												rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+												leftlegC0 = Lerp(leftleg.C0, targetll, Speed)	
+								task.synchronize()				
+												rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+							end				
+						end		
+					end
+				if humanoid.SeatPart then
+					--if isthereathing then
+					--	humanoidrootpart.C0 = Lerp(humanoidrootpart.C0, CFrame.new(0, (-0.5 * Scale) + ((rootpart.Size.Y * 1.5) - isthereathing.Distance), 0), Speed)				
+					--else
+										task.desynchronize()
+										local targetcf = CFrame.new(0, -0.5 * Scale, 0)
+										humanoidrootpartC0 = Lerp(humanoidrootpart.C0, targetcf, Speed)								
+										TS_ORIGINC0 = Lerp(TS_ORIGINC0, targetcf, Speed)								
+					task.synchronize()
+										humanoidrootpart.C0 = humanoidrootpartC0
+				else
+										task.desynchronize()
+										local targetcf = CFrame.new()
+										TS_ORIGINC0 = Lerp(TS_ORIGINC0, targetcf, Speed)					
+										humanoidrootpartC0 = Lerp(humanoidrootpart.C0, targetcf, Speed)												
+					task.synchronize()
+										humanoidrootpart.C0 = humanoidrootpartC0
+				end
+				task.desynchronize()		end
+				if CrouchIdentifier and CrouchIdentifier.Value ~= 'Nothing' then task.synchronize() CrouchIdentifier.Value = 'Nothing' end end
+				elseif state == Enum.HumanoidStateType.Jumping then
+					if ran ~= "Jumping" then
+						--Register_Land = true
+						ran = "Jumping"	
+					end			
+					RightLegDis = Random.new():NextInteger(-3,-2)
+					LeftLegDis = Random.new():NextInteger(-3,-2)
+				elseif state == Enum.HumanoidStateType.Swimming then
+					local cosofct = math.cos(lt)				
+					Register_Land = false
+					humanoidrootpartC0 = Lerp(humanoidrootpart.C0, CFrame.new(), Speed)	
+					if yvelo > 5 then
+						rightarmC0 = Lerp(rightarm.C0, CFrame.new(1.5 * Scale,0.5,cosofct * -0.1 * Scale * absvel.Magnitude) * CFrame.Angles(cosofct * math.rad(5 * absvel.Magnitude) + math.rad(180), 0, 0), Speed)
+						leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale,0.5,cosofct * 0.1 * Scale * absvel.Magnitude) * CFrame.Angles(cosofct * math.rad(-5 * absvel.Magnitude) + math.rad(180), 0, 0), Speed)
+					else
+						rightarmC0 = Lerp(rightarm.C0, CFrame.new(1.5 * Scale,0,cosofct * -0.1 * Scale * absvel.Magnitude) * CFrame.Angles(cosofct * math.rad(5 * absvel.Magnitude), 0, 0), Speed)
+						leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale,0,cosofct * 0.1 * Scale * absvel.Magnitude) * CFrame.Angles(cosofct * math.rad(-5 * absvel.Magnitude), 0, 0), Speed)
+					end				
+									task.desynchronize()
+									targetrl = CFrame.new(0.5 * Scale, -2 * Scale, cosofct * 0.12 * Scale * absvel.Magnitude) * CFrame.Angles(cosofct * math.rad(-6 * absvel.Magnitude), 0, 0)
+									targetll = CFrame.new(-0.5 * Scale, -2 * Scale, cosofct * -0.12 * Scale* absvel.Magnitude) * CFrame.Angles(cosofct * math.rad(6 * absvel.Magnitude), 0, 0)
+									TS_ORIGINC0 = Lerp(TS_ORIGINC0, CFrame.new(), Speed)	
+					RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+									LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)			
+									humanoidrootpartC0 = Lerp(humanoidrootpart.C0, CFrame.new(), Speed)		
+									rightlegC0 = Lerp(rightleg.C0, CFrame.new(0.5 * Scale, -2 * Scale, cosofct * 0.12 * Scale * absvel.Magnitude) * CFrame.Angles(cosofct * math.rad(-6 * absvel.Magnitude), 0, 0), Speed)
+									leftlegC0 = Lerp(leftleg.C0, targetll, Speed)			
+					
+					if CrouchIdentifier and CrouchIdentifier.Value ~= 'Nothing' then task.synchronize() CrouchIdentifier.Value = 'Nothing' end
+									task.synchronize()
+									rightarm.C0 = 	rightarmC0	 leftarm.C0 = 	leftarmC0	
+									humanoidrootpart.C0 = humanoidrootpartC0
+									rightleg.C0 = rightlegC0
+									leftleg.C0 = leftlegC0
+				else
+					local cosofct = math.cos(lt)	
+									targetrl = CFrame.new(0.5 * Scale, -2 * Scale, cosofct * 0.12 * Scale) * CFrame.Angles(cosofct * math.rad(-6), 0, 0)
+									targetll = CFrame.new(-0.5 * Scale, -2 * Scale, cosofct * -0.12 * Scale) * CFrame.Angles(cosofct * math.rad(6), 0, 0)
+									RL_ORIGINC0 = Lerp(RL_ORIGINC0, targetrl, Speed)
+					LL_ORIGINC0 = Lerp(LL_ORIGINC0, targetll, Speed)
+					TS_ORIGINC0 = Lerp(TS_ORIGINC0, CFrame.new(), Speed)	
+									rightlegC0 = Lerp(rightleg.C0, targetrl, Speed)
+					rightarmC0 = Lerp(rightarm.C0, CFrame.new(1.5 * Scale,0,cosofct * -0.1 * Scale) * CFrame.Angles(cosofct * math.rad(5), 0, 0), Speed)
+					leftarmC0 = Lerp(leftarm.C0, CFrame.new(-1.5 * Scale,0,cosofct * 0.1 * Scale) * CFrame.Angles(cosofct * math.rad(-5), 0, 0), Speed)
+									leftlegC0 = Lerp(leftleg.C0, targetll, Speed)
+					humanoidrootpartC0 = Lerp(humanoidrootpart.C0, CFrame.new(), Speed)
+					task.synchronize()
+									rightleg.C0 = rightlegC0
+									rightarm.C0 = rightarmC0
+									leftarm.C0 = leftarmC0
+									leftleg.C0 = leftlegC0
+									humanoidrootpart.C0 = humanoidrootpartC0
+								end
+					task.desynchronize()		
+					local ScanLength: number = (FindFirstChildOfNameAndClass(Character,"UpperTorso","BasePart") and (FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart") and FindFirstChildOfNameAndClass(Character,"RightLowerLeg","BasePart") and FindFirstChildOfNameAndClass(Character,"RightLowerLeg","RightFoot") and ((FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart").Position + (FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart").Size.Y/2)) - (FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart").Position + (-FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart").Size.Y/2))).Magnitude) or 2) or (FindFirstChildOfNameAndClass(Character,"Right Leg","BasePart") and FindFirstChildOfNameAndClass(Character,"Right Leg","BasePart").Size.Y) or 2
+					local leg: BasePart = ((FindFirstChildOfNameAndClass(Character,"RightFoot","BasePart") and FindFirstChildOfNameAndClass(Character,"RightLowerLeg","BasePart") and FindFirstChildOfNameAndClass(Character,"RightUpperLeg","BasePart")) or FindFirstChildOfNameAndClass(Character,"Right Leg","BasePart"))
+								task.desynchronize()	
+								if not leg then continue end
+								local StepMatScan = leg 
+									and (workspace:Blockcast(leg.CFrame + (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)), leg.Size,-leg.CFrame.UpVector * (ScanLength + (curex or 0.25) + 0.05), footing) or
+										workspace:Blockcast(leg.CFrame - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)), leg.Size,-Vector3.new(0,0.05,0), footing) or 
+										workspace:Blockcast(leg.CFrame - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,-leg.Size.Z /2,0)), leg.Size,leg.CFrame.LookVector * (leg.Size.Z) * 2, footing) or
+										workspace:Blockcast(leg.CFrame - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,leg.Size.Z /2,0)), leg.Size,-leg.CFrame.LookVector * (leg.Size.Z), footing)) or 
+									workspace:Blockcast(rootpart.CFrame, leg.Size,RootVel, footing) or workspace:Blockcast(rootpart.CFrame, leg.Size,Vector3.new(0,-ScanLength,0), footing) or workspace:Blockcast(rootpart.CFrame, leg.Size,rootpart.CFrame.UpVector * Vector3.new(0,-ScanLength,0), footing)
+								if not StepMatScan then
+									ScanLength = (FindFirstChildOfNameAndClass(Character, "UpperTorso", "BasePart") and (FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftLowerLeg", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftLowerLeg", "LeftFoot") and ((FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart").Position + (FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart").Size.Y / 2)) - (FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart").Position + (-FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart").CFrame.UpVector * FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart").Size.Y / 2))).Magnitude) or 2) or (FindFirstChildOfNameAndClass(Character, "Left Leg", "BasePart") and FindFirstChildOfNameAndClass(Character, "Left Leg", "BasePart").Size.Y) or 2
+									leg = ((FindFirstChildOfNameAndClass(Character, "LeftFoot", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftLowerLeg", "BasePart") and FindFirstChildOfNameAndClass(Character, "LeftUpperLeg", "BasePart")) or FindFirstChildOfNameAndClass(Character, "Left Leg", "BasePart"))
+									StepMatScan = leg and (workspace:Blockcast(leg.CFrame + (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)), leg.Size,-leg.CFrame.UpVector * (ScanLength + (curex or 0.25) + 0.05), footing) or workspace:Blockcast(leg.CFrame - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)), leg.Size,-Vector3.new(0,0.05,0), footing) or workspace:Blockcast(leg.CFrame - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,-leg.Size.Z /2,0)), leg.Size,leg.CFrame.LookVector * (leg.Size.Z) * 2, footing) or workspace:Blockcast(leg.CFrame - (leg.CFrame.UpVector * Vector3.new(0,leg.Size.Y /2,0)) + (leg.CFrame.LookVector * Vector3.new(0,leg.Size.Z /2,0)), leg.Size,-leg.CFrame.LookVector * (leg.Size.Z), footing))
+								end 
+					--if Register_Land == true and yvelo < 0 and (StepMatScan --[[or (workspace:Raycast(leftleg.Part1.Position, RootVel - leftleg.Part1.Size.Y * leftleg.Part1.CFrame.UpVector, footing) or workspace:Raycast(rightleg.Part1.Position, RootVel - rightleg.Part1.Size.Y * rightleg.Part1.CFrame.UpVector, footing))]]) then
+								if Register_Land == true and humanoid:GetState() ~= Enum.HumanoidStateType.Freefall and humanoid:GetState() ~= Enum.HumanoidStateType.Jumping --[[and yvelo <= 1 and (StepMatScan or (workspace:Raycast(leftleg.Part1.Position, RootVel - leftleg.Part1.Size.Y * 2 * leftleg.Part1.CFrame.UpVector, footing) or workspace:Raycast(rightleg.Part1.Position, RootVel - rightleg.Part1.Size.Y * 2 * rightleg.Part1.CFrame.UpVector, footing)))]] then
+									Register_Land = false
+									local mat = StepMatScan and StepMatScan.Material or workspace:Blockcast(leftleg.Part1.CFrame, leg.Size, -leftleg.Part1.Size.Y * 1.5 * leftleg.Part1.CFrame.UpVector, footing) and workspace:Blockcast(leftleg.Part1.CFrame, leg.Size, -leftleg.Part1.Size.Y * 1.5 * leftleg.Part1.CFrame.UpVector, footing).Material or workspace:Blockcast(rightleg.Part1.CFrame, leg.Size, -rightleg.Part1.Size.Y * 1.5 * rightleg.Part1.CFrame.UpVector, footing) and workspace:Blockcast(rightleg.Part1.CFrame, leg.Size, -rightleg.Part1.Size.Y * 1.5 * rightleg.Part1.CFrame.UpVector, footing).Material or humanoid.FloorMaterial or Enum.Material.Plastic
+									local yvelo_dividedby24 = math.abs(yvelo)/24
+									humanoidrootpartC1 = humanoidrootpart.C1 * CFrame.new(0,1*Scale*math.abs(yvelo/24),0) * CFrame.Angles(math.rad(20*math.abs(yvelo/24)),0,0)
+									rightlegC1 = rightleg.C1 * CFrame.new(0,math.clamp(-1*Scale*math.abs(yvelo/24), -Scale, Scale) ,math.clamp(-0.5*Scale*math.abs(yvelo/24), -Scale/2, Scale/2)) * CFrame.Angles(math.rad(math.clamp(40*math.abs(yvelo/24), -40, 40)),0,0)
+									leftlegC1 = leftleg.C1 * CFrame.new(0,math.clamp(-1*Scale*math.abs(yvelo/24), -Scale, Scale) ,math.clamp(-0.5*Scale*math.abs(yvelo/24), -Scale/2, Scale/2)) * CFrame.Angles(math.rad(math.clamp(40*math.abs(yvelo/24), -40, 40)),0,0)
+						task.synchronize()			
+						local cloned = rootpart:Clone()
+						cloned:ClearAllChildren()
+						cloned.CanCollide = false
+						cloned.CanTouch = false
+						cloned.CanQuery = false
+						cloned.Anchored = true
+						cloned.Transparency = 1
+						cloned.Parent = workspace	
+						Debris:AddItem(cloned, 2)			
+						local landsound = Instance.new('Sound', cloned)			
+						if Running then
+							landsound.SoundId = 'rbxassetid://268933900'
+						else
+							landsound.SoundId = 'rbxassetid://268933841'
+						end
+						local sound = Instance.new('Sound',cloned)	
+						sound.SoundId = footstep_module and footstep_module:GetRandomSound(footstep_module:GetTableFromMaterial(mat)) or 'rbxasset://sounds//switch.wav'
+						sound.PlaybackSpeed = math.random(950,1050) * (XZMAG_16) /1000
+						sound.Volume =  (yvelo_dividedby24 + (XZMAG_16))/5
+						sound.Parent = cloned
+						sound:Play()	
+						landsound.Volume = yvelo_dividedby24/2
+									landsound:Play()
+									if not recentfall then
+									local sa, sb, sc = humanoidrootpart.C1, rightleg.C1, leftleg.C1 
+						humanoidrootpart.C1 = humanoidrootpartC1
+						rightleg.C1 = rightlegC1-- * CFrame.new(0,math.clamp(-1*Scale*math.abs(yvelo/24), -Scale, Scale) ,math.clamp(-0.5*Scale*math.abs(yvelo/24), -Scale/2, Scale/2)) * CFrame.Angles(math.rad(math.clamp(40*math.abs(yvelo/24), -40, 40)),0,0)
+						leftleg.C1 = leftlegC1-- * CFrame.new(0,math.clamp(-1*Scale*math.abs(yvelo/24), -Scale, Scale) ,math.clamp(-0.5*Scale*math.abs(yvelo/24), -Scale/2, Scale/2)) * CFrame.Angles(math.rad(math.clamp(40*math.abs(yvelo/24), -40, 40)),0,0)
+									if timer > 10 then
+										recentfall =true
+										TweenService:Create(humanoidrootpart, TweenInfo.new(.5), {C1 = sa}):Play()
+											TweenService:Create(leftleg, TweenInfo.new(.5), {C1 = sc}):Play()			TweenService:Create(rightleg, TweenInfo.new(.5), {C1 = sb}):Play()
+											task.delay(.5, function()
+												recentfall = false
+											end)
+						end end			
+					end
+				end
+				task.desynchronize()
+				if rightleg and (not rightleg:GetAttribute("Origin") or (rightleg:GetAttribute("Origin") and rightleg:GetAttribute("Origin") ~= RL_ORIGINC0))	 then
+					task.synchronize()rightleg:SetAttribute("Origin", RL_ORIGINC0)
+				end
+				task.desynchronize()
+				if leftleg and (not leftleg:GetAttribute("Origin") or (leftleg:GetAttribute("Origin") and leftleg:GetAttribute("Origin") ~= LL_ORIGINC0))	 then
+					task.synchronize()leftleg:SetAttribute("Origin", LL_ORIGINC0)
+				end	
+				task.desynchronize()
+				if humanoidrootpart and (not humanoidrootpart:GetAttribute("Origin") or (humanoidrootpart:GetAttribute("Origin") and humanoidrootpart:GetAttribute("Origin") ~= TS_ORIGINC0))	 then
+					task.synchronize()humanoidrootpart:SetAttribute("Origin", TS_ORIGINC0)
+				end	
+			end			
+			task.desynchronize()
+			if Character:FindFirstChild("Animate") and Character:FindFirstChild("Animate"):IsA("LocalScript") then
+				task.synchronize()Character:FindFirstChild("Animate").Enabled = false
+			end
+			task.desynchronize()			
+			if Character:FindFirstChildOfClass("Tool") or RA:FindFirstChildOfClass("RopeConstraint")or RA:FindFirstChildOfClass("BallSocketConstraint") or RA:FindFirstChildOfClass("Constraint") then
+				task.synchronize()
+				rightarm.Enabled = true
+				RA.CanCollide =false
+				if Character:FindFirstChildOfClass("Tool") then
+					for i,v in pairs(Character:FindFirstChildOfClass("Tool"):GetDescendants())  do
+						if v:IsA("BasePart") then
+							v.CanCollide = false
+						end			
+					end
+				end	
+				
+			else
+				task.synchronize()
+				rightarm.Enabled = true
+			end
+					if LA:FindFirstChildOfClass("RopeConstraint")or LA:FindFirstChildOfClass("BallSocketConstraint") or LA:FindFirstChildOfClass("Constraint") then
+						leftarm.Enabled = true
+						LA.CanCollide =false
+					else
+						leftarm.Enabled = true
+					end	
+						task.desynchronize()
+						
+			----)
+				elseif CrouchIdentifier and CrouchIdentifier:GetAttribute("SpecialPose") and CrouchIdentifier:GetAttribute("SpecialPose") == "Slide" then
+						if ran ~= "Sliding" then lt = 0 ran = 'Sliding'	pase = 0 end
+						if lt < 3 and pase < 5 then
+						TS_ORIGINC0 = TS_ORIGINC0:Lerp(CFrame.new(0, -2.5, 0)*CFrame.Angles(math.rad(75), 0 , 0),Speed)
+						RL_ORIGINC0 = RL_ORIGINC0:Lerp(CFrame.new(0.562*Scale, -1.983*Scale, -0.029*Scale)*CFrame.Angles(math.rad(1.658),math.rad (0.002), math.rad(3.552)),Speed)
+						LL_ORIGINC0 = LL_ORIGINC0:Lerp(CFrame.new(-0.5*Scale, -1.5*Scale, -0.25*Scale)*CFrame.Angles(math.rad(-15),0 , 0),Speed)
+						rightlegC0 = rightleg.C0:Lerp(CFrame.new(0.562*Scale, -1.983*Scale, -0.029*Scale)*CFrame.Angles(math.rad(1.658),math.rad (0.002), math.rad(3.552)),Speed)
+						leftlegC0 = leftleg.C0:Lerp(CFrame.new(-0.5*Scale, -1.5*Scale, -0.25*Scale)*CFrame.Angles(math.rad(-15),0 , 0),Speed)
+						rightarmC0 = rightarm.C0:Lerp(CFrame.new(1.5*Scale, 0, 0)*CFrame.Angles(math.rad(15) , math.rad(15), math.rad(-15)),Speed)
+						leftarmC0 = leftarm.C0:Lerp(CFrame.new(-1*Scale, 0, 0)*CFrame.Angles(math.rad(15),math.rad(15),0),Speed)
+						HeadC0 = Head.C0:Lerp(CFrame.new(0, 1.5*Scale, 0)*CFrame.Angles(math.rad(-45),0 , 0),Speed)
+						humanoidrootpartC0 = humanoidrootpartC0:Lerp(CFrame.new(0, -2.5, 0)*CFrame.Angles(math.rad(75), 0 , 0),Speed)
+						task.synchronize() rightleg.C0 = rightlegC0 leftleg.C0 = leftlegC0
+						humanoidrootpart.C0 = humanoidrootpartC0 rightarm.C0 = rightarmC0 leftarm.C0 = leftarmC0 Head.C0 = HeadC0
+						end
+					end
+					LastStamina = ThatGuyStamina
+					if LastStamina > 100 then
+						LastStamina = 100
+					elseif LastStamina < 0 then
+						LastStamina = 0
+					end
+					if ThatGuyStamina > 100 then
+						ThatGuyStamina = 100
+					elseif ThatGuyStamina < 0 then
+						ThatGuyStamina = 0
+					end
+					NowJump = true
+					----(('tr')
+				end
+				if pase < 10 then
+					pase+=Delta
+				end
+				--end)
+			--	--((ran)
+			end
+			task.synchronize()
+			if s then s:Disconnect() s= nil end
+			if Jumpcon then Jumpcon:Disconnect() Jumpcon = nil end
+			if Connection then Connection:Disconnect() Connection = nil end
+			return 
+		end))
+		
+		--[[rootpart.Changed:Connect(function(whatchanged)-- Starting Anim
+			if whatchanged == "AssemblyLinearVelocity" or "Velocity" then
+				
+			end
+		end)]]
+		if Character.Parent == workspace and HMD then
+			local CO: boolean
+			local Coroutine: thread?
+			local savedct = 0
+			if Character:FindFirstChild("Animate") and Character:FindFirstChild("Animate"):IsA("LocalScript") then
+				task.synchronize() Character:FindFirstChild("Animate").Enabled = false
+			end
+			task.synchronize()
+			s = HMD.StateChanged:Connect(function(old,new) -- physics tripping glitch recovery
+				CO = false
+				if table.find({Enum.HumanoidStateType.Physics , Enum.HumanoidStateType.Ragdoll , Enum.HumanoidStateType.GettingUp , Enum.HumanoidStateType.FallingDown},new) and not Character:GetAttribute('IsRagdoll') then
+					Character.Archivable = true
+					local chcl = Character:Clone()
+					if chcl then
+						chcl:Destroy()
+					end
+					--[[if chcl then
+						coroutine.resume(coroutine.create(function()
+							for i,v in chcl:GetChildren() do
+								if v:IsA("BasePart") then
+									v.Anchored = true
+								end
+							end
+						end))
+					end]]
+					Character.Archivable = false
+					local fallentime = 0
+					local uniqueid = uniqueid(savedct)
+					savedct = uniqueid
+					--coroutine.wrap(function()
+					if Connection then Connection:Disconnect() end
+					Connection = HMD.StateChanged:Connect(function(old2,new2)
+						--if table.find({Enum.HumanoidStateType.Physics , Enum.HumanoidStateType.Ragdoll , Enum.HumanoidStateType.GettingUp , Enum.HumanoidStateType.FallingDown},new2) then
+						if Connection then Connection:Disconnect()end
+						if chcl then
+							chcl:Destroy()
+						end
+						Connection = nil
+						return
+							--[[else
+								if chcl then
+									chcl:Destroy()
+								end
+								if Connection then Connection:Disconnect()end
+							end]]
+					end)
+					CO = true
+					if Coroutine then coroutine.close(Coroutine) end
+					Coroutine = coroutine.create(function()
+						while CO and savedct == fallentime and fallentime  <= 15 and Character and Character.Parent ~= nil and HMD do
+							local dt = task.wait(.1)
+							fallentime += dt
+							if not Connection then
+								CO = false
+								break
+							end
+							if fallentime >= 10 then
+								if Connection and Character and HMD and table.find({Enum.HumanoidStateType.Physics , Enum.HumanoidStateType.Ragdoll , Enum.HumanoidStateType.GettingUp , Enum.HumanoidStateType.FallingDown},HMD:GetState()) then
+									if not chcl then
+										if Connection then
+											Connection:Disconnect()
+											Connection = nil
+										end
+										return
+									end
+									if chcl then
+										chcl:Destroy()
+										chcl = nil
+									end
+									----(('ah')
+									if Character:FindFirstChildOfClass('Humanoid') and not Character:FindFirstChildOfClass('Humanoid').SeatPart ~= nil then
+										SHADOWCHAR(Character)
+										Character:PivotTo(LastStandingCFrame + Vector3.new(0,HMD.HipHeight,0))	
+									end
+									Connection:Disconnect()
+									Connection = nil
+								end
+								CO = false
+								break
+							end
+						end
+					end)
+					if Coroutine and savedct == uniqueid then coroutine.resume(Coroutine) end
+					--end)
+				elseif table.find({Enum.HumanoidStateType.Ragdoll , Enum.HumanoidStateType.GettingUp},old) and HMD.FloorMaterial ~= Enum.Material.Air and HMD.RootPart.Position.Y > -2 and not table.find({Enum.HumanoidStateType.Swimming},new) then
+					pcall(function()
+						CrouchIdentifier.Value = 'Crawl'
+					end)
+				 end
+			end)
+			if HMD.Health <= 0 then
+				return
+			end
+		end
+		Jumpcon = HMD.Jumping:Connect(function()
+			ran1 = math.random(4,8) ran2 = math.random(4,8) ranting1 = math.random(5,10)/10 ranting2 = math.random(5,10)/10
+			HMD:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+			HMD:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
+			task.wait(2)
+			if Character and HMD then
+				HMD:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+			end
+		end)
+	end
+end
+local Joints = {}
+function CreateWeldIfNeeded(AnimatedCharacter: Model, partName: string?, parentName: string?, part0Name: string?, part1Name: string?, weldName: string?, startcframe: CFrame?)
+	if typeof(AnimatedCharacter) ~= 'Instance' then return end
+	if not partName then partName = 'DICTIONARY_SLOT' end
+	if (typeof(part1Name) ~= 'string' and typeof(part1Name) ~= 'Instance') or (typeof(part0Name) ~= 'string' and typeof(part0Name) ~= 'Instance') then return end
+	if not Joints[AnimatedCharacter] then Joints[AnimatedCharacter] = {} end
+	if not Joints[AnimatedCharacter][partName] then
+		local newWeld = Instance.new('Weld')
+		Joints[AnimatedCharacter][partName] = newWeld
+		if partName:match('Hip') or partName:match('Root') then newWeld.Enabled = false end
+		local newWeldParent = typeof(parentName) == 'Instance' and parentName or parentName and FindFirstChildOfNameAndClass(AnimatedCharacter, parentName, 'BasePart') or AnimatedCharacter
+		local newWeldPart1 = typeof(part1Name) == 'Instance' and part1Name or part1Name and FindFirstChildOfNameAndClass(AnimatedCharacter, part1Name, 'BasePart') or FindFirstChildOfNameAndClass(AnimatedCharacter, 'UpperTorso', 'BasePart') or FindFirstChildOfNameAndClass(AnimatedCharacter, 'Torso', 'BasePart')
+		local newWeldPart0 = typeof(part0Name) == 'Instance' and part0Name or part0Name and FindFirstChildOfNameAndClass(AnimatedCharacter, part0Name, 'BasePart') or newWeld.Part1 or FindFirstChildOfNameAndClass(AnimatedCharacter, 'UpperTorso', 'BasePart') or FindFirstChildOfNameAndClass(AnimatedCharacter, 'Torso', 'BasePart') or nil
+		--print(tostring(newWeld.Parent)..','..tostring(newWeld.Part1)..','..tostring(newWeld.Part0)..partName)
+		task.synchronize()
+		newWeld.Parent = newWeldParent newWeld.Part1 = newWeldPart1 newWeld.Part0 = newWeldPart0
+		newWeld.C0 = startcframe or CFrame.new()
+		if newWeld.Part1.Name:match('UpperArm') then
+			local SizeA: Vector3 = newWeld.Part1.Size
+			local SizeB: Vector3 = newWeld.Part0.Size
+			newWeld.C1 = CFrame.new(0,(SizeB.Y-SizeA.Y * 2)/2,0)
+		end
+		newWeld.Name = weldName or '__PLACEHOLDER'
+		return newWeld
+	end
+end
+-- Function to count accessories on a character using HumanoidDescription
+function countAccessories(character: Model)
+	if not character or (character and (not character:IsA("Model") or not character:FindFirstChildOfClass('Humanoid') )) then return 0 end
+	local accessoryCount = 0
+	task.desynchronize()
+	-- Check if the character is valid
+	if character and character:IsA("Model") then
+		local humanoid = character:FindFirstChildOfClass('Humanoid')
+		if humanoid then
+			local start = 0
+			repeat local del = task.wait(.1) start += del until character:FindFirstChildOfClass("Accessory") or (start > 1)
+			task.wait(0.05)
+			task.synchronize()
+			local humanoidDesc = humanoid:GetAppliedDescription()
+			task.desynchronize()
+			if humanoidDesc then
+				task.synchronize()
+				accessoryCount = #humanoidDesc:GetAccessories(true)
+				for i,v in character:GetChildren() do
+					if v:IsA("Accessory") and v.AccessoryType == Enum.AccessoryType.Unknown then
+						accessoryCount = accessoryCount+1
+					end
+				end
+				if accessoryCount == 0 then
+					for i,v in character:GetChildren() do
+						if v:IsA("Accessory") then
+							accessoryCount = accessoryCount+1
+						end
+					end
+				end
+				----(("Got Acc>>" ..tostring(accessoryCount))
+			else
+				local start = 0
+				task.desynchronize()
+				for i,v in character:GetChildren() do
+					if v:IsA("Accessory") then
+						accessoryCount = accessoryCount+1
+					end
+				end
+				if accessoryCount == 0 then
+					for i,v in character:GetChildren() do
+						if v:IsA("Accessory") then
+							accessoryCount = accessoryCount+1
+						end
+					end
+				end
+			end
+		end
+	end
+	task.synchronize()
+	return accessoryCount
+end
+function Thing(descendant: Instance)
+	--if workspace.Name:upper() == "VIPSERVER" or (game.PrivateServerOwnerId ~= '' and game.PrivateServerOwnerId ~= nil and game.PrivateServerOwnerId ~= 0) then script:Destroy() return end
+	if descendant:IsDescendantOf(workspace:FindFirstChild('Map')) or workspace.Name:upper() == "VIPSERVER" then return end
+	if game:FindFirstChildOfClass("RunService") :IsStudio() or game.CreatorId == tonumber('1233413367') then
+		if not descendant then return end
+		if descendant:IsA("LocalScript") and descendant.Name == "Animate" then
+			descendant.Enabled = false
+		end
+		if descendant.Name ~= "Effect" and descendant.Name ~= "Effect_" and not descendant:GetAttribute('ALTERNATIVE_RIG') then
+			if descendant:IsA("Model") and descendant:FindFirstChildOfClass('Humanoid') and descendant:FindFirstChildOfClass("Humanoid"):GetState() ~= Enum.HumanoidStateType.Dead then
+				local hat = countAccessories(descendant) or 0
+				--if not descendant:FindFirstChildOfClass("Accessory") and hat == 0 then
+				if hat <= 2 and not descendant:FindFirstChild("UpperTorso") then
+					descendant:SetAttribute("Retro",true)
+					local char = descendant
+					local con
+					local cor = coroutine.create(function()
+						local things = {}
+						for i,v in pairs(char:GetChildren()) do
+							if v:IsA("BasePart") then
+								local box = Instance.new("SelectionBox")
+								box.SurfaceTransparency = 1
+								box.LineThickness = 0.1
+								box.Parent = v
+								box.Adornee = v
+								table.insert(things, box)
+								game:GetService('Debris'):AddItem(box, 5)
+							end
+						end
+						local tme = 0
+						repeat 
+							local dt = task.wait(.1)
+							tme += dt
+							local color = BrickColor.Random().Color
+							for i,v in things do
+								game:GetService("TweenService"):Create(v, TweenInfo.new(0.25), {Color3 = color}):Play()
+							end
+						until tme >= 5 or not char or not char.Parent
+						if con then con:Disconnect() con = nil end
+					end)
+					coroutine.resume(cor)
+					con = descendant.Destroying:Once(function()
+						coroutine.close(cor)
+						cor = nil
+					end)
+					pcall(function() Old_Anim(descendant) end)
+				else
+					local trigger = true
+					for i,joint in ipairs(descendant:GetDescendants()) do
+						if joint.ClassName:lower():match('motor6d') then
+							local socket = Instance.new("BallSocketConstraint")
+							local a1 = Instance.new("Attachment")
+							local a2 = Instance.new("Attachment")
+							a1.Parent = joint.Part0
+							a2.Parent = joint.Part1
+							socket.Parent = joint.Parent
+							socket.Attachment0 = a1
+							socket.Attachment1 = a2
+							a1.CFrame = joint.C0
+							a2.CFrame = joint.C1
+							socket.LimitsEnabled = true
+							socket.TwistLimitsEnabled = true
+							socket.Name = joint.Name.."FakeAhhJoints"
+							local Nocollide = Instance.new("NoCollisionConstraint")
+							Nocollide.Parent = joint.Parent
+							Nocollide.Part1 = joint.Part1
+							Nocollide.Part0 = joint.Part0
+							Nocollide.Name = joint.Name
+							socket.Enabled = false	Nocollide:SetAttribute('R_ENA', true) socket:SetAttribute('R_ENA', true)
+						end
+					end
+					for i,v in ipairs(descendant:GetDescendants()) do
+						if (v.Name:match('Hand') or v.Name:match('Foot') or v.Name:match('LowerLeg') or v.Name:match('LowerArm')) and v:IsA('BasePart') then
+							if v:FindFirstChildOfClass('Motor6D') then
+								local mt = v:FindFirstChildOfClass('Motor6D')
+								if mt.Enabled == true then
+									mt.Enabled = false
+									mt:SetAttribute('Enabled', true)
+									local Replace = Instance.new('Weld', mt.Parent)
+									Replace.Name = mt.Name
+									Replace.Part1 = mt.Part1
+									Replace.Part0 = mt.Part0
+									Replace.C0 = mt.C0
+									Replace.C1 = mt.C1
+									trigger = false
+									Replace:SetAttribute('R_DIS', true)
+									mt:Destroy()
+								end
+							end
+						end
+					end
+					if trigger and descendant and descendant:FindFirstChildOfClass('Humanoid') and FindFirstChildOfNameAndClass(descendant, 'UpperTorso', 'BasePart') then
+						local Character = descendant
+						if not descendant then return end
+						for i,v in ipairs(Character:GetChildren()) do
+							task.desynchronize()
+							if not v:IsA('BasePart') then continue end
+							local TargetPart = v.Name
+							if v.Name:upper():match('UPPER') then
+								TargetPart = v.Name:gsub('Upper', 'Lower')
+							elseif v.Name:upper():match('LOWER') then
+								if v.Name:upper():match('ARM') then
+									TargetPart = v.Name:gsub('LowerArm', 'Hand')
+								elseif v.Name:upper():match('LEG') then
+									TargetPart = v.Name:gsub('LowerLeg', 'Foot')
+								end
+							end
+							if TargetPart == v.Name then continue end
+							local ThisPart = FindFirstChildOfNameAndClass(Character, TargetPart, 'BasePart')
+							if not ThisPart then continue end
+							local LockWeld = CreateWeldIfNeeded(Character, 'LockWeld'..TargetPart, TargetPart, v.Name, TargetPart, v.Name..'_'..TargetPart, CFrame.new(0,v.Size.Y/2 + ThisPart.Size.Y/2,0):Inverse())
+							LockWeld:SetAttribute('R_DIS', true)
+						end
+					end
+					task.synchronize()
+					SetUpAnimation(descendant)
+				end
+				local humanoid: Humanoid? = descendant:FindFirstChildOfClass('Humanoid')
+				if humanoid then
+					--humanoid.Jump = true
+					humanoid:Move(Vector3.new(math.random(-100,100)/1000,math.random(-100,100)/1000,math.random(-100,100)/1000), false)
+				end
+				if descendant and descendant.Parent and descendant.Parent == workspace and charfolder then
+					descendant.Parent = charfolder
+				end
+			end
+		end
+	end
+end
+coroutine.resume(coroutine.create(function()
+for i, v in game:FindFirstChildOfClass("CollectionService"):GetTagged("Initiate_Handler")  do
+--for i, v in pairs(workspace:GetDescendants())  do
+		----((v.Name.." Is A Workspace Children")
+	if v:IsA("Model") and v:FindFirstChildOfClass("Humanoid") then
+		Thing(v)
+	end	
+end
+end))
+
+
+task.synchronize()
+script.Registry.Event:Connect(function(model)
+	if typeof(model) ~= 'Instance' or not model:IsA('Model') or not model:FindFirstChildOfClass('Humanoid') then return end
+	Thing(model) 
+end)
+workspace.DescendantAdded:Connect(function(descendant)
+	Thing(descendant)
+end)]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{9037D740-BE72-449F-8BDD-6D9164665176}</string>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">Animation_Handler</string>
+			<int64 name="SourceAssetId">5042528743</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="ModuleScript" referent="RBXE4E51CAA7253466197273D610DBC1AB1">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local LeftShoulder = Instance.new("Motor6D")
+LeftShoulder.Name = "Left Shoulder"
+LeftShoulder.C1 = CFrame.new(0.5, 0.5, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+LeftShoulder.C0 = CFrame.new(-1, 0.5, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+LeftShoulder.MaxVelocity = 0.1
+
+return LeftShoulder]]></ProtectedString>
+				<string name="ScriptGuid">{867DD8AB-0609-4E53-89AD-BB93F08D338D}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Serialized_LeftShoulder</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="ModuleScript" referent="RBXB6981F22C953442BBA4F506122A9E99C">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local Neck = Instance.new("Motor6D")
+Neck.Name = "Neck"
+Neck.C1 = CFrame.new(0, -0.5, 0, -1, 0, 0, 0, 0, 1, 0, 1, -0)
+Neck.C0 = CFrame.new(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 1, -0)
+Neck.MaxVelocity = 0.1
+
+return Neck]]></ProtectedString>
+				<string name="ScriptGuid">{76AFBF51-0ED8-433A-858C-5DB6D62E4C61}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Serialized_Neck</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="ModuleScript" referent="RBX21C4F875B5DD4B759133AC10E642C6E9">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local RightHip = Instance.new("Motor6D")
+RightHip.Name = "Right Hip"
+RightHip.C1 = CFrame.new(0.5, 1, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+RightHip.C0 = CFrame.new(1, -1, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+RightHip.MaxVelocity = 0.1
+
+return RightHip]]></ProtectedString>
+				<string name="ScriptGuid">{BECFD59A-A0B3-42F8-A86D-7B14D3817945}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Serialized_RightHip</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="ModuleScript" referent="RBX093BE271A5DA470EB56F700175B6C033">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local RightShoulder = Instance.new("Motor6D")
+RightShoulder.Name = "Right Shoulder"
+RightShoulder.C1 = CFrame.new(-0.5, 0.5, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+RightShoulder.C0 = CFrame.new(1, 0.5, 0, 0, 0, 1, 0, 1, -0, -1, 0, 0)
+RightShoulder.MaxVelocity = 0.1
+
+return RightShoulder]]></ProtectedString>
+				<string name="ScriptGuid">{0BDC93A4-54B3-427F-B744-B5CFC02E22BF}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Serialized_RightShoulder</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="ModuleScript" referent="RBX7D29E033099F4BC9BDA6F4F48F6D00EE">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local LeftHip = Instance.new("Motor6D")
+LeftHip.Name = "Left Hip"
+LeftHip.C1 = CFrame.new(-0.5, 1, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+LeftHip.C0 = CFrame.new(-1, -1, 0, 0, 0, -1, 0, 1, 0, 1, 0, 0)
+LeftHip.MaxVelocity = 0.1
+
+return LeftHip]]></ProtectedString>
+				<string name="ScriptGuid">{22FCCB85-A269-4564-A188-9C7340C79FDF}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Serialized_LeftHip</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="BindableEvent" referent="RBX41B56ADBF5CF4C5E812D06A8BE500984">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Registry</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Script" referent="RBXB781A4A8FE7441DB8A2B4ACD248A9F05">
+			<Properties>
+				<ProtectedString name="Source"><![CDATA[local value = script:FindFirstAncestorWhichIsA('StringValue')
+if not value then return end
+local model = value:FindFirstAncestorWhichIsA('Model')
+if not model then return end
+local humanoid = model:FindFirstChildOfClass('Humanoid')
+if not humanoid then return end
+function setval()
+	if typeof(value.Value) ~= 'string' or not humanoid or not model or not value or humanoid.Parent ~= model or not model.Parent then return end
+	if value.Value:lower():match('crawl') then
+		humanoid.NameDisplayDistance = 0 humanoid.HealthDisplayDistance = 0 	humanoid.MaxSlopeAngle = 89.9
+	elseif value.Value:lower():match('crouch') then
+		humanoid.NameDisplayDistance = 25 humanoid.HealthDisplayDistance = 13 humanoid.MaxSlopeAngle = 70
+	else
+		humanoid.NameDisplayDistance = 50 humanoid.NameDisplayDistance = 33 humanoid.MaxSlopeAngle = 50
+	end
+end
+
+value:GetPropertyChangedSignal('Value'):Connect(setval)
+setval()]]></ProtectedString>
+				<bool name="Disabled">false</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{98CA7969-DDD3-486A-B5BF-443B16708DF0}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">HumanoidPropertyChanger</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+	</Item>
+</roblox>

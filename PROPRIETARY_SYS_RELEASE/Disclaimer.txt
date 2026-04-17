@@ -1,0 +1,1 @@
+this folder mainly contains exports of previously closed-source system and script. Some component of the game is the same one in my open-sourced repository, I will not be putting that here.

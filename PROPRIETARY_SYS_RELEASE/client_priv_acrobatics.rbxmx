@@ -1,0 +1,283 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="LocalScript" referent="RBXED974FBD973948EFA88588FCCF62E8A5">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[--SERVICES
+local vip = true
+if workspace.Name:upper() ~= 'VIPSERVER' then vip = false end
+local Input = game:FindFirstChildOfClass('UserInputService')
+local humanoid: Humanoid, character: Model
+local connectiona: RBXScriptConnection, connectionb: RBXScriptConnection
+local tablesofid = {}
+local canCoyoteJump = false
+local LeapForward = false
+local climbboost = vip
+local SwimBoost = vip
+local coyoteTime = .1 -- Time window for coyote jump
+local timeSinceGrounded = 0
+local lastclimbboost = 1
+local lastswimboost = 1
+local currentfallreg = math.random()
+local Param = RaycastParams.new()
+local Rolling = false
+local rollVelocity = 10
+Param.RespectCanCollide = true
+Param.FilterType = Enum.RaycastFilterType.Exclude
+
+function uniqueid(number: number) -- to register different freefall that occured so the cancoyotejump will not be disabled for that new fall if u r so fast
+	local uniqueid = math.random()
+	if uniqueid == number or table.find(tablesofid, uniqueid) then
+		repeat if uniqueid == number or table.find(tablesofid, uniqueid) then  uniqueid += math.random() uniqueid += math.random(1,5) end until not table.find(tablesofid, uniqueid)
+	end
+	table.insert(tablesofid, uniqueid)
+	task.delay(20, function()
+		if table.find(tablesofid, uniqueid) then
+			table.remove(tablesofid, table.find(tablesofid, uniqueid))
+		end
+	end)
+	return uniqueid
+end
+
+function performRoll(character: Model)
+	if not character or not humanoid or Rolling or not LeapForward or humanoid.FloorMaterial ~= Enum.Material.Air or humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then return end
+	LeapForward = false
+	local rootPart = humanoid and humanoid.RootPart or character and character:FindFirstChild("HumanoidRootPart")
+	if rootPart and not Rolling then
+		Rolling = true
+		local rollDirection = rootPart.CFrame.UpVector
+		if humanoid.MoveDirection:Dot(rootPart.AssemblyLinearVelocity) > .95 then
+			rollDirection = rootPart.CFrame.LookVector
+		end
+		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+		rollVelocity = humanoid.JumpPower
+		rootPart.AssemblyLinearVelocity = rootPart.AssemblyLinearVelocity + rollDirection * rollVelocity
+		task.wait()
+		if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end
+		task.delay(.5, function()
+			Rolling = false
+		end)
+	end
+end
+
+function onJumpRequest(character: Model, a: any) -- a is for bypassing checks btw, send the argument as true to bypass the check
+	if not character or not humanoid or character:GetAttribute('IsRagdoll') then return end
+	if not humanoid:GetAttribute('Jump') and not a then return end
+	humanoid:SetAttribute('Jump', nil)
+	local LocalDirection = humanoid.RootPart.CFrame:VectorToObjectSpace(humanoid.RootPart.AssemblyLinearVelocity)
+	if humanoid and ((humanoid:GetState() == Enum.HumanoidStateType.Freefall and (canCoyoteJump or (LeapForward and vip))) or (SwimBoost and humanoid:GetState() == Enum.HumanoidStateType.Swimming) or (climbboost and humanoid:GetState() == Enum.HumanoidStateType.Climbing)) then
+		local rootPart = humanoid.RootPart or character:FindFirstChild("HumanoidRootPart")
+		if rootPart and (canCoyoteJump or (LeapForward and vip) or (SwimBoost and humanoid:GetState() == Enum.HumanoidStateType.Swimming) or (climbboost and humanoid:GetState() == Enum.HumanoidStateType.Climbing)) and humanoid:GetState() ~= Enum.HumanoidStateType.Running then
+			local BOOSTTYPE__ = 'Default'
+			if humanoid:GetState() == Enum.HumanoidStateType.Freefall and (LeapForward and vip) then
+				BOOSTTYPE__ = 'LEAP'
+				performRoll(character)
+			elseif humanoid:GetState() == Enum.HumanoidStateType.Climbing and climbboost then
+				BOOSTTYPE__ = 'CLIMBBOOST'
+				climbboost = false
+				canCoyoteJump = false
+				task.delay(.05, function()
+					if humanoid and humanoid.RootPart and	humanoid:GetState() ~= Enum.HumanoidStateType.Climbing then
+						humanoid.RootPart.AssemblyLinearVelocity = Vector3.new(humanoid.RootPart.AssemblyLinearVelocity.X,0,humanoid.RootPart.AssemblyLinearVelocity.Z)
+					end
+				end)
+				task.delay(1, function()
+					climbboost = true
+				end)
+				if script:FindFirstChild('LongJump') then
+					script:FindFirstChild('LongJump'):Play()
+				end
+			elseif humanoid:GetState() == Enum.HumanoidStateType.Swimming and SwimBoost  then
+				BOOSTTYPE__ = 'SWIMBOOST'
+				SwimBoost = false
+				canCoyoteJump = false
+				task.delay(1, function()
+					SwimBoost = true
+				end)
+				if script:FindFirstChild('DoubleJumpAlt') then
+					script:FindFirstChild('DoubleJumpAlt'):Play()
+				end
+			end
+			--[[if BOOSTTYPE__ == 'SWIMBOOST' then
+				local SLIDEDOWN: LinearVelocity = Instance.new('LinearVelocity', humanoid.RootPart)
+				SLIDEDOWN.RelativeTo = Enum.ActuatorRelativeTo.World
+				SLIDEDOWN.ForceLimitsEnabled = true
+				SLIDEDOWN.ForceLimitMode = Enum.ForceLimitMode.PerAxis
+				SLIDEDOWN.MaxForce = 10
+				SLIDEDOWN.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+				SLIDEDOWN.MaxAxesForce = Vector3.new(10,10,10)
+				SLIDEDOWN.Attachment0 = humanoid.RootPart:FindFirstChild('RootAttachment')
+				SLIDEDOWN.Attachment1 = humanoid.RootPart:FindFirstChild('RootAttachment')
+				if(LocalDirection.Z < 0) then
+					SLIDEDOWN.VectorVelocity = humanoid.RootPart.CFrame.UpVector * Vector3.new(0,-10/55,0)
+				elseif (LocalDirection.Z > 0) then
+					SLIDEDOWN.VectorVelocity = humanoid.RootPart.CFrame.UpVector * Vector3.new(0,10/55,0)
+				else
+					SLIDEDOWN.VectorVelocity = Vector3.new(0,-character:GetPivot().Y/55,0)
+				end
+				game:FindFirstChildOfClass('TweenService'):Create(SLIDEDOWN, TweenInfo.new(-character:GetPivot().Y/10, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {VectorVelocity = Vector3.new(0,0,0)})
+				game:FindFirstChildOfClass('Debris'):AddItem(SLIDEDOWN, 1)
+			end]]
+			--print(LocalDirection)
+			--print(BOOSTTYPE__)
+			if BOOSTTYPE__ ~= 'Default' and BOOSTTYPE__ ~= 'LEAP' then
+				rootPart.AssemblyLinearVelocity = rootPart.AssemblyLinearVelocity + ((BOOSTTYPE__ == 'CLIMBBOOST' and ((LocalDirection.Y > 0 and Vector3.new(0,1,0) + humanoid.RootPart.CFrame.UpVector) or (LocalDirection.Y < 0 and (-humanoid.RootPart.CFrame.LookVector)) or (humanoid.RootPart.CFrame.LookVector)) or humanoid.RootPart.CFrame.UpVector) * (BOOSTTYPE__ == 'SWIMBOOST' and 2 or 1) * ((character:GetPivot().Y > -2 and BOOSTTYPE__ == 'SWIMBOOST') and humanoid.JumpPower/2.5 or humanoid.JumpPower) * (((humanoid:GetState() == Enum.HumanoidStateType.Freefall and canCoyoteJump) and timeSinceGrounded * (((character:GetPivot().Y > -2 and BOOSTTYPE__ == 'SWIMBOOST') and 3) or 10)) or 1))
+			else
+				rootPart.AssemblyLinearVelocity = Vector3.new(rootPart.AssemblyLinearVelocity.X, humanoid.JumpPower + workspace.Gravity/20, rootPart.AssemblyLinearVelocity.Z)
+			end
+		else
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+		canCoyoteJump = false
+		LeapForward = false
+	end
+end
+
+function onStateChanged(old, newState)
+	if old == newState then return end
+	if old ~= Enum.HumanoidStateType.Jumping and newState == Enum.HumanoidStateType.Freefall then
+		local cur = uniqueid(currentfallreg)
+		currentfallreg = cur
+		if cur == currentfallreg then
+			canCoyoteJump = true
+			LeapForward = true
+			task.delay(coyoteTime, function()
+				if cur == currentfallreg then
+					canCoyoteJump = false
+					LeapForward = false
+				end
+			end)
+		end
+	elseif newState == Enum.HumanoidStateType.Landed or newState == Enum.HumanoidStateType.Running or newState == Enum.HumanoidStateType.Seated then
+		canCoyoteJump = false
+		LeapForward = false
+	end
+end
+
+function ACROBATIC(character)
+	--print('regging')
+	character = character or game:FindFirstChildOfClass('Players').LocalPlayer.Character or script:FindFirstAncestorWhichIsA('Model')
+	if not Input or not character then --[[print('no char')]] return end
+	repeat task.wait(1) until not character or not game:FindFirstChildOfClass('Players').LocalPlayer or not script:FindFirstAncestorWhichIsA('Player') or game:FindFirstChildOfClass('Players').LocalPlayer.Character ~= character or character:FindFirstChildOfClass('Humanoid')
+	if game:FindFirstChildOfClass('Players').LocalPlayer.Character ~= character or not character then --[[print('character had changed')]] return end
+	humanoid = character:FindFirstChildOfClass('Humanoid')
+
+--[[Input.InputBegan:Connect(function(a)
+	if a and ((a.KeyCode == Enum.KeyCode.Space and not workspace:GetAttribute('TEXTBOXON')) or (workspace:GetAttribute('TEXTBOXON') and a.KeyCode == Enum.KeyCode.RightAlt)) then
+		onJumpRequest('true')
+	end
+end)]]
+	if connectiona then connectiona:Disconnect() end
+	if connectionb then connectionb: Disconnect() end
+	--print('a')
+	canCoyoteJump = false
+	LeapForward = false
+	Rolling = false
+	climbboost = vip
+	SwimBoost = vip
+	connectiona =
+		humanoid:GetAttributeChangedSignal('Jump'):Connect(function() onJumpRequest(character) end)
+	connectionb = 
+		humanoid.StateChanged:Connect(onStateChanged)
+
+--[[while character and humanoid do
+    local dt = task.wait(0.1)
+    if humanoid.FloorMaterial ~= Enum.Material.Air and table.find({Enum.HumanoidStateType.Running,Enum.HumanoidStateType.Climbing,Enum.HumanoidStateType.Seated}, humanoid:GetState()) then
+		timeSinceGrounded = 0
+		lastclimbboost = 1
+		canCoyoteJump = true
+		climbboost = true
+	else
+		if humanoid:GetState() == Enum.HumanoidStateType.Climbing and lastclimbboost < 1 then
+			lastclimbboost += dt
+			if lastclimbboost >= 1 then
+				climbboost = true
+			end
+		end
+		if humanoid:GetState() == Enum.HumanoidStateType.Swimming and lastswimboost < 1 then
+			lastswimboost += dt
+			if lastswimboost >= 1 then
+				SwimBoost = true
+			end
+		end
+        timeSinceGrounded += dt
+    end
+end
+
+]]
+end
+
+local LP = game:FindFirstChildOfClass('Players').LocalPlayer
+if LP then
+	LP.CharacterAdded:Connect(function(char)
+		Param.FilterDescendantsInstances = {char}
+		ACROBATIC(char)
+	end)
+end
+]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{C7242530-6291-4B01-8550-A1869213BBC3}</string>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">JUMP CONTROLLER</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="Sound" referent="RBX8B34EEDB9A76496BA0D48897D0345433">
+			<Properties>
+				<bool name="AcousticSimulationEnabled">true</bool>
+				<bool name="IsMutedForCapture">false</bool>
+				<NumberRange name="LoopRegion">0 60000 </NumberRange>
+				<bool name="Looped">false</bool>
+				<bool name="PlayOnRemove">false</bool>
+				<NumberRange name="PlaybackRegion">0 60000 </NumberRange>
+				<bool name="PlaybackRegionsEnabled">false</bool>
+				<float name="PlaybackSpeed">1</float>
+				<bool name="Playing">false</bool>
+				<float name="RollOffMaxDistance">10000</float>
+				<float name="RollOffMinDistance">10</float>
+				<token name="RollOffMode">0</token>
+				<Ref name="SoundGroup">null</Ref>
+				<Content name="SoundId"><url>rbxassetid://18195448800</url></Content>
+				<double name="TimePosition">0</double>
+				<float name="Volume">0.25</float>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">LongJump</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX8AEF6C5FBF0C4ED4AD5F674D5E6FF6EE">
+			<Properties>
+				<bool name="AcousticSimulationEnabled">true</bool>
+				<bool name="IsMutedForCapture">false</bool>
+				<NumberRange name="LoopRegion">0 60000 </NumberRange>
+				<bool name="Looped">false</bool>
+				<bool name="PlayOnRemove">false</bool>
+				<NumberRange name="PlaybackRegion">0 60000 </NumberRange>
+				<bool name="PlaybackRegionsEnabled">false</bool>
+				<float name="PlaybackSpeed">1.39999998</float>
+				<bool name="Playing">false</bool>
+				<float name="RollOffMaxDistance">10000</float>
+				<float name="RollOffMinDistance">10</float>
+				<token name="RollOffMode">0</token>
+				<Ref name="SoundGroup">null</Ref>
+				<Content name="SoundId"><url>rbxassetid://18291481763</url></Content>
+				<double name="TimePosition">0</double>
+				<float name="Volume">0.200000003</float>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">DoubleJumpAlt</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+	</Item>
+</roblox>

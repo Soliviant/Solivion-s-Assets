@@ -1,0 +1,937 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Script" referent="RBX6BE9DD91D46546649989CA05ABC866A7">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[--solivion
+local Dataset = {}
+local Module = game:GetService('ReplicatedStorage'):WaitForChild("Offline Media",60) and game:GetService('ReplicatedStorage'):WaitForChild("Offline Media",60):FindFirstChild('CharacterDatas')
+local Chr = (typeof(Module) == 'Instance' and Module.ClassName == 'ModuleScript' and require(Module)) or {}
+if typeof(Chr) ~= 'table' then Chr = {} end
+if typeof(Chr[1]) ~= 'table' then
+	Chr[1] = {
+		Type = "R6",
+		Name = "HitboxAccurate",
+		Parts = {
+			HumanoidRootPart = {
+				Size = Vector3.new(2, 2, 1),
+				Color = Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255)), -- Classic Blue
+				Shape = Enum.PartType.Block, Transparency = .2,
+			},
+		}
+	}
+end
+if not script:FindFirstChild('WorkstationFolder') then local newf = Instance.new('Folder' , script) newf.Name = 'WorkstationFolder' end
+if not script:FindFirstChildOfClass('BindableEvent') then local newe = Instance.new('BindableEvent' , script) newe.Name = 'Event' end
+
+--js store the thing and pin it with attribute
+
+function findfromID(id: number)
+	if typeof(id) ~= 'number' then return end
+	for i,v in (game.Players:GetPlayers()) do
+		if v.UserId == id then
+			return v
+		end
+	end
+	return nil
+end
+
+function RCTPlr(plr: Player, Character: Model?) -- Register Character To Players
+	if typeof(plr) ~= 'Instance' or plr.ClassName ~= 'Player' or typeof(Character) ~= 'Instance' or Character.ClassName ~= 'Model' then
+		return
+	end
+	--register the plr to the table along side marking the Attribute onto the character here
+	Character:SetAttribute('__REGPLRID', plr.UserId)
+	Character.Name = tostring(plr.UserId or plr.Name or '__thingymabob') or '__characterthing'
+	local cA, cB
+	local function clear()
+		if cA then cA:Disconnect() cA = nil end
+		if cB then cB:Disconnect() cB = nil end
+		if Character then Character:SetAttribute('__REGPLRID', nil) pcall(function() Character:Destroy() end) pcall(function() Dataset[plr.UserId] = nil end) end
+	end
+	local set = pcall(function()
+		plr.Character = Character
+	end)
+	if not set then pcall(function() plr.Character = nil end) end
+	cB = plr.Destroying:Once(clear)
+	Dataset[plr.UserId] = Character
+	--send bindableevent request to other services here.
+	pcall(function()
+		if not Character:FindFirstChild('Reflector') then
+			local new = script:FindFirstChild('Reflector'):Clone()
+			new.Parent = Character
+			new.Enabled = true
+		end
+	end)
+	pcall(function()
+		if not Character:FindFirstChild('Anim') then
+			local new = script:FindFirstChild('Anim'):Clone()
+			new.Parent = Character
+			new.Enabled = true
+		end
+	end)
+	pcall(function()
+		if not Character:FindFirstChild('Applier') then
+			local new = script:FindFirstChild('Applier'):Clone()
+			new.Parent = Character
+			new.Enabled = true
+		end
+	end)
+	pcall(function()
+		game:GetService('ServerScriptService'):FindFirstChild('CAMPAIGN'):FindFirstChild('GAMEPLAY_HANDLER'):FindFirstChildOfClass('BindableEvent'):Fire(plr, Character)
+	end)
+	pcall(function()
+		game:GetService('ServerScriptService'):FindFirstChild('CAMPAIGN'):FindFirstChild('TITLE_HANDLER'):FindFirstChildOfClass('BindableEvent'):Fire(plr, 'use command "!alt_control" to get controller')
+	end)
+		pcall(function()
+			game:GetService('ServerScriptService'):FindFirstChild('Accessory_Fixer_Actor'):FindFirstChild('Default Clothing'):FindFirstChildOfClass('BindableEvent'):Fire(Character)
+		end)
+	pcall(function()
+		local PutIn = plr:FindFirstChildOfClass('PlayerScripts') or plr:FindFirstChildOfClass('Backpack') or plr:FindFirstChildOfClass('PlayerGui') or plr
+		if PutIn then
+			if PutIn:FindFirstChild('__Camera__Focus') then
+				PutIn:FindFirstChild('__Camera__Focus'):Destroy()
+			end
+			local new = script:FindFirstChild('__Camera__Focus'):Clone()
+			new.Parent = PutIn
+			new.Enabled = true
+			game:GetService('Debris'):AddItem(new, 60)
+		end
+	end)
+end
+
+--load stuff from scanning
+for i,v in workspace:GetChildren() do
+	local PLR = findfromID(v:GetAttribute('__REGPLRID'))
+	if v:IsA('Model') and typeof(PLR) == 'Instance' then
+		RCTPlr(PLR, v)
+	end
+end
+
+function ReqChDat(ID: number)
+	if typeof(ID) == 'number' then if typeof(Chr[ID]) ~= 'table' then return end return Chr[ID] end
+	local Chosen = Chr[math.random(1, #Chr)] if typeof(Chosen) ~= 'table' then return end
+	return Chosen
+end
+
+function ConstructChar(Data)
+	if typeof(Data) ~= 'table' then return end
+	local CurModel = Instance.new('Model', script:FindFirstChild('WorkstationFolder'))
+	local Success, model = pcall(function()
+		if Data.Type ~= 'R6' then return CurModel end -- only lazy fucks would make single parser for a whole ass alternative character system
+		--somebody who made ts is so weird, they just left it accepting the data type without single checking; I implemented checking along side adding parser for other properties
+		
+		local parts = {}
+		
+		-- Create all parts
+		if typeof(Data.Parts) == 'table' then
+		for partName, partData in pairs(Data.Parts) do
+			local part
+			if typeof(partData.From) == 'Instance' and partData.From:IsA('BasePart') then
+				pcall(function()		partData.From.Archivable = true end)
+				pcall(function()	part = partData.From:Clone() end)
+			end
+			if typeof(part) ~= 'Instance' or not part:IsA('BasePart') then
+			part = Instance.new('Part')
+			part.Size = typeof(partData.Size) == 'Vector3' and partData.Size or Vector3.new()
+			part.Color = typeof(partData.Color) == 'Color3' and partData.Color or Color3.new(1,1,1)
+			part.Shape = typeof(partData.Shape) == 'EnumItem' and partData.Shape or Enum.PartType.Block
+			part.Material = typeof(partData.Material) == 'EnumItem' and partData.Material or Enum.Material.SmoothPlastic
+			part.Transparency = typeof(partData.Transparency) == 'number' and partData.Transparency or 0
+			part.Anchored = typeof(partData.Anchored) == 'boolean' and partData.Anchored or false
+			part.CanCollide = typeof(partData.CanCollide) == 'boolean' and partData.CanCollide or  true
+			end
+			part.Name = typeof(partName) == 'string' and partName or ''
+			parts[partName] = part
+			part.Parent = CurModel
+			if typeof(partData.Mesh) == 'table' then
+				local mesh = Instance.new('SpecialMesh')
+				mesh.MeshType = typeof(partData.Mesh.MeshType) == 'EnumItem' and partData.Mesh.MeshType or Enum.MeshType.Brick
+				mesh.Scale = typeof(partData.Mesh.Scale) == 'Vector3' and  partData.Mesh.Scale or Vector3.new(1,1,1)
+				mesh.Parent = part
+				if typeof(partData.Mesh.MeshId) == 'string' then
+					pcall(function()
+						mesh.MeshId = partData.Mesh.MeshId
+					end)
+				end
+			end
+
+			if typeof(partData.Face) == 'table' then
+				local face = Instance.new('Decal')
+				face.Texture = typeof(partData.Face.Texture) == 'string' and partData.Face.Texture or ''
+				face.Face = typeof(partData.Face.NormalId) == 'EnumItem' and partData.Face.NormalId or Enum.NormalId.Front
+				face.Name = typeof(partData.Face.Name) == 'string' and partData.Face.Name or 'face'
+				face.Parent = part
+			end
+		end end
+		
+		-- Create welds
+		if typeof(Data.Welds) == 'table' then
+		for _, weldData in pairs(Data.Welds) do
+			local part0 = parts[weldData.Part0]
+			local part1 = parts[weldData.Part1]
+			
+			if part0 and part1 then
+				local weld = Instance.new('Weld')
+				weld.Name = weldData.Part1
+				weld.Part0 = part0
+				weld.Part1 = part1
+				weld.C0 = weldData.C0
+				weld.C1 = weldData.C1
+				weld.Parent = part0
+			end
+		end end
+		
+		if parts.HumanoidRootPart then
+			CurModel.PrimaryPart = parts.HumanoidRootPart
+		elseif parts.Torso then
+			CurModel.PrimaryPart = parts.Torso
+		elseif parts.Head then
+			CurModel.PrimaryPart = parts.Head
+		else
+			CurModel.PrimaryPart = parts[1] or CurModel:FindFirstChildOfClass('BasePart')
+		end
+		pcall(function()
+			if Data.Name == 'R6Clothed' then
+				CurModel:SetAttribute('ONEDECAL', true)
+			end
+		end)
+		return CurModel
+	end)
+	
+	if Success then return model else return false end
+end
+
+function GetPlayerNewChr(plr, Data: ({} | number)?) -- requested?
+	if typeof(plr) ~= 'Instance' or not plr.Parent or plr.ClassName ~= 'Player' or (typeof(Data) ~= 'table' and typeof(Data) ~= 'number') then return end
+	--handle differently
+	local Chr: Model
+	if typeof(Data) == 'number' then
+		-- Get the data table first, then construct the character
+		local charData = ReqChDat(Data)
+		if typeof(charData) ~= 'table' then
+			warn("Invalid character data for ID: " .. tostring(Data))
+			return
+		end
+		Chr = ConstructChar(charData)
+	else
+		Chr = ConstructChar(Data)
+	end
+	if typeof(Chr) ~= 'Instance' or Chr.ClassName ~= 'Model' then 
+		warn("Failed to construct character for " .. plr.Name)
+		return
+	end
+	RCTPlr(plr, Chr)
+	Chr.Parent = workspace:FindFirstChild('Characters') or workspace
+end
+
+script:FindFirstChildOfClass('BindableEvent').Event:Connect(function(a, b, c) -- for write only operations and basic registry
+	if typeof(a) == 'string' then
+		if a == 'SETATTRIBUTE' and typeof(b) == 'Instance' and b.ClassName == 'Player' and typeof(c) == 'table' then
+			-- get linked char from table then set the attributes
+			local chr = Dataset[b.UserId] if typeof(chr) ~= 'Instance' then return end
+			for i,v in pairs(c) do
+				chr:SetAttribute(i, v)
+			end
+		end
+	else
+		GetPlayerNewChr(a, b)
+	end
+end)]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{6C05C0D2-4C0B-4C7F-BFC4-7B8C6ED2D521}</string>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">AltCharacterService</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="BindableEvent" referent="RBX107E494FC2F84E8EB6590ED307ADB0FF">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Event</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Folder" referent="RBX5FE9D31FC798498AABF1195E20D5A54D">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">WorkstationFolder</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="LocalScript" referent="RBXA0CEFA8A50214F0B9E8C62809CB7480A">
+			<Properties>
+				<ProtectedString name="Source"><![CDATA[--solivion
+local Plr = game:GetService('Players').LocalPlayer
+if not Plr then return end
+local ID = typeof(Plr) == 'Instance' and Plr.ClassName == 'Player' and Plr.UserId or 0
+local tries = 0
+local logged = 0
+local yes = false
+while task.wait(1) and not yes and Plr and Plr.Parent do
+	pcall(function()
+	local Found = nil;
+	for i,v in  (workspace:FindFirstChild('Characters') or workspace):GetChildren() do
+		if v:IsA('Model') and v:GetAttribute('__REGPLRID') == ID then
+			Found = v
+			break
+		end
+	end
+	if not Found:IsDescendantOf(workspace) then return end
+ 	local To = typeof(Found) == 'Instance' and Found.PrimaryPart or Found:FindFirstChildOfClass('BasePart') or Found
+	pcall(function() workspace.CurrentCamera.CameraSubject = To end)
+ 	tries += 1
+	if tries > 120 or workspace.CurrentCamera.CameraSubject == To then
+		logged += 1
+		if logged > 10 then 
+		yes = true end
+	end end) if yes then break end
+end
+pcall(function()
+script:Destroy() end)]]></ProtectedString>
+				<bool name="Disabled">true</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{D5659904-5C15-42BC-BB39-C6CE1E1ED963}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">__Camera__Focus</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Script" referent="RBXB44618412D8741B295C7529A0D16D0E1">
+			<Properties>
+				<ProtectedString name="Source"><![CDATA[--This is a Script, Not magic, If the LocalScript depends on the Character as It's Ancestor, It won't work. Link your character through the ID attached to the Folder Instead. for i,v parse loop until you find it or use Folder's Attribute to locate it
+--Solivion, 2026
+--Reflect Some Camera Script To The Player Backpack Because This Is A Pseudo-Character(It is a model without a Humanoid; not Connected To The Player Directly But Player Got Alternative Control Over)
+local Reflected: {[Instance]: Instance} = {}
+local ScriptLinkedTo: Model
+local Count = 0;
+while typeof(ScriptLinkedTo) ~= 'Instance' do
+	ScriptLinkedTo = script:FindFirstAncestorWhichIsA('Model')
+	Count += task.wait(1)
+	if Count > 20 then
+		break
+	end
+end
+if typeof(ScriptLinkedTo) ~= 'Instance' then script:Destroy() return end -- [[This script is not associated with a Character]]
+local PID: number
+local Folder: Folder?
+Count = 0;
+function CleanUP() pcall(function() if ScriptLinkedTo then ScriptLinkedTo:Destroy() end end) pcall(function() if Folder then Folder:Destroy() end end) script:Destroy() end
+while typeof(PID) ~= 'number' and ScriptLinkedTo and ScriptLinkedTo.Parent do
+	PID = ScriptLinkedTo and ScriptLinkedTo:GetAttribute('__REGPLRID')
+	Count += task.wait(1)
+	if Count > 20 then
+		break
+	end
+end
+if typeof(PID) ~= 'number' then script:Destroy() return end -- [[This is not the associated Character Type]]
+if not ScriptLinkedTo or not ScriptLinkedTo.Parent then CleanUP() end
+local Plr: Player?
+--GetPlayerFromId but Able to run in Parallel Luau, In case this script got Desynchronized
+for i,v in game:GetService('Players'):GetDescendants() do
+	if v.ClassName == 'Player' and v.UserId == PID then
+		Plr = v
+		break
+	end
+end
+if not Plr then CleanUP() return end -- [[invalid character]]
+local Foldir = Plr:FindFirstChildOfClass('PlayerScripts') or Plr:FindFirstChildOfClass('Backpack') or Plr:FindFirstChildOfClass('PlayerGui') or Plr
+if typeof(Foldir) ~= 'Instance' then CleanUP() return end -- [[invalid Player Structure]]
+Folder = Foldir:FindFirstChild('__LINKED_SCRIPTS') or Instance.new('Folder', Foldir) Folder.Name = '__LINKED_SCRIPTS'
+if typeof(Folder) ~= 'Instance' or not Folder.Parent then CleanUP() return end
+local Hook = {}
+function Reflect(Tscript: LocalScript)
+	if not Plr or typeof(ScriptLinkedTo) ~= 'Instance' or typeof(ScriptLinkedTo.Parent) ~= 'Instance' or not Plr.Parent or typeof(Folder) ~= 'Instance' or Folder.ClassName ~= 'Folder' or typeof(Foldir) ~= 'Instance' or not Folder:IsDescendantOf(Foldir) or not Folder:IsDescendantOf(Plr) then CleanUP() return end
+	if typeof(Tscript) ~= 'Instance' or Tscript.ClassName ~= "LocalScript" or not Tscript:IsDescendantOf(ScriptLinkedTo) then return end
+	local ALR = Reflected[Tscript]
+	if typeof(ALR) == 'Instance' and ALR:IsDescendantOf(Folder) then return end
+	local Cloned = Tscript:Clone() Cloned.Parent = typeof(Tscript:GetActor()) == 'Instance' and Folder:FindFirstChildOfClass('Actor') or Folder
+	Reflected[Tscript] = Cloned
+	if typeof(Cloned) ~= 'Instance' then return end
+	if not Hook[Tscript] then Hook[Tscript] = {} end
+	local Clean Clean = function()
+		if Hook[Tscript] then
+			for i,v in Hook[Tscript] do
+				pcall(function()
+				if typeof(v) == 'RBXScriptConnection' then
+					v:Disconnect()
+				end end)
+			end
+			Hook[Tscript] = nil
+		end
+		Reflected[Tscript] = nil
+		Cloned:Destroy()
+		Clean = nil
+	end
+	Hook[Tscript][1] = Cloned.AncestryChanged:Connect(function()
+		if not (typeof(Cloned) == 'Instance' and Cloned.Parent and Cloned:IsDescendantOf(Folder)) then
+			Clean()
+		end
+	end)
+	Hook[Tscript][2] = Tscript.AncestryChanged:Once(Clean)
+	Hook[Tscript][3] = Tscript.Changed:Connect(function(ChangedName) if typeof(Cloned) == 'Instance' and Cloned.Parent and Cloned:IsDescendantOf(Folder) then pcall(function() Cloned[ChangedName] = Tscript[ChangedName] end) end end)
+end
+
+--Recheck
+if not Plr or typeof(ScriptLinkedTo) ~= 'Instance' or typeof(ScriptLinkedTo.Parent) ~= 'Instance' or not Plr.Parent or typeof(Folder) ~= 'Instance' or Folder.ClassName ~= 'Folder' or typeof(Foldir) ~= 'Instance' or not Folder:IsDescendantOf(Foldir) or not Folder:IsDescendantOf(Plr) then CleanUP() return end
+Folder:ClearAllChildren() -- Unreflect Last
+Instance.new("Actor", Folder)
+Folder:SetAttribute('ID_SOURCE', PID)
+Folder:SetAttribute('FULL_NAME', ScriptLinkedTo:GetFullName())
+Folder:SetAttribute('DIRECTORY', ScriptLinkedTo.Parent:GetFullName())
+for I,V in ScriptLinkedTo:GetChildren() do
+	if V.ClassName == 'Actor' then
+		for i,v in V:GetChildren() do
+			Reflect(v)
+		end
+		continue	
+	end
+	Reflect(V)
+end
+ScriptLinkedTo.DescendantAdded:Connect(Reflect)]]></ProtectedString>
+				<bool name="Disabled">true</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{B1F09A7A-E64E-48F6-98FB-1821383D88DB}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Reflector</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Script" referent="RBXC5444CDC5DE44C2B8EDAB5429F3F7C6B">
+			<Properties>
+				<ProtectedString name="Source"><![CDATA[--solivion
+local RunService = game:GetService("RunService")
+
+-- Define the character and torso
+local character = script.Parent
+local torso = character:WaitForChild("Torso")
+
+-- Make sure these names match the actual Welds inside your Torso
+local rightShoulder = torso:WaitForChild("Right Arm")
+local leftShoulder = torso:WaitForChild("Left Arm")
+local rightHip = torso:WaitForChild("Right Leg")
+local leftHip = torso:WaitForChild("Left Leg")
+
+-- Cache the original C0s so we can always return to the base pose
+local rsOrig = rightShoulder.C0
+local lsOrig = leftShoulder.C0
+local rhOrig = rightHip.C0
+local lhOrig = leftHip.C0
+
+-- Animation variables
+local sineTime = 0
+local maxAngle = math.rad(45) -- Controls how high the limbs swing (45 degrees)
+local lastpos = Vector3.new()
+local lastvel = Vector3.new()
+
+while character and character.Parent do
+	local dt = task.wait(1/15)
+	-- Get horizontal velocity to determine if we are walking
+	local curpos = (character:FindFirstChild('HumanoidRootPart') or torso).Position
+	local velocity = (lastpos - curpos) / dt
+	lastpos = curpos
+	local flatVelocity = Vector3.new(velocity.X, 0, velocity.Z)
+	local Lerpspeeed = 1 - ((10 ^ -1) ^ dt)
+	flatVelocity = lastvel:Lerp(flatVelocity, Lerpspeeed)
+	lastvel = flatVelocity
+	--print(velocity, flatVelocity)
+	local speed = flatVelocity.Magnitude
+--print(speed)
+	-- Base targets (idle position)
+	local targetRS = rsOrig
+	local targetLS = lsOrig
+	local targetRH = rhOrig
+	local targetLH = lhOrig
+	if speed > 1 then -- If the character is moving
+
+		-- Advance the sine wave timer
+		sineTime = sineTime + (dt * math.min(speed/2, 64))
+
+		-- Calculate the current swing angle
+		local swingAngle = math.sin(sineTime) * maxAngle * math.min(speed/8, 3.25)
+
+		-- Apply the rotation. 
+		-- Note: We apply it to the X-axis for a forward/backward swing.
+		-- (Opposite limbs swing in opposite directions)
+		targetRS = rsOrig * CFrame.Angles(swingAngle, 0, 0)
+		targetLS = lsOrig * CFrame.Angles(-swingAngle, 0, 0)
+		targetRH = rhOrig * CFrame.Angles(-swingAngle, 0, 0)
+		targetLH = lhOrig * CFrame.Angles(swingAngle, 0, 0)
+		
+		sineTime = sineTime % (math.pi * 4)
+	else
+		-- Reset sine wave so it starts naturally on the next movement
+		sineTime = 0
+	end
+
+	-- Smoothly interpolate to the target positions
+	-- This makes the limbs return to idle smoothly when you stop
+	local lerpSpeed = math.clamp(Lerpspeeed * 4,0, 1)
+
+	rightShoulder.C0 = rightShoulder.C0:Lerp(targetRS * (not character:GetAttribute('Grounded') and CFrame.Angles(math.pi, 0, 0) or CFrame.new()), lerpSpeed)
+	leftShoulder.C0 = leftShoulder.C0:Lerp(targetLS * (not character:GetAttribute('Grounded') and CFrame.Angles(math.pi, 0, 0) or CFrame.new()), lerpSpeed)
+	rightHip.C0 = rightHip.C0:Lerp(targetRH, lerpSpeed)
+	leftHip.C0 = leftHip.C0:Lerp(targetLH, lerpSpeed)
+end]]></ProtectedString>
+				<bool name="Disabled">true</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{AEEA524D-7D7F-41EF-B662-019858D489B5}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Anim</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+		<Item class="Script" referent="RBX15AE0FFB61F94F37B6271EB1926D52CF">
+			<Properties>
+				<ProtectedString name="Source"><![CDATA[--By @Solivion; I doubt anybody would need this unless they want clothing support for custom R6 without Humanoid
+local chr = script:FindFirstAncestorWhichIsA('Model')
+if not chr then return end
+local removeConT: RBXScriptConnection
+local removeConShirt: RBXScriptConnection
+local removeConPants: RBXScriptConnection
+local listPant = {"Foot", 'Leg'} -- pants override the torso texture when there is no shirt
+local activeShirt = nil
+local activePants = nil
+local activeT = nil -- nuller until finder
+local thePart = nil
+
+-- UV Data for 18-decal system (6 decals per body part)
+local ClothingUVData = {
+    Shirt = {
+        ["Torso"] = {
+            ["FRONT"] = {UVOffset = {X = 0.393, Y = 0.128}, UVScale = {X = 0.222, Y = 0.235}},
+            ["BACK"] = {UVOffset = {X = 0.728, Y = 0.128}, UVScale = {X = 0.222, Y = 0.235}},
+            ["LEFT"] = {UVOffset = {X = 0.282, Y = 0.128}, UVScale = {X = 0.111, Y = 0.235}},
+            ["RIGHT"] = {UVOffset = {X = 0.615, Y = 0.128}, UVScale = {X = 0.111, Y = 0.235}},
+            ["TOP"] = {UVOffset = {X = 0.393, Y = 0.011}, UVScale = {X = 0.222, Y = 0.117}},
+            ["BOTTOM"] = {UVOffset = {X = 0.393, Y = 0.363}, UVScale = {X = 0.222, Y = 0.117}},
+        },
+        ["Left Arm"] = {
+            ["FRONT"] = {UVOffset = {X = 0.525, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["BACK"] = {UVOffset = {X = 0.747, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["LEFT"] = {UVOffset = {X = 0.636, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["RIGHT"] = {UVOffset = {X = 0.858, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["TOP"] = {UVOffset = {X = 0.525, Y = 0.515}, UVScale = {X = 0.111, Y = 0.117}},
+            ["BOTTOM"] = {UVOffset = {X = 0.370, Y = 0.865}, UVScale = {X = 0.111, Y = 0.117}},
+        },
+        ["Right Arm"] = {
+            ["FRONT"] = {UVOffset = {X = 0.370, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["BACK"] = {UVOffset = {X = 0.145, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["LEFT"] = {UVOffset = {X = 0.032, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["RIGHT"] = {UVOffset = {X = 0.258, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["TOP"] = {UVOffset = {X = 0.370, Y = 0.515}, UVScale = {X = 0.111, Y = 0.117}},
+            ["BOTTOM"] = {UVOffset = {X = 0.525, Y = 0.865}, UVScale = {X = 0.111, Y = 0.117}},
+        },
+    },
+    Pant = {
+        ["Torso"] = {
+            ["FRONT"] = {UVOffset = {X = 0.393, Y = 0.128}, UVScale = {X = 0.222, Y = 0.235}},
+            ["BACK"] = {UVOffset = {X = 0.728, Y = 0.128}, UVScale = {X = 0.222, Y = 0.235}},
+            ["LEFT"] = {UVOffset = {X = 0.282, Y = 0.128}, UVScale = {X = 0.111, Y = 0.235}},
+            ["RIGHT"] = {UVOffset = {X = 0.615, Y = 0.128}, UVScale = {X = 0.111, Y = 0.235}},
+            ["TOP"] = {UVOffset = {X = 0.393, Y = 0.011}, UVScale = {X = 0.222, Y = 0.117}},
+            ["BOTTOM"] = {UVOffset = {X = 0.393, Y = 0.363}, UVScale = {X = 0.222, Y = 0.117}},
+        },
+        ["Left Leg"] = {
+            ["FRONT"] = {UVOffset = {X = 0.525, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["BACK"] = {UVOffset = {X = 0.747, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["LEFT"] = {UVOffset = {X = 0.636, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["RIGHT"] = {UVOffset = {X = 0.858, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["TOP"] = {UVOffset = {X = 0.525, Y = 0.515}, UVScale = {X = 0.111, Y = 0.117}},
+            ["BOTTOM"] = {UVOffset = {X = 0.370, Y = 0.865}, UVScale = {X = 0.111, Y = 0.117}},
+        },
+        ["Right Leg"] = {
+            ["FRONT"] = {UVOffset = {X = 0.370, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["BACK"] = {UVOffset = {X = 0.145, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["LEFT"] = {UVOffset = {X = 0.032, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["RIGHT"] = {UVOffset = {X = 0.258, Y = 0.635}, UVScale = {X = 0.111, Y = 0.235}},
+            ["TOP"] = {UVOffset = {X = 0.370, Y = 0.515}, UVScale = {X = 0.111, Y = 0.117}},
+            ["BOTTOM"] = {UVOffset = {X = 0.525, Y = 0.865}, UVScale = {X = 0.111, Y = 0.117}},
+        },
+    },
+}
+
+local faceMap = {
+    ["FRONT"] = Enum.NormalId.Front,
+    ["BACK"] = Enum.NormalId.Back,
+    ["LEFT"] = Enum.NormalId.Left,
+    ["RIGHT"] = Enum.NormalId.Right,
+    ["TOP"] = Enum.NormalId.Top,
+    ["BOTTOM"] = Enum.NormalId.Bottom,
+}
+
+-- Check if rig uses ONEDECAL system
+local useOneDecal = chr:GetAttribute("ONEDECAL") or false
+
+-- Function to apply 18-decal system
+local function applyMultiDecal(part, texture, clothingType, bodyPartName)
+    if not ClothingUVData[clothingType] or not ClothingUVData[clothingType][bodyPartName] then
+        return
+    end
+    
+    local uvData = ClothingUVData[clothingType][bodyPartName]
+    
+    for faceName, faceData in pairs(uvData) do
+        local decalName = faceName .. (clothingType == "Shirt" and "SHIRT" or "PANT")
+		local existingDecal
+		for i,v in part:GetChildren() do
+			if v:IsA("Decal") and v.Name == decalName then
+				existingDecal = v
+				break
+			end
+		end
+        
+		if existingDecal and existingDecal:IsA("Decal") then
+       pcall(function()     existingDecal:Destroy() end)
+        end
+        
+        local decal = Instance.new('Decal', part)
+        decal.Name = decalName or 'SHIRTFRONT'
+		pcall(function()   decal.Face = faceMap[faceName] end)
+		pcall(function() decal.Texture = texture end)
+		pcall(function()    decal.UVOffset = Vector2.new(faceData.UVOffset.X, faceData.UVOffset.Y) end)
+		pcall(function()    decal.UVScale = Vector2.new(faceData.UVScale.X, faceData.UVScale.Y) end)
+    end
+end
+
+-- Function to remove 18-decal system
+local function removeMultiDecal(part, clothingType, bodyPartName)
+    if not ClothingUVData[clothingType] or not ClothingUVData[clothingType][bodyPartName] then
+        return
+    end
+    
+    local uvData = ClothingUVData[clothingType][bodyPartName]
+    
+    for faceName, _ in pairs(uvData) do
+        local decalName = faceName .. (clothingType == "Shirt" and "SHIRT" or "PANT")
+        local decal = part:FindFirstChild(decalName)
+        
+        if decal then
+			pcall(function()        decal:Destroy() end)
+        end
+    end
+end
+
+-- part to show t-shirt on, Separated from the character torso cuz torso ain't treating it right.
+function Process(child, child2)
+	if typeof(child2) == 'Instance' and typeof(child) ~= 'Instance' then child = child2 child2 = nil end
+	if typeof(child) ~= 'Instance' or not child:IsDescendantOf(chr) then return end
+	if child.ClassName == 'Shirt' then
+		activeShirt = child -- The newest shirt becomes the active one
+
+		if removeConShirt then removeConShirt:Disconnect() end
+		local tremoveConShirt = child.AncestryChanged:Connect(function()
+			if child.Parent ~= chr then
+				-- STACK CHECK: Only run removal logic if THIS shirt is still the active one
+				if activeShirt == child then
+					activeShirt = nil
+
+					for i,v in chr:GetChildren() do
+						local normalizedName = v.Name:gsub('Left', ''):gsub('Right', ''):gsub('Upper', ''):gsub('Lower', ''):gsub(" ", '')
+						if v:IsA('BasePart') and normalizedName ~= '' and table.find({"Torso", 'Arm', 'Hand'}, normalizedName) then
+							if useOneDecal then
+								-- ONEDECAL system removal
+								if v:IsA('MeshPart') then
+									v.TextureID = (normalizedName == 'Torso' and activePants and activePants.PantsTemplate) or ''
+								else
+									local decal = v:FindFirstChild('Decal') or v:FindFirstChildOfClass('Decal')
+									local altDecal = v:FindFirstChild('Decal_Alt')
+
+									if decal then
+										if altDecal and normalizedName == 'Torso' then
+											decal.Texture = altDecal.Texture
+											altDecal:Destroy()
+										else
+											decal.Texture = (normalizedName == 'Torso' and activePants and activePants.PantsTemplate) or ''
+										end
+									end
+
+									local specialMesh = v:FindFirstChildOfClass('SpecialMesh')
+									if specialMesh and not decal then 
+										specialMesh.TextureId = (normalizedName == 'Torso' and activePants and activePants.PantsTemplate) or '' 
+									end
+								end
+							else
+								-- 18-decal system removal
+								removeMultiDecal(v, "Shirt", v.Name)
+								
+								-- If pants active, reapply pants decals
+								if normalizedName == 'Torso' and activePants then
+									applyMultiDecal(v, activePants.PantsTemplate, "Pant", v.Name)
+								end
+							end
+						end
+					end
+				end
+				removeConShirt:Disconnect(); removeConShirt = nil
+			end
+		end)
+		removeConShirt = tremoveConShirt
+
+		repeat task.wait() until (typeof(child.ShirtTemplate) == 'string' and child.ShirtTemplate:match('asset')) or tremoveConShirt ~= removeConShirt or not child.Parent
+
+		-- If another shirt was added while we yielded, abort applying this old one
+		if activeShirt ~= child then return end
+
+		for i,v in chr:GetChildren() do 
+			local normalizedName = v.Name:gsub('Left', ''):gsub('Right', ''):gsub('Upper', ''):gsub('Lower', ''):gsub(" ", '')
+			if v:IsA('BasePart') and normalizedName ~= '' and table.find({"Torso", 'Arm', 'Hand'}, normalizedName) then
+				if useOneDecal then
+					-- ONEDECAL system application
+					if v:IsA('MeshPart') then
+						v.TextureID = child.ShirtTemplate
+					else 
+						local decal = v:FindFirstChild('Decal') or v:FindFirstChildOfClass('Decal')
+						if not decal then 
+							decal = Instance.new('Decal', v) 
+							decal.Name = "Decal"
+							decal.ZIndex = 1
+						end
+
+						if normalizedName == 'Torso' and activePants then
+							decal.Name = "Decal_Alt"
+							decal.ZIndex = 0
+
+							local newMain = Instance.new('Decal', v)
+							newMain.Name = "Decal"
+							newMain.ZIndex = 1
+							newMain.Texture = child.ShirtTemplate
+						else
+							decal.Texture = child.ShirtTemplate or ''
+						end
+
+						local specialMesh = v:FindFirstChildOfClass('SpecialMesh')
+						if specialMesh and not decal then specialMesh.TextureId = child.ShirtTemplate end 
+					end
+				else
+					-- 18-decal system application
+					applyMultiDecal(v, child.ShirtTemplate, "Shirt", v.Name)
+				end
+			end
+		end
+
+	elseif child.ClassName == 'Pants' then
+		activePants = child -- The newest pants become the active ones
+
+		if removeConPants then removeConPants:Disconnect() end
+		local tremoveConPants = child.AncestryChanged:Connect(function()
+			if child.Parent ~= chr then
+				-- STACK CHECK: Only run removal logic if THESE pants are still the active ones
+				if activePants == child then
+					activePants = nil
+
+					local thischeck = table.clone(listPant)
+					table.insert(thischeck, 'Torso') 
+
+					for i,v in chr:GetChildren() do 
+						local normalizedName = v.Name:gsub('Left', ''):gsub('Right', ''):gsub('Upper', ''):gsub('Lower', ''):gsub(" ", '')
+						if v:IsA('BasePart') and normalizedName ~= '' and table.find(thischeck, normalizedName) then
+							if useOneDecal then
+								-- ONEDECAL system removal
+								if v:IsA('MeshPart') then
+									if not (normalizedName == 'Torso' and activeShirt) then
+										v.TextureID = ''
+									end
+								else 
+									local altDecal = v:FindFirstChild('Decal_Alt')
+									if altDecal then altDecal:Destroy() end
+
+									local decal = v:FindFirstChild('Decal') or v:FindFirstChildOfClass('Decal')
+									if decal and not (normalizedName == 'Torso' and activeShirt) then 
+										decal.Texture = ''  
+									end
+
+									local specialMesh = v:FindFirstChildOfClass('SpecialMesh')
+									if specialMesh and not decal and not (normalizedName == 'Torso' and activeShirt) then 
+										specialMesh.TextureId = '' 
+									end 
+								end
+							else
+								-- 18-decal system removal
+								removeMultiDecal(v, "Pant", v.Name)
+								
+								-- If shirt active, reapply shirt decals
+								if normalizedName == 'Torso' and activeShirt then
+									applyMultiDecal(v, activeShirt.ShirtTemplate, "Shirt", v.Name)
+								end
+							end
+						end
+					end
+				end
+				removeConPants:Disconnect(); removeConPants = nil
+			end
+		end) 
+		removeConPants = tremoveConPants
+
+		repeat task.wait() until (typeof(child.PantsTemplate) == 'string' and child.PantsTemplate:match('asset')) or removeConPants ~= tremoveConPants or not child.Parent
+
+		-- If another pant was added while we yielded, abort applying this old one
+		if activePants ~= child then return end
+
+		local thischeck = table.clone(listPant)
+		table.insert(thischeck, 'Torso') 
+
+		for i,v in chr:GetChildren() do
+			local normalizedName = v.Name:gsub('Left', ''):gsub('Right', ''):gsub('Upper', ''):gsub('Lower', ''):gsub(" ", '')
+			if v:IsA('BasePart') and normalizedName ~= '' and table.find(thischeck, normalizedName) then
+				if useOneDecal then
+					-- ONEDECAL system application
+					if v:IsA('MeshPart') then
+						if not (normalizedName == 'Torso' and activeShirt) then
+							v.TextureID = child.PantsTemplate
+						end
+					else 
+						if activeShirt and normalizedName == 'Torso' then
+							local altDecal = v:FindFirstChild('Decal_Alt')
+							if not altDecal then
+								altDecal = Instance.new('Decal', v)
+								altDecal.Name = 'Decal_Alt'
+								altDecal.ZIndex = 0
+							end
+							altDecal.Texture = child.PantsTemplate
+						else
+							local decal = v:FindFirstChild('Decal') or v:FindFirstChildOfClass('Decal')
+							if not decal then 
+								decal = Instance.new('Decal', v) 
+								decal.Name = "Decal"
+								decal.ZIndex = 1
+							end
+							decal.Texture = child.PantsTemplate or '' 
+						end
+
+						local specialMesh = v:FindFirstChildOfClass('SpecialMesh')
+						if specialMesh and not v:FindFirstChildOfClass('Decal') and not (activeShirt and normalizedName == 'Torso') then 
+							specialMesh.TextureId = child.PantsTemplate 
+						end 
+					end
+				else
+					-- 18-decal system application
+					applyMultiDecal(v, child.PantsTemplate, "Pant", v.Name)
+				end
+			end
+		end
+	elseif child.ClassName == 'BodyColors' then
+		for i,v in chr:GetChildren() do
+			local normalizedName = v.Name:gsub('Upper', ''):gsub('Lower', ''):gsub(" ", '')
+			if v:IsA('BasePart') and normalizedName ~= '' then
+				pcall(function()
+					if v.Name:match('Left') then
+						if v.Name:match('Leg') then
+							v.Color = child.LeftLegColor3
+						elseif v.Name:match('Arm') then
+							v.Color = child.LeftArmColor3
+						end
+					elseif v.Name:match('Right') then
+						if v.Name:match('Leg') then
+							v.Color = child.RightLegColor3
+						elseif v.Name:match('Arm') then
+							v.Color = child.RightArmColor3
+						end
+					elseif v.Name:match('Torso') then
+						v.Color = child.TorsoColor3
+					elseif v.Name:match('Head') then
+						v.Color = child.HeadColor3
+
+					end end)
+			end
+		end
+	elseif child.ClassName == 'ShirtGraphic' then
+		local Torso = chr:FindFirstChild('Torso') or chr:FindFirstChild('UpperTorso')
+		if Torso then
+			activeT = child
+			if typeof(thePart) ~= 'Instance' or not thePart:IsDescendantOf(chr) then
+				local Part = Instance.new('Part')
+				Part.Size = Vector3.new(Torso.Size.X, Torso.Size.Y, 0.01)
+				Part.Transparency = 1
+				Part.CanCollide = false
+				Part.Anchored = false
+				Part.Parent = Torso
+				local Weld = Instance.new('Weld', Part)
+				Weld.Part1 = Part
+				Weld.Part0 = Torso
+				Weld.C0 = CFrame.new(0, 0, -((Torso.Size.Z/2) + 0.01)) -- for floating in front texture
+				pcall(function()
+					-- old one
+					thePart:Destroy()
+				end)
+				thePart = Part
+			end
+			if not thePart:FindFirstChildOfClass('Decal') then
+				Instance.new('Decal', thePart)
+			end
+			if removeConT then
+				removeConT:Disconnect() removeConT = nil
+			end
+			local tremoveConT = child.AncestryChanged:Connect(function()
+				if child.Parent ~= chr then
+					if thePart:FindFirstChildOfClass('Decal') then
+						local anotherT = chr:FindFirstChildOfClass('ShirtGraphic')
+						if anotherT then
+							activeT = anotherT
+						else activeT = nil end
+						thePart:FindFirstChildOfClass('Decal').Color3 = anotherT and anotherT.Color3 or Color3.new(1,1,1)
+						thePart:FindFirstChildOfClass('Decal').ColorMap = anotherT and anotherT.Graphic or ''
+					end
+					removeConT:Disconnect() removeConT = nil
+				end
+			end) removeConT = tremoveConT
+			repeat task.wait() until (activeT ~= child) or (typeof(child.Graphic) == 'string' and child.Graphic:match('asset')) or removeConT ~= tremoveConT or not child.Parent
+			pcall(function() if activeT ~= child then return end thePart:FindFirstChildOfClass('Decal').ColorMap = child.Graphic end) pcall(function() thePart:FindFirstChildOfClass('Decal').Color3 = child.Color3 end)
+		end
+	end
+end
+local Connections = {}
+function ListAndConnect(v)
+	if typeof(v) ~= 'Instance' then return end
+	Process(v)
+	if typeof(Connections[v]) ~= 'table' then
+		Connections[v] = {}
+		Connections[v][1] = v.Changed:Connect(Process, v)
+		Connections[v][2] = v.Destroying:Once(function()
+			if Connections[v][1] then	Connections[v][1]:Disconnect() Connections[v][1] = nil end
+			if Connections[v][2] then	Connections[v][2]:Disconnect() Connections[v][2] = nil end
+			Connections[v] = nil
+		end)
+	end
+end
+for i, v in chr:GetChildren() do
+	ListAndConnect(v)
+end
+chr.ChildAdded:Connect(ListAndConnect)]]></ProtectedString>
+				<bool name="Disabled">true</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<token name="RunContext">0</token>
+				<string name="ScriptGuid">{EB169A0D-CD7D-48EA-966C-A11C7B1E7B6C}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">Applier</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+	</Item>
+</roblox>
