@@ -1,0 +1,454 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Script" referent="RBX34D6D826AB344E758E5A3B66F00A8D48">
+		<Properties>
+			<ProtectedString name="Source"><![CDATA[--Soliviant, for "myleszad" NPC
+if not workspace.Map then script:Destroy() end
+local Myle = workspace.Map:WaitForChild('Myle', 120)
+if not Myle then return end
+local PRX = workspace.Map.Myle:WaitForChild('ProximityPrompt', 120)
+if not PRX or not Myle then script:Destroy() return end
+local CRSPK: Player
+local PLRS: {Player: PlayerStats} = {}
+type PlayerStats = {DialoguePoint: string, Reputation: number}
+
+type PlayerStats = {
+	LastDialogue: DialoguePointStruct,
+	Reputation: number
+}
+
+type DialoguePointReroute = {
+	Path: string
+}
+type DialoguePointStruct = {
+	Reply: { [string]: DialoguePointStruct? },
+	ReturnMode: number, -- 0: none, 1: goodbye only, 2: return only, 3: both
+	ReplyMessage: string?
+}
+
+local DialogueLine: {DialoguePointStruct} = {
+	ReplyMessage = 'Hello?',
+	ReturnMode = 3, -- allow both goodbye and return
+	Reply = {
+		["Tell me about this place."] = {
+			ReplyMessage = 'This is the "Paradise" or so they say.',
+			ReturnMode = 3,
+			Reply = {
+				["Any notable stuff?"] = {
+					ReplyMessage = [[I'd say check for differences, should you?]],
+					ReturnMode = 3,
+					Reply = {
+						["Anything To Look Out For?"] = {
+							ReplyMessage = 'A Door.',
+							ReturnMode = 1,
+							Reply = {["Anything Info About That?"] = {
+								ReplyMessage = [[I've got none so far]],
+								ReturnMode = 1,
+								Reply = {}
+							}}
+						}
+					}
+				},
+				["Sounds interesting."] = {
+					ReplyMessage = "I'd disagree",
+					ReturnMode = 1,
+					Reply = {}
+				},
+				["Any lore?"] = {
+					ReplyMessage = "Not really.",
+					ReturnMode = 1,
+					Reply = {}
+				},
+				["Why's the place surrounded by water?"] = {
+					ReplyMessage = "It's meant to be a small island, turn up ur render distance",
+					ReturnMode = 1,
+					Reply = {}
+				},
+				["Paradise?"] = {
+					ReplyMessage = "yeah, they call it that.",
+					ReturnMode = 1,
+					Reply = {
+						["Sounds overrated."] = {
+							ReplyMessage = "I agree with your asessment.",
+							ReturnMode = 1,
+							Reply = {}
+						},["How did this place came to be?"] = {
+							ReplyMessage = "Built In Roblox Studio.",
+							ReturnMode = 1,
+							Reply = {}
+						},
+						["Anymore about the place?"] = {
+							ReplyMessage = "it's definitely not real.",
+							ReturnMode = 1,
+							Reply = {["not real?"] = {
+								ReplyMessage = "if you know. you know.",
+								ReturnMode = 1,
+								Reply = {},
+								["Is that why I can't just go out the sea?"] = {
+									ReplyMessage = "Pretty much",
+									ReturnMode = 1,
+									Reply = {}
+								},
+							}
+							}
+							,
+							["So random"] = {
+								ReplyMessage = "I think so.",
+								ReturnMode = 1,
+								Reply = {}
+							}
+						}
+					}
+				}
+			} 
+		},
+		["Who are you?"] = {
+			ReplyMessage = 'I am myleszad.',
+			ReturnMode = 3,
+			Reply = {
+				["But that's the dev?"] = {
+					ReplyMessage = "Well, this npc's been here for a while, so why not just keep it that way?",
+					ReturnMode = 1,
+					Reply = {}
+				},
+				["Nice to meet you."] = {
+					ReplyMessage = 'so do I.',
+					ReturnMode = 1,
+					Reply = {}
+				},
+				["Why can you have dialogue?"] = {
+					ReplyMessage = "Well. It's WIP",
+					ReturnMode = 1,
+					Reply = {}
+				},
+				["Why are you here."] = {
+					ReplyMessage = [[Well, I'm just here to be a test NPC.]],
+					ReturnMode = 1,
+					Reply = {
+						["Any other npcs I could talk to?"] = {
+							ReplyMessage = 'No, Not anymore.',
+							ReturnMode = 1,
+							Reply = {
+								["Why though?"] = {
+									ReplyMessage = 'The dev is too bothered to adapt it to TextChatService.',
+									ReturnMode = 1,
+									Reply = {}
+								},
+								["So it's only you?"] = {
+									ReplyMessage = 'Indeed.',
+									ReturnMode = 1,
+									Reply = {}
+								},
+							}
+						},
+						["test?"] = {
+							ReplyMessage = "The Code's A Mess",
+							ReturnMode = 1,
+							Reply = {}
+						},
+						["Does the dev ever take something seriously?"] = {
+							ReplyMessage = "Unfortunately not",
+							ReturnMode = 1,
+							Reply = {}
+						},
+						["Are you recently added?"] = {
+							ReplyMessage = "Nope, Been here not long after this game started development.",
+							ReturnMode = 1,
+							Reply = {}
+						},
+						["Why do you only appear in a reserved server?"] = {
+							ReplyMessage = "Easter egg.",
+							ReturnMode = 1,
+							Reply = {}
+						},
+					}
+				}
+			}
+		},
+		["Goodbye."] = {
+			ReplyMessage = 'Bye?',
+			ReturnMode = 0,
+			Reply = {}
+		},
+		["Hi"] = {
+			ReturnMode = 0,
+			Reply = {}
+		}
+	}
+}
+
+PRX.Destroying:Once(function()
+	task.synchronize()
+	cleanUPPROMPT()
+	PLRS = nil
+	script:Clone().Parent = script.Parent
+	script:Destroy()
+end)
+
+local GU = require(script.GridUtility)
+function ReturnOffsetTable(Amount)
+	task.desynchronize()
+	if GU then return GU.ReturnOffsetTable(Amount) end
+		local Table = {}
+		local Row = 0
+		while Amount > 0 do
+			local Counted = 0
+			for i = 1, math.round(math.sqrt(Amount)) do
+				if Amount <= 0 then break end
+				Amount -= 1
+				Counted += 1
+			end
+			if Counted > 0 then
+				Row += 1
+				Table[Row] = Counted
+			else
+				break
+			end
+		end
+		local Finale = {}
+		local totalOffsetY = Row * -50
+		for i, v in ipairs(Table) do
+			local YOffset = totalOffsetY + i * 100
+		local totalOffsetX = math.ceil(v / 2) * 100
+			local Strpnt = -totalOffsetX
+			for j = 1, v do
+			Strpnt += 100
+				table.insert(Finale, Vector2.new(Strpnt, YOffset))
+			end
+		end
+		if #Finale <= 0 then
+			Finale = {Vector2.new()}
+		end
+		return Finale
+end
+local TweenDown
+local PRXPMT = {}
+local Timer: thread
+local UITHRD
+local RespondGUI = PRX.Parent.Head.respond
+if not RespondGUI then task.synchronize() PRX:Destroy() return end
+local KCDE = {
+	Enum.KeyCode.One,
+	Enum.KeyCode.Two,
+	Enum.KeyCode.Three,
+	Enum.KeyCode.Four,
+	Enum.KeyCode.Five,
+	Enum.KeyCode.Six,
+	Enum.KeyCode.Seven,
+	Enum.KeyCode.Eight,
+	Enum.KeyCode.Nine ,
+	Enum.KeyCode.Zero,
+	Enum.KeyCode.KeypadOne,	Enum.KeyCode.KeypadTwo,	Enum.KeyCode.KeypadThree,	Enum.KeyCode.KeypadFour,	Enum.KeyCode.KeypadFive,	Enum.KeyCode.KeypadSix,	Enum.KeyCode.KeypadSeven,	Enum.KeyCode.KeypadEight,	Enum.KeyCode.KeypadNine,	Enum.KeyCode.KeypadZero
+}
+function GETDPS(Player: Player)
+	task.desynchronize()
+	if not Player then return end
+	local DPSLOCATION = PLRS[Player] and PLRS[Player].DialoguePoint or ''
+	local Split = string.split(DPSLOCATION, '>')
+	if Split[1] == '' then table.remove(Split,1) end
+	local TableRN = DialogueLine
+	for i,v in Split do
+		if TableRN.Reply and TableRN.Reply[v] then TableRN = TableRN.Reply[v] elseif PLRS[Player] then print(PLRS[Player].DialoguePoint) PLRS[Player].DialoguePoint = '' break end
+	end
+	return TableRN
+end
+function ReadDPS(DPS: DialoguePointStruct, Player: Player)
+	task.desynchronize()
+	if typeof(Player) ~= 'Instance' or not Player:IsA('Player') then return end
+	local Respond = DPS.ReplyMessage
+	if Respond then
+		task.synchronize()
+		if TweenDown then TweenDown:Cancel() end
+		TweenDown = game:GetService('TweenService'):Create(RespondGUI.TextLabel, TweenInfo.new(1), {Transparency = 0})
+		TweenDown:Play()
+		RespondGUI.AlwaysOnTop = true
+		RespondGUI.Brightness = 1
+		RespondGUI.LightInfluence = .5
+		RespondGUI.TextLabel.Text = Respond
+		RespondGUI.TextLabel.Visible = true
+		if UITHRD then coroutine.close(UITHRD) end
+		UITHRD = coroutine.create(function()
+			task.wait(3)
+			if RespondGUI.TextLabel.Text ~= Respond then return end
+			TweenDown = game:GetService('TweenService'):Create(RespondGUI.TextLabel, TweenInfo.new(3), {Transparency = 1})
+			TweenDown:Play()
+			task.wait(3)
+			if RespondGUI.TextLabel.Text ~= Respond then return end
+			RespondGUI.TextLabel.Visible = false
+	end)
+	coroutine.resume(UITHRD)
+	end	
+	if not PLRS[Player] then PLRS[Player] = {Reputation = 1, DialoguePoint = ""} Player.Destroying:Once(function() PLRS[Player] = nil end) end
+	if not next(DPS.Reply) or not PLRS[Player] then
+		PLRS[Player].DialoguePoint = ""
+	else
+		SetUPPROMPT(DPS, Player)
+	end
+end
+function cleanUPPROMPT()
+	task.synchronize()
+	for i,v in pairs(PRXPMT) do
+		v:Disconnect()
+		i:Destroy()
+	end
+	PRX.Enabled = true
+	PRXPMT = {}
+end
+function SetUPPROMPT(DPS: DialoguePointStruct, Player)
+	task.desynchronize()
+	if Timer then coroutine.close(Timer) end	
+	local tTimer tTimer = coroutine.create(function()
+		task.wait(15)
+		if Timer == tTimer and next(PRXPMT) then
+			cleanUPPROMPT()
+		end 
+	end)
+	Timer = tTimer
+	coroutine.resume(Timer)
+	cleanUPPROMPT()
+	task.desynchronize()
+	local Ipair = 1
+	local count = 0
+	for i,v in DPS.Reply do
+		count += 1
+	end
+	task.synchronize()
+	PRX.Enabled = false
+	local UIOFFSET = ReturnOffsetTable(count)
+	for i: string,v: DialoguePointStruct in pairs(DPS.Reply) do
+		task.synchronize()
+		local newprompt = Instance.new('ProximityPrompt', PRX.Parent)
+		newprompt.Name = i..'PRMPT'
+		newprompt.KeyboardKeyCode = KCDE[Ipair]
+		newprompt.RequiresLineOfSight = false
+		newprompt.HoldDuration = 1
+		newprompt.ActionText = i or ''
+		newprompt.ObjectText =--[[ v.ReplyMessage or]] ''
+		newprompt.UIOffset = UIOFFSET[Ipair]
+		Ipair+=1
+		PRXPMT[newprompt] = newprompt.Triggered:Connect(function(PLR)
+			if PLR ~= Player then return end
+			PLRS[PLR].DialoguePoint = PLRS[PLR].DialoguePoint..'>'..i
+			cleanUPPROMPT()
+			ReadDPS(GETDPS(Player), Player)
+		end)
+	end
+end
+PRX.Triggered:Connect(function(Player)
+	task.desynchronize()
+	if next(PRXPMT) then return end
+	ReadDPS(GETDPS(Player), Player)
+end)
+
+coroutine.resume(coroutine.create(function()
+	while task.wait(600) do --//stray cases, events not picked up
+		task.desynchronize()
+		for i,v in pairs(PLRS) do
+			if not i or not i.Parent then PLRS[i] = nil end
+		end
+	end
+end))]]></ProtectedString>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<token name="RunContext">0</token>
+			<string name="ScriptGuid">{C402DB9D-B9E1-483C-B489-0FDFE984DC75}</string>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+			<bool name="DefinesCapabilities">false</bool>
+			<string name="Name">__MYLEDIALOG</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="ModuleScript" referent="RBX8C7F3AFA870E4FBFA57E15848987A5FA">
+			<Properties>
+				<Content name="LinkedSource"><null></null></Content>
+				<ProtectedString name="Source"><![CDATA[local GridUtility = {}
+
+function GridUtility.ReturnOffsetTable(Amount)
+	local itemsToDistribute = Amount
+	local spacing = 100 -- Define the spacing between items/rows
+
+	if not itemsToDistribute or itemsToDistribute <= 0 then
+		return {Vector2.new(0, 0)} -- Return a default position for zero or invalid amount
+	end
+
+	local rowCounts = {} -- Stores the number of items for each row
+	local totalRows = 0
+
+	-- Determine number of items per row based on the original logic
+	while itemsToDistribute > 0 do
+		local numItemsInRowAttempt = math.round(math.sqrt(itemsToDistribute))
+		if numItemsInRowAttempt == 0 and itemsToDistribute > 0 then -- Ensure at least one item is processed if some remain
+			numItemsInRowAttempt = 1
+		elseif numItemsInRowAttempt == 0 and itemsToDistribute <= 0 then -- No items left
+			break
+		end
+		
+		local countedThisRow = 0
+		for _ = 1, numItemsInRowAttempt do
+			if itemsToDistribute <= 0 then
+				break
+			end
+			itemsToDistribute -= 1
+			countedThisRow += 1
+		end
+
+		if countedThisRow > 0 then
+			totalRows += 1
+			rowCounts[totalRows] = countedThisRow
+		else
+			-- Should not happen if itemsToDistribute > 0 initially and numItemsInRowAttempt is handled
+			break
+		end
+	end
+
+	if totalRows == 0 then
+		return {Vector2.new(0, 0)} -- Fallback if no rows were created
+	end
+
+	local finalOffsets = {}
+
+	-- Calculate the starting Y offset to center the entire grid vertically
+	-- Total height of row centers = (totalRows - 1) * spacing
+	-- Start Y for the first row (index 1) = - (totalRows - 1) * spacing / 2
+	local startY = -(totalRows - 1) * spacing / 2
+
+	for i = 1, totalRows do
+		local itemsInCurrentRow = rowCounts[i]
+		local currentY = startY + (i - 1) * spacing
+
+		-- Calculate the starting X offset to center items in the current row horizontally
+		-- Total width of item centers in this row = (itemsInCurrentRow - 1) * spacing
+		-- Start X for the first item in this row (index 1) = - (itemsInCurrentRow - 1) * spacing / 2
+		local currentStartX = -(itemsInCurrentRow - 1) * spacing / 2
+
+		for j = 1, itemsInCurrentRow do
+			local currentX = currentStartX + (j - 1) * spacing
+			table.insert(finalOffsets, Vector2.new(currentX, currentY))
+		end
+	end
+
+	if #finalOffsets == 0 then
+		-- This fallback should ideally not be reached if Amount > 0
+		return {Vector2.new(0, 0)}
+	end
+
+	return finalOffsets
+end
+
+return GridUtility
+
+]]></ProtectedString>
+				<string name="ScriptGuid">{E9996C3F-D4E0-441E-93E3-0D4D786F6710}</string>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+				<bool name="DefinesCapabilities">false</bool>
+				<string name="Name">GridUtility</string>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+		</Item>
+	</Item>
+</roblox>
