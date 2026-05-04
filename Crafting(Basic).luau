@@ -235,7 +235,7 @@ function Entry(PhysicalBench: Instance, ReqData: {}?) -- ReqData Checked Against
 	end
 	local Bench = table.clone(ReqData or {}) or {}
 	local BenchStorage = game:FindFirstChildOfClass('ServerStorage'):FindFirstChild('Storage__'..PhysicalBench:GetFullName())
-	if not BenchStorage then BenchStorage = Instance.new('Folder', game:FindFirstChildOfClass('ServerStorage')) or Default('instance') BenchStorage.Name = 'Storage__'..PhysicalBench:GetFullName() end
+	if not validInstance(BenchStorage) then BenchStorage = Instance.new('Folder', game:FindFirstChildOfClass('ServerStorage')) or Default('instance') BenchStorage.Name = 'Storage__'..PhysicalBench:GetFullName() end
 	function Bench:UpdateItemTable()
 		if not validInstance(BenchStorage) then return end
 		local Refreshed = {}
@@ -263,7 +263,7 @@ function Entry(PhysicalBench: Instance, ReqData: {}?) -- ReqData Checked Against
 		if typeof(HoldIn) ~= 'Instance' then return end	
 		table.insert(Bench.HoldingItem, Item) table.insert(Bench.HoldingItemString, Identified)
 		pcall(function() Item.Parent = HoldIn end)
-		task.spawn(function() while not table.find(BenchStorage:GetChildren(), Item) and table.find(Bench.HoldingItemString, Identified) and table.find(Bench.HoldingItem, Item) do task.wait(.1) pcall(function() Item.Parent = BenchStorage end) end end)
+		task.spawn(function() while validInstance(BenchStorage) and not table.find(BenchStorage:GetChildren(), Item) and table.find(Bench.HoldingItemString, Identified) and table.find(Bench.HoldingItem, Item) do task.wait(.1) pcall(function() Item.Parent = BenchStorage end) end if not validInstance(PhysicalBench) then Bench:Destroy() return end --[[whoops]] if not validInstance(BenchStorage) then BenchStorage = Instance.new('Folder', game:FindFirstChildOfClass('ServerStorage')) or Default('instance') BenchStorage.Name = 'Storage__'..PhysicalBench:GetFullName() end end)
 		if #Bench.HoldingItem ~= #Bench.HoldingItemString then Bench:UpdateStringTable() end -- inaccurate reading
 	end
 	function Bench:NewPrompt(Label: string, Act: string?, Obj: string?, Offset: Vector2?) if typeof(Label) ~= 'string' or typeof(Bench.ProximityPrompts) ~= 'table' then Bench.ProximityPrompts = {} end
@@ -313,12 +313,13 @@ function Entry(PhysicalBench: Instance, ReqData: {}?) -- ReqData Checked Against
 		if not is_subset(Recipe.required ,Bench.HoldingItemString) then return end --not READY
 		local MarkForDeletion = {} -- used
 		local stringclone = table.clone(Bench.HoldingItemString) -- clone to not modify the original
+		local used = {}
 		for i,v in Recipe.required do
 			local Item = table.find(stringclone, v)
 			if not Item then return end -- not ready
 			table.remove(stringclone, Item)
 			for a,b in Bench.HoldingItem do
-				if ItemIs(b) == v then table.insert(MarkForDeletion, b) end
+				if ItemIs(b) == v and not used[a] then used[a] = true table.insert(MarkForDeletion, b) break end
 			end
 		end
 		local clone = table.clone(Bench.HoldingItem)
@@ -360,6 +361,12 @@ function Entry(PhysicalBench: Instance, ReqData: {}?) -- ReqData Checked Against
 		if validInstance(ToParent) then pcall(function() Item.Parent = ToParent end) task.spawn(function() while validInstance(ToParent) and validInstance(Item) and Item.Parent ~= ToParent do task.wait(1) pcall(function() Item.Parent = ToParent end) end if not validInstance(Item) then return end if not validInstance(ToParent) then Item.Parent = workspace or Default('instance') end end) else Item:Destroy() end
 		Bench:UpdateItemTable()
 		Bench:UpdateStringTable()
+	end
+	function Bench:Destroy()
+		pcall(function() Bench:UpdateItemTable() for i,v in Bench.HoldingItem do pcall(function() Bench:RemoveItem(v, workspace) end) end end)
+		pcall(function() Bench:EjectPlayer() end) pcall(function() allTable[PhysicalBench] = nil end)
+		pcall(function() table.clear(Bench) end)
+		Bench = nil
 	end
 	function Bench:RefreshWire()
 		if typeof(Bench.State) ~= 'string' then Bench.State = 'EmptyState' end
@@ -535,6 +542,9 @@ function Entry(PhysicalBench: Instance, ReqData: {}?) -- ReqData Checked Against
 	Bench:ToState("ItemInput")
 	Bench:UpdateItemTable()
 	Workbenches[PhysicalBench] = Bench
+	PhysicalBench.Destroying:Once(function()
+		Bench:Destroy()
+	end)
 end
 
 local Bindable = script:FindFirstChildOfClass('BindableEvent') or script:WaitForChild('BenchBindable', 10) or Instance.new('BindableEvent', script)
