@@ -5,7 +5,7 @@
 -- Stat: a bit stable, Last Commit 5/17/2026
 --im bad at metatable ToT, I never realized it was this useful at making local Environment and Global Env Seperated and can Index to each other
 
-local Codes = "x=1;y=2;z={};z[fuckyou]={};z.fuckyou[k]=1;u can index table too;z[a]=2;z[b]=~(x==1 & y==2);z[c]=(a=number);Solivion; #x=$(@x@*@a@+12); #y=$(@y@+1); end; z[d]=3;z:c(a=67,b=61,c=41); y = $(@x@+1);z[b]=~(x==1 & y==2);this is an if line;~(x>0) #y=1; end;v=~(y<2);"	
+local Codes = "x=1;y=2;z={};z[fuckyou]={};z.fuckyou[k]=1;u can index table too;z[a]=2;d=~(x!=1);z[b]=~(x==1 & y==2);z[c]=(a=number);Solivion; #x=$(@x@*@a@+12); #y=$(@y@+1); end; z[d]=3;z:c(a=67,b=61,c=41); y = $(@x@+1);z[b]=~(x==1 & y==2);this is an if line;~(x>0) #y=1; end;v=~(y<2);"	
 --[[CORE]]
 function Verbose(...) print(...) end -- to silence, please comment the print()
 local _SYNTAXES = {"<", ">", "=", "+", "-", "!", "(", ")", "{", "}", ":", ";", "#", ".", "[", "]", ",", "/", "^" , "~", "|", "'", "&", "*", "$", "%"}
@@ -198,7 +198,7 @@ function CheckOperation(OString: string, _ENV: {})
 			if buf ~= "" then table.insert(tokens, buf); buf = "" end
 			-- check for two-char operators
 			local two = OString:sub(i, i+1)
-			if two == "==" or two == "~=" or two == ">=" or two == "<=" or two == "!=" then
+			if two == "==" or two == "!=" or two == ">=" or two == "<=" or two == "!=" then
 				table.insert(tokens, two)
 				i = i + 1
 			elseif c == "&" or c == "|" or c == ">" or c == "<" or c == "=" then
@@ -231,12 +231,12 @@ function CheckOperation(OString: string, _ENV: {})
 		else
 			-- Vals
 			local nextOp = tokens[i+1]
-			if nextOp == "==" or nextOp == "~=" or nextOp == ">" or 
+			if nextOp == "==" or nextOp == "!=" or nextOp == ">" or 
 				nextOp == "<" or nextOp == ">=" or nextOp == "<=" then
 				local left = DecodeVal(token, _ENV)
 				local right = DecodeVal(tokens[i+2], _ENV)
 				if nextOp == "==" then waitingBool = (left == right)
-				elseif nextOp == "~=" then waitingBool = (left ~= right)
+				elseif nextOp == "!=" then waitingBool = (left ~= right)
 				elseif nextOp == ">" then waitingBool = (left > right)
 				elseif nextOp == "<" then waitingBool = (left < right)
 				elseif nextOp == ">=" then waitingBool = (left >= right)
