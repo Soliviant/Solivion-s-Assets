@@ -1,4 +1,3 @@
---by @Soliviant, aka Solivion
 local X,Y = 0,0
 local Ang = CFrame.new()
 local Dist = 5
@@ -370,7 +369,7 @@ local Param = RaycastParams.new()
 Param.FilterType = Enum.RaycastFilterType.Exclude
 Param.IgnoreWater = true
 local LastMax = 25
-
+Invisparte = {}
 while script and script.Parent do
 	local dt = task.wait()
 	local userSens = getUserSensitivity()
@@ -404,15 +403,21 @@ while script and script.Parent do
 		end)
 		if typeof(Inverted) ~= 'number' then Inverted = 0 end
 		Ang = Ang:Lerp(CFrame.Angles(0, math.rad(X * math.sign(SquishX + 1)), 0) * CFrame.Angles(math.rad(Y * Inverted * math.sign(SquishY + 1)), 0, 0), Speed)
-		Centre = typeof(Cam.CameraSubject) == 'Instance' and (Cam.CameraSubject:IsA('BasePart') and Cam.CameraSubject.Position or Cam.CameraSubject:IsA('Humanoid') and Cam.CameraSubject.RootPart and Cam.CameraSubject.RootPart.Position or Cam.CameraSubject:IsA('Model') and Cam.CameraSubject:GetPivot().Position) or (script:FindFirstAncestorWhichIsA('Player') and script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui') and script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('theThingWoah') and typeof(script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('theThingWoah'):GetAttribute('__POS')) == 'Vector3' and script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('theThingWoah'):GetAttribute('__POS')) or Centre
+		Centre = typeof(Cam.CameraSubject) == 'Instance' and (Cam.CameraSubject:IsA('BasePart') and Cam.CameraSubject.Position or Cam.CameraSubject:IsA('Humanoid') and Cam.CameraSubject.RootPart and Cam.CameraSubject.RootPart.Position or Cam.CameraSubject:IsA('Model') and Cam.CameraSubject:GetPivot().Position) or (script:FindFirstAncestorWhichIsA('Player') and script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui') and ((script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('TheCoolThingIGuess') and typeof(script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('TheCoolThingIGuess'):GetAttribute('__POS')) == 'Vector3' and script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('TheCoolThingIGuess'):GetAttribute('__POS')) or (script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('theThingWoah') and typeof(script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('theThingWoah'):GetAttribute('__POS')) == 'Vector3' and script:FindFirstAncestorWhichIsA('Player'):FindFirstChildOfClass('PlayerGui'):FindFirstChild('theThingWoah'):GetAttribute('__POS')) )) or Centre
 		local BackwardVec = -Ang.LookVector * LDist
 		LDist = math.min(LDist + (Dist - LDist) * Speed, LastMax)
-		pcall(function()	Param.FilterDescendantsInstances = {getSubjectFilter(Cam)} end)
+		pcall(function()	Param.FilterDescendantsInstances = {getSubjectFilter(Cam), Invisparte} end)
 		local TotalDist = workspace:Blockcast(CFrame.new(Centre), Vector3.new(.1,.1,.1), -Ang.LookVector * Dist, Param)
 		if TotalDist then
+			if typeof(TotalDist.Instance) == 'Instance' and TotalDist.Instance:IsA('BasePart') and TotalDist.Instance.Transparency >= 1 then table.insert(Invisparte, TotalDist.Instance) else 
 			LDist = math.min(LDist, TotalDist.Distance)
-			LastMax = math.min(LastMax, TotalDist.Distance)
+			LastMax = math.min(LastMax, TotalDist.Distance) end
 		else
+			for i,v in Invisparte do
+				if typeof(v) ~= 'Instance' or typeof(v.Parent) ~= 'Instance' or not v:IsA("BasePart") or v.Transparency < 1 then
+					table.remove(Invisparte, table.find(Invisparte, v))
+				end  
+			end
 			LastMax = 25
 		end
 		local SETTO = Ang + (Centre + BackwardVec)
