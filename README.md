@@ -19,4 +19,5 @@ Roblox is no longer what it once was, It died a while back, and we are seeing it
 Also, to note, I do make mistakes, especially with metatable stuff, One thing to note is that I sometime use normal table indexing in .__newindex (such as MIME class in Crafting system).
 Also I just realize that using task.wait() for delta didn't account for operation time, and yeah I'm not fixing allat. u could just make sure they just go "local dt = os.clock() - (lastclock or os.clock()) lastclock = os.clock()" tho.
 
---@Soliviant(myleszad) Github/Codeberg/Youtube May 2026; @Solivion InternetArchive/Roblox;
+--@Soliviant(myleszad) Github/Codeberg/Youtube June 2026; @Solivion InternetArchive/Roblox;
+Please remember that accounts can be comprimised. and for that reason, I'll be archiving my stuff in various places.
